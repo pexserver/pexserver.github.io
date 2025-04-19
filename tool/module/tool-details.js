@@ -47,7 +47,7 @@ const toolsData = {
         downloadUrl: './File/markdown.html',
         docsUrl: './File/markdown.html',
         platform: 'web',
-        categoryType: 'markdown'
+        categoryType: 'development'
     }
 };
 
