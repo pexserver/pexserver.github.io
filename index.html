@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<title>PEX Server v4</title>
+<meta name="description"
+    content="PEX Server v4は、こう君が開発したサーバー関連サービス、ゲーム、ツールへのリンク集です。サーバー管理、AIツール、ゲームなど、様々なサービスを体験いただけます。">
+<meta name="keywords" content="PEX Server, こう君, サーバーサービス, ゲーム, AIツール, 管理ツール, リンク集">
+<meta name="author" content="こう君">
+
+<!-- OGP設定 -->
+<meta property="og:title" content="PEX Server v4">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://gamelist1990.github.io/gamelist1990/pexserver/">
+<meta property="og:image" href="./lib/Assets/images/home.png"> <!-- パスが正しいか確認してください -->
+<meta property="og:description"
+    content="PEX Server v4は、こう君が開発したサーバー関連サービス、ゲーム、ツールへのリンク集です。サーバー管理、AIツール、ゲームなど、様々なサービスを体験いただけます。">
+<meta property="og:site_name" content="PEX Server v4">
+<meta property="og:locale" content="ja_JP">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@PEXkoukunn">
+
+<!-- iOS設定 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PEX Server v4">
+<link rel="apple-touch-icon" href="./lib/Assets/images/home.png"> <!-- パスが正しいか確認してください -->
+<meta name="apple-touch-fullscreen" content="yes">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="canonical" href="https://gamelist1990.github.io/gamelist1990/pexserver/" />
+
+
+<link rel="stylesheet" href="./lib/css/home.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HTPC109STK"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-HTPC109STK');
+</script>
+</head>
+
+<body>
+<header>
+    <div class="container">
+        <a href="#" class="logo">
+            <p>🖥️ PEX Server v4</p>
+        </a>
+        <nav>
+            <ul>
+                <li><a href="./tool/index.html"><i class="fas fa-bookmark"></i>ツール系配布</a></li>
+                <li><a href="./about.html"><i class="fa fa-book" aria-hidden="true"></i>概要</a></li>
+            </ul>
+        </nav>
+        <!-- Use button for accessibility -->
+        <button class="hamburger" aria-label="メニューを開閉する" aria-expanded="false">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </div>
+</header>
+
+<main>
+    <div class="container">
+        <section class="hero">
+            <h1>PEX Server v4</h1>
+            <p>こう君が開発した色々なコンテンツを提供します マインクラフト、AIツール、ゲームなど、幅広いサービスを体験いただけます。</p>
+        </section>
+
+        <section class="info section">
+            <h2><i class="fas fa-bullhorn"></i> お知らせ</h2>
+            <div class="card-grid">
+                <article class="card">
+                    <div class="icon"><i class="fas fa-server"></i></div>
+                    <h3>NEW PEX Server (MenuClient v3 の後継版です)</h3>
+                    <p class="date">2025-04-19</p>
+                    <p>MenuClientの更新版ですベースはMenuClientv3のコードを一部使用しています</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="updates section">
+            <h2><i class="fas fa-sync"></i> サーバーステータス</h2>
+            <div class="card-grid">
+                <article class="card" id="ai-service-card">
+                    <div class="icon"><i class="fas fa-brain"></i></div>
+                    <h3><a href="https://neuralai-jbwc.onrender.com/">AI サービス</a></h3>
+                    <div class="server-status">
+                        <span class="status-indicator status-loading" id="ai-status-indicator"></span>
+                        <span id="ai-status-text">確認中...</span>
+                        <span style="margin-left: 0.5rem; font-size: 0.8em; color: var(--text-light);" id="ai-ping-display">(Ping: <span
+                                id="ai-ping-time">-</span> ms)</span>
+                    </div>
+                    <p class="last-update" id="ai-last-update">
+                        <i class="fas fa-clock"></i> 最終更新: <span id="ai-update-time">確認中...</span>
+                    </p>
+                    <p>NeuralAI推論サービスです</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="app section">
+            <h2><i class="fas fa-th-large"></i> サービス一覧</h2>
+            <div class="card-grid">
+                <article class="card service-card">
+                    <div class="icon"><i class="fas fa-tachometer-alt"></i></div>
+                    <h3><a href="./tool/index.html">ツール系配布</a></h3>
+                    <p>こう君が作ったツール等を配布しています</p>
+                </article>
+            </div>
+        </section>
+    </div>
+</main>
+
+<footer>
+    <div class="container">
+        <div class="footer-links">
+            <a href="../privacy.html">プライバシーポリシー</a>
+            <a href="../terms.html">利用規約</a>
+            <a href="../contact.html">お問い合わせ</a>
+            <a href="../about.html">PEX Serverについて</a>
+        </div>
+        <div class="social-links">
+            <a href="https://twitter.com/PEXkoukunn" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+            <a href="https://github.com/gamelist1990" aria-label="GitHub"><i class="fab fa-github"></i></a>
+            <a href="https://discord.gg/PpfgY3UAnD" aria-label="Discord"><i class="fab fa-discord"></i></a>
+        </div>
+        <p class="copyright">
+            © 2025 PEX Server. All rights reserved.
+        </p>
+    </div>
+</footer>
+<script src="./lib/scripts/home.js"></script>
+</body>
+
+</html>

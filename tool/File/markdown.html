@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ja_JP">
+
+<head>
+    <title>Markdown Editor</title>
+    <meta charset="utf-8">
+    <script src="https://unpkg.com/prettier@2.8.8/standalone.js"></script>
+    <script src="https://unpkg.com/prettier@2.8.8/parser-markdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+    <style>
+        /* 基本的なスタイルのリセット */
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        /* モダンでクリーンなスタイル */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            /* 薄い背景 */
+            color: #333;
+            /* 濃いテキスト */
+        }
+
+        .container {
+            display: flex;
+            height: 100%;
+        }
+
+        .editor-pane {
+            width: 50%;
+            border-right: 1px solid #ddd;
+            /* 薄い分割線 */
+        }
+
+        #markdown-editor {
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            background-color: #fff;
+            /* 白いエディタ背景 */
+            color: #333;
+            border: none;
+            resize: none;
+            font-size: 16px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .preview-pane {
+            width: 50%;
+            padding: 20px;
+            background-color: #fff;
+            /* 白いプレビュー背景 */
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        /* モダンなスクロールバー (必要に応じて調整) */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .toolbar {
+            background-color: #eee;
+            /* 薄いツールバーの背景 */
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #ddd;
+        }
+
+
+        .toolbar button {
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .toolbar button:hover {
+            background-color: #f8f8f8;
+        }
+
+        .context-menu {
+            position: absolute;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 5px 0;
+            z-index: 10;
+            /* 他の要素の上に表示されるようにする */
+            display: none;
+            /* デフォルトでは非表示 */
+            border: 1px solid #ccc;
+            /* 枠線を追加 */
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+            /* 影を追加 */
+        }
+
+
+        .context-menu li {
+            list-style: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .context-menu li:hover {
+            background-color: #f8f8f8;
+        }
+
+
+        /* Markdown Preview Styling */
+        #preview {
+            font-family: sans-serif;
+        }
+
+        #preview h1,
+        #preview h2,
+        #preview h3,
+        #preview h4,
+        #preview h5,
+        #preview h6 {
+            font-weight: bold;
+            margin-bottom: 0.5em;
+        }
+
+        #preview h1 {
+            font-size: 2em;
+        }
+
+        #preview h2 {
+            font-size: 1.5em;
+            border-bottom: 1px solid #eee;
+        }
+
+        #preview p {
+            line-height: 1.6;
+        }
+
+        #preview a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+
+        #preview a:hover {
+            text-decoration: underline;
+        }
+
+
+        #preview code {
+            background-color: #f5f5f5;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+
+        #preview pre {
+            background-color: #f5f5f5;
+            padding: 1em;
+            border-radius: 3px;
+            overflow: auto;
+            font-family: monospace;
+        }
+
+
+        #preview pre code {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+        }
+
+        #preview blockquote {
+            border-left: 4px solid #ddd;
+            padding: 0.5em 1em;
+            color: #777;
+        }
+
+        #preview ul,
+        #preview ol {
+            padding-left: 2em;
+        }
+
+        #preview table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1em;
+        }
+
+        #preview th,
+        #preview td {
+            border: 1px solid #ddd;
+            padding: 0.5em;
+            text-align: left;
+        }
+
+        #preview img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="toolbar">
+        <span>編集メニュー</span>
+        <div>
+            <button id="saveBtn">保存</button>
+            <button id="loadBtn">読み込み</button>
+            <button id="exportBtn">エクスポート</button>
+            <button id="shareBtn">共有</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="editor-pane">
+            <div id="markdown-editor" contenteditable="true" placeholder="Markdown を入力してください..."></div>
+        </div>
+        <div class="preview-pane" id="preview"></div>
+    </div>
+
+    <ul class="context-menu" id="contextMenu">
+        <li id="refactorBtn">リファクター</li>
+        <li id="formatBtn">ドキュメントのフォーマット</li>
+        <li id="showBlankBtn">別ウィンドウでプレビュー</li>
+    </ul>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const saveBtn = document.getElementById('saveBtn');
+            const loadBtn = document.getElementById('loadBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const shareBtn = document.getElementById('shareBtn');
+            const markdownEditor = document.getElementById('markdown-editor');
+            const preview = document.getElementById('preview');
+            const contextMenu = document.getElementById('contextMenu');
+            const refactorBtn = document.getElementById('refactorBtn');
+            const formatBtn = document.getElementById('formatBtn');
+            const showBlankBtn = document.getElementById('showBlankBtn');
+
+
+
+            markdownEditor.addEventListener('input', () => {
+                updatePreview();
+            });
+
+            // プレビューを更新する関数
+            function updatePreview() {
+                const markdownText = markdownEditor.innerText;
+                const html = marked.parse(markdownText);
+                preview.innerHTML = html;
+            }
+
+
+
+            // URLパラメータから圧縮データを取得し、解凍
+            const urlParams = new URLSearchParams(window.location.search);
+            const compressedTextFromUrl = urlParams.get('data');
+            if (compressedTextFromUrl) {
+                const decompressedText = LZString.decompressFromEncodedURIComponent(compressedTextFromUrl);
+                markdownEditor.innerText = decompressedText;
+                updatePreview();
+            }
+
+            saveBtn.addEventListener('click', () => {
+                const markdownText = markdownEditor.innerText;
+                const blob = new Blob([markdownText], { type: 'text/markdown' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'markdown.md';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            loadBtn.addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.md';
+                input.addEventListener('change', (event) => {
+                    const file = event.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        markdownEditor.innerText = e.target.result;
+                    };
+                    reader.readAsText(file);
+                });
+                input.click();
+            });
+
+            exportBtn.addEventListener('click', () => {
+                // HTML export (simple download)
+                const htmlContent = `<!DOCTYPE html><html><head><title>Exported Markdown</title><style>/* Add any necessary styles here */</style></head><body>${preview.innerHTML}</body></html>`;
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'markdown.html';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+
+            shareBtn.addEventListener('click', () => {
+                const markdownText = markdownEditor.innerText;
+
+                // LZStringで圧縮
+                const compressedText = LZString.compressToEncodedURIComponent(markdownText);
+
+                // URLパラメータに圧縮データを含める
+                const shareUrl = window.location.href + '?data=' + compressedText;
+
+                // URLをクリップボードにコピー
+                navigator.clipboard.writeText(shareUrl)
+                    .then(() => {
+                        alert('共有URLをクリップボードにコピーしました: ' + shareUrl);
+                    })
+                    .catch(err => {
+                        console.error('URLのコピーに失敗しました: ', err);
+                        alert('URLのコピーに失敗しました。');
+                    });
+            });
+
+
+            markdownEditor.addEventListener('contextmenu', (event) => {
+                event.preventDefault(); // Prevent default context menu
+
+                // Show/hide refactor button based on editor content
+                if (markdownEditor.innerText.trim() === "") {
+                    refactorBtn.style.display = 'block';
+                } else {
+                    refactorBtn.style.display = 'none';
+                }
+
+                contextMenu.style.left = event.clientX + 'px';
+                contextMenu.style.top = event.clientY + 'px';
+                contextMenu.style.display = 'block';
+            });
+
+            showBlankBtn.addEventListener('click', () => {
+                const markdownText = markdownEditor.innerText;
+                const html = marked.parse(markdownText);
+
+                // 新しいウィンドウを作成
+                const newWindow = window.open('', '_blank');
+
+                // 新しいウィンドウにHTMLコンテンツを書き込み
+                newWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Markdown Preview</title>
+                    <style>
+                        /* プレビューウィンドウのスタイル */
+                        body {
+                            margin: 20px;
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${html}
+                </body>
+                </html>
+            `);
+
+                // 書き込みを完了
+                newWindow.document.close();
+            });
+
+
+            document.addEventListener('click', (event) => {
+                // Hide context menu when clicking outside of it
+                if (!contextMenu.contains(event.target)) {
+                    contextMenu.style.display = 'none';
+                }
+            });
+
+            refactorBtn.addEventListener('click', () => {
+                markdownEditor.innerText = `# サンプル Markdown
+
+これはサンプルの Markdown です。
+
+## 見出し 2
+
+- リスト項目 1
+- リスト項目 2
+- リスト項目 3
+  - ネストしたリスト項目 1
+  - ネストしたリスト項目 2
+
+\`\`\`javascript
+// コードブロック (JavaScript)
+console.log("Hello, world!");
+\`\`\`
+
+\`\`\`python
+# コードブロック (Python)
+print("Hello, world!")
+\`\`\`
+
+**太字**、*斜体*、~~取り消し線~~
+
+[リンク](https://www.example.com)
+
+![画像](https://via.placeholder.com/150)
+
+> 引用
+
+***
+
+水平線
+
+| ヘッダー1 | ヘッダー2 |
+|---|---|
+| セル1 | セル2 |
+| セル3 | セル4 |
+`;
+            });
+
+            formatBtn.addEventListener('click', () => {
+                const markdownText = markdownEditor.innerText;
+                const formattedText = prettier.format(markdownText, {
+                    parser: "markdown",
+                    plugins: prettierPlugins
+                });
+                markdownEditor.innerText = formattedText;
+                alert("ドキュメントをフォーマットしました");
+            });
+        });
+    </script>
+</body>
+
+</html>

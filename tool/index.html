@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <title>ツール一覧 - PEX Server v4</title>
+    <meta name="description" content="PEX Server v4が提供する様々なサーバー管理・監視ツールの一覧です。ダウンロードして便利なツールを利用しましょう。">
+
+    <!-- OGP設定 -->
+    <meta property="og:title" content="ツール一覧 - PEX Server v4">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://gamelist1990.github.io/gamelist1990/pexserver/tool/">
+    <meta property="og:image" href="../lib/Assets/images/home.png">
+    <meta property="og:description" content="PEX Server v4が提供する様々なサーバー管理・監視ツールの一覧です。ダウンロードして便利なツールを利用しましょう。">
+    <meta property="og:site_name" content="PEX Server v4">
+    <meta property="og:locale" content="ja_JP">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@PEXkoukunn">
+
+    <!-- iOS設定 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PEX Tools">
+    <link rel="apple-touch-icon" href="../lib/Assets/images/home.png">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="./module/tool.css">
+    <link rel="stylesheet" href="./module/modal.css">
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HTPC109STK"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-HTPC109STK');
+    </script>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <p>🖥️ PEX Server v4</p>
+            </a>
+            <button id="theme-toggle" class="theme-toggle" aria-label="テーマを切り替える">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <section class="hero">
+                <h1>サーバー管理・監視ツール</h1>
+                <p>こう君が作成した便利系の色々なツール等を提供します <br>(バグあったらDiscordまで)</p>
+                <div class="search-bar">
+                    <input type="text" placeholder="ツールを検索..." id="tool-search">
+                    <button aria-label="検索"><i class="fas fa-search"></i></button>
+                </div>
+            </section>
+
+            <section class="filter-section">
+                <div class="filter-header">
+                    <h2>フィルタオプション</h2>
+                    <button class="filter-toggle" id="filter-toggle">
+                        <span>詳細フィルタ</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="filter-content" id="filter-content">
+                    <div class="filter-group">
+                        <label for="category-filter">カテゴリ</label>
+                        <select id="category-filter">
+                            <option value="">すべて</option>
+                            <option value="server-management">サーバー管理</option>
+                            <option value="data-management">データ管理</option>
+                            <option value="security">セキュリティ</option>
+                            <option value="development">開発サポート</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="platform-filter">プラットフォーム</label>
+                        <select id="platform-filter">
+                            <option value="">すべて</option>
+                            <option value="windows">Windows</option>
+                            <option value="macos">macOS</option>
+                            <option value="linux">Linux</option>
+                            <option value="web">Webベース</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="sort-filter">並べ替え</label>
+                        <select id="sort-filter">
+                            <option value="latest">最新順</option>
+                            <option value="popular">人気順</option>
+                            <option value="name">名前順</option>
+                        </select>
+                    </div>
+                    <div class="filter-buttons">
+                        <button class="btn btn-primary" id="apply-filter">
+                            <i class="fas fa-filter"></i>フィルタを適用
+                        </button>
+                        <button class="btn btn-outline" id="reset-filter">
+                            <i class="fas fa-times"></i>リセット
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="category-nav">
+                <a href="#all" class="active"><i class="fas fa-th"></i>すべて</a>
+                <a href="#server-management"><i class="fas fa-server"></i>サーバー管理</a>
+                <a href="#data-management"><i class="fas fa-database"></i>データ管理</a>
+                <a href="#security"><i class="fas fa-shield-alt"></i>セキュリティ</a>
+                <a href="#development"><i class="fas fa-code"></i>開発サポート</a>
+            </section>
+
+            <h2 class="section-title"><i class="fas fa-tools"></i>すべてのツール</h2>
+            <section class="tool-grid">
+                <!-- Add more tools as needed -->
+            </section>
+
+            <div class="pagination">
+                <a href="#" class="prev"><i class="fas fa-chevron-left"></i> 前へ</a>
+                <a href="#" class="active">1</a>
+                <a href="#">2</a>
+                <a href="#">3</a>
+                <a href="#">4</a>
+                <a href="#" class="next">次へ <i class="fas fa-chevron-right"></i></a>
+            </div>
+        </div>
+
+        <!-- Tool Detail Modal -->
+        <div id="tool-detail-modal" class="modal">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="modal-title">ツール名</h3>
+                    <button id="modal-close" class="modal-close" aria-label="閉じる">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <img id="modal-image" class="modal-image" src="" alt="ツール画像">
+                    <div class="modal-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-tag"></i>
+                            <span class="meta-label">カテゴリ:</span>
+                            <span class="meta-value" id="modal-category">カテゴリ名</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-code-branch"></i>
+                            <span class="meta-label">バージョン:</span>
+                            <span class="meta-value" id="modal-version">1.0.0</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span class="meta-label">更新日:</span>
+                            <span class="meta-value" id="modal-updated">2025-01-01</span>
+                        </div>
+                    </div>
+                    <div id="modal-description" class="modal-description">
+                        <!-- Tool description will be inserted here -->
+                    </div>
+                    <div class="modal-actions">
+                        <a id="modal-download" href="#" class="btn btn-primary">
+                            <i class="fas fa-download"></i>ダウンロード
+                        </a>
+                        <a id="modal-docs" href="#" class="btn btn-outline">
+                            <i class="fas fa-book"></i>ドキュメント
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="../privacy.html">プライバシーポリシー</a>
+                <a href="../terms.html">利用規約</a>
+                <a href="../contact.html">お問い合わせ</a>
+                <a href="../about.html">PEX Serverについて</a>
+            </div>
+            <div class="social-links">
+                <a href="https://twitter.com/PEXkoukunn" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                <a href="https://github.com/gamelist1990" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                <a href="https://discord.gg/PpfgY3UAnD" aria-label="Discord"><i class="fab fa-discord"></i></a>
+            </div>
+            <p class="copyright">
+                © 2025 PEX Server. All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+    <button id="scroll-top" class="scroll-top" aria-label="ページの先頭へ">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script src="./module/tool.js"></script>
+    <script src="./module/tool-details.js"></script>
+</body>
+
+</html>
