@@ -79,7 +79,7 @@ const toolsData = {
     },
     'tool3': {
         title: 'Hive KB Addon 1.21.70',
-        image: 'https://cdn.discordapp.com/attachments/1348643134954799197/1348643135676223571/pack_icon.png?ex=6804f14c&is=68039fcc&hm=16ccebd7b06a999df66b7c9527c341982e4fb125555b03a856c3d75150850cf6&',
+        image: '../lib/Assets/images/HiveKB/kb.png',
         imageLarge: 'https://th.bing.com/th/id/OIP.Y6QPCmi8ZckeM80BG23X_gAAAA?rs=1&pid=ImgDetMain',
         category: 'マイクラ',
         version: '1.0',
