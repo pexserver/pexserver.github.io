@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChestFormData ビルダー v5 (ツールベース)</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <h1>ChestFormData ビルダー v5 (ツールベース) <a href="./en.html">English</a></h1>
+
+    <div class="controls">
+        <div>
+            <label for="function-name">関数名:</label>
+            <input type="text" id="function-name" value="openMyChestMenu">
+        </div>
+        <div>
+            <label for="form-size">フォームサイズ:</label>
+            <select id="form-size">
+                <option value="small">小 (27)</option>
+                <option value="large" selected>大 (54)</option>
+            </select>
+        </div>
+        <div>
+            <label for="form-title">フォームタイトル:</label>
+            <input type="text" id="form-title" value="§lマイチェストメニュー">
+        </div>
+    </div>
+
+    <h2>チェストグリッド</h2>
+    <div class="tool-selector">
+        <span>ツール:</span>
+        <button id="tool-edit" class="tool-button active" title="単一スロット編集 (ペン)">🖊️ 編集</button>
+        <button id="tool-select" class="tool-button" title="複数スロット選択 (選択)">🖱️ 選択</button>
+    </div>
+    <p id="grid-instruction">現在のツール: 編集 - スロットをクリックして個別に編集します。</p>
+
+    <div id="selection-controls" style="margin-bottom: 10px; min-height: 30px; display: none;">
+        <button id="clear-selection-button" disabled>選択解除</button>
+        <button id="edit-pattern-button" disabled>選択範囲をパターンとして編集 (<span id="selection-count">0</span>)</button>
+        <button id="clear-individual-button" disabled>選択範囲の個別設定をクリア</button>
+        <button id="clear-pattern-membership-button" disabled>選択範囲からパターンを削除</button>
+    </div>
+    <div id="chest-grid" class="grid-large tool-edit-mode">
+        <!-- スロットはJSによって生成されます -->
+    </div>
+
+    <div id="slot-editor" class="editor-panel" style="display: none;">
+        <h3>スロット編集 <span id="slot-index-display"></span></h3>
+        <label for="slot-item-name">アイテム名:</label><input type="text" id="slot-item-name" placeholder="§lアイテム名">
+        <label for="slot-item-desc">アイテム説明 (1行ごとに改行):</label><textarea id="slot-item-desc" rows="3"
+            placeholder="1行目\n§72行目"></textarea>
+        <label for="slot-texture">テクスチャ:</label><input type="text" id="slot-texture" placeholder="minecraft:apple">
+        <label for="slot-stack-size">スタックサイズ (1-99):</label><input type="number" id="slot-stack-size" min="1" max="99"
+            value="1">
+        <label for="slot-durability">耐久値 (0-99):</label><input type="number" id="slot-durability" min="0" max="99"
+            value="0">
+        <label for="slot-enchanted"><input type="checkbox" id="slot-enchanted"> エンチャントの輝き</label>
+        <div class="editor-buttons">
+            <button id="save-slot-button">スロット保存</button>
+            <button id="clear-slot-button">このスロットデータをクリア</button>
+            <button id="cancel-slot-button">編集キャンセル</button>
+        </div>
+    </div>
+
+    <div id="pattern-editor" class="editor-panel" style="display: none;">
+        <h3>選択したスロットのパターン設定を編集</h3>
+        <p><span id="pattern-slot-count">0</span> 個の選択されたスロットに適用されます。</p>
+        <label for="pattern-key-char">パターンキー文字 (例: 'x'):</label><input type="text" id="pattern-key-char" value="x"
+            maxlength="1">
+        <label for="pattern-item-name">アイテム名:</label><input type="text" id="pattern-item-name" placeholder="§7背景パネル">
+        <label for="pattern-item-desc">アイテム説明 (1行ごとに改行):</label><textarea id="pattern-item-desc" rows="3"
+            placeholder="装飾要素"></textarea>
+        <label for="pattern-texture">テクスチャ:</label><input type="text" id="pattern-texture"
+            placeholder="minecraft:gray_stained_glass_pane">
+        <label for="pattern-stack-size">スタックサイズ (1-99):</label><input type="number" id="pattern-stack-size" min="1"
+            max="99" value="1">
+        <label for="pattern-durability">耐久値 (0-99):</label><input type="number" id="pattern-durability" min="0" max="99"
+            value="0">
+        <label for="pattern-enchanted"><input type="checkbox" id="pattern-enchanted"> エンチャントの輝き</label>
+        <div class="editor-buttons">
+            <button id="save-pattern-button">選択範囲にパターンを適用</button>
+            <button id="clear-pattern-from-selected-button">パターン全体をクリア</button>
+            <button id="cancel-pattern-button">編集キャンセル</button>
+        </div>
+    </div>
+
+    <button id="import-code-button"
+        style="margin-top: 15px; padding: 10px 15px; background-color: #ffc107; border: none; border-radius: 4px; cursor: pointer;">コードをインポート...</button>
+
+    <div id="import-modal" class="editor-panel" style="display: none; min-width: 500px;">
+        <h3>ChestFormDataコードをインポート</h3>
+        <p>既存のTypeScript関数コードを以下に貼り付けてください。</p>
+        <textarea id="import-code-area" rows="15" placeholder="ここに関数コードを貼り付け..."
+            style="width: 100%; font-family: 'Courier New', Courier, monospace; font-size: 0.9em; background-color: #f8f8f8; border: 1px solid #ccc; padding: 10px; box-sizing: border-box;"></textarea>
+        <div class="editor-buttons">
+            <button id="confirm-import-button" style="background-color: #28a745; color: white;">インポートして適用</button>
+            <button id="cancel-import-button" style="background-color: #6c757d; color: white;">キャンセル</button>
+        </div>
+    </div>
+
+    <h2>生成されたTypeScriptコード</h2>
+    <textarea id="output-code" rows="20" readonly placeholder="生成されたコードはここに表示されます..."></textarea>
+    <button id="generate-code-button">コードを生成/更新</button>
+
+    <div id="overlay" style="display: none;"></div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

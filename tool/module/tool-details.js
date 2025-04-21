@@ -134,7 +134,73 @@ const toolsData = {
         docsUrl: "https://discord.com/channels/890315487962095637/1348212550680182805/1348212550680182805",
         platform: 'windows,linux',
         categoryType: 'development'
-    }
+    },
+    'tool5': {
+        title: 'ChestUI Editor',
+        image: '../lib/Assets/images/ChestUI/chest.png',
+        imageLarge: '../lib/Assets/images/gray.pngg',
+        category: '開発ツール',
+        version: '1.0.0',
+        updated: '2025-04-21',
+        description: 'リアルタイムでChestUIの関数を生成できます。',
+        detailedDescription: `
+        <p>Minecraft Bedrock Editionのアドオン開発者向けに、<code>ChestFormData</code> APIを使用したチェストメニューUIを視覚的に作成するためのWebベースのビルダーです。</p>
+<p>複雑なコードを手書きすることなく、グラフィカルなインターフェースを通じてスロットの配置やアイテム情報を設定し、対応するTypeScriptコードを生成できます。既存のコードをインポートして編集することも可能です。</p>
+<h4>主な機能:</h4>
+<ul>
+    <li>チェストメニューのサイズ選択 (Small: 27スロット / Large: 54スロット)</li>
+    <li>フォームのタイトル設定 (書式コード対応)</li>
+    <li>生成されるTypeScript関数の名前設定</li>
+    <li>インタラクティブなチェストグリッド表示:
+        <ul>
+            <li><b>Editモード:</b> スロットをクリックして個別にアイテム情報を編集</li>
+            <li><b>Selectモード:</b> ドラッグまたはクリックで複数スロットを選択し、一括操作</li>
+        </ul>
+    </li>
+    <li>個別スロット設定 (Editモード):
+        <ul>
+            <li>アイテム名 (書式コード対応)</li>
+            <li>アイテム説明 (複数行、書式コード対応)</li>
+            <li>テクスチャ指定 (例: <code>minecraft:apple</code>)</li>
+            <li>スタックサイズ (1-99)</li>
+            <li>耐久値 (0-99)</li>
+            <li>エンチャント風エフェクトの有無</li>
+            <li>設定したスロットデータのクリア</li>
+        </ul>
+    </li>
+    <li>パターン機能 (Selectモード):
+        <ul>
+            <li>選択した複数のスロットに共通のアイテム（背景アイテムなど）を一括で設定</li>
+            <li>パターン用のキー文字、アイテム情報（名前、説明、テクスチャ、スタックサイズ、耐久値、エンチャント）を設定</li>
+            <li>設定したパターン全体のクリア</li>
+        </ul>
+    </li>
+    <li>選択範囲に対する操作 (Selectモード):
+        <ul>
+            <li>選択範囲のクリア</li>
+            <li>選択されたスロットの「個別設定」を一括で削除</li>
+            <li>選択されたスロットを「パターン」の割り当てから除外</li>
+        </ul>
+    </li>
+    <li>生成されたTypeScriptコードのリアルタイム表示とコピー機能</li>
+    <li>既存の<code>ChestFormData</code> TypeScriptコードをインポートして編集を再開する機能</li>
+</ul>
+<h4>技術スタック:</h4>
+<ul>
+    <li>HTML5, CSS3, JavaScript (ES6)</li>
+</ul>
+<h4>システム要件:</h4>
+<ul>
+    <li>最新のWebブラウザ (Chrome, Firefox, Safari, Edgeなど)</li>
+</ul>
+<p>特別なインストールは不要で、提供されたHTMLファイルをWebブラウザで開くだけで利用を開始できます。</p>
+<br><footer>Create By こう君</footer>
+    `,
+        downloadUrl: "./File/ChestUI/en.html",
+        docsUrl: './File/ChestUI/en.html',
+        platform: 'web',
+        categoryType: 'development'
+    },
 };
 
 function getToolDetails(id) {
@@ -190,7 +256,7 @@ function ensurePlatformModalExists() {
         }
     });
 
-     modalContent.addEventListener('click', (e) => {
+    modalContent.addEventListener('click', (e) => {
         e.stopPropagation();
     });
 }
@@ -403,7 +469,7 @@ function initializeFilters() {
         }
         filterTools({ sort: 'latest', categoryType: getActiveNavCategory() });
     } else if (toolGrid) {
-         filterTools({ sort: 'latest' });
+        filterTools({ sort: 'latest' });
     }
 
     if (filterToggle && filterContent) {
@@ -439,7 +505,7 @@ function initializeFilters() {
                 categoryType: categoryToFilter,
             });
 
-             if (categoryFilter) {
+            if (categoryFilter) {
                 categoryFilter.value = categoryToFilter;
             }
         });
@@ -470,16 +536,16 @@ function initializeFilters() {
                 categoryType: categoryToUse,
             });
 
-             if (filtersFromUi.categoryType) {
-                 categoryNavLinks.forEach(l => l.classList.remove('active'));
-                 const targetNavLink = document.querySelector(`.category-nav a[href="#${filtersFromUi.categoryType}"]`);
-                 if (targetNavLink) {
-                     targetNavLink.classList.add('active');
-                 } else {
-                     const allLink = document.querySelector('.category-nav a[href="#all"]');
-                     if (allLink) allLink.classList.add('active');
-                 }
-             }
+            if (filtersFromUi.categoryType) {
+                categoryNavLinks.forEach(l => l.classList.remove('active'));
+                const targetNavLink = document.querySelector(`.category-nav a[href="#${filtersFromUi.categoryType}"]`);
+                if (targetNavLink) {
+                    targetNavLink.classList.add('active');
+                } else {
+                    const allLink = document.querySelector('.category-nav a[href="#all"]');
+                    if (allLink) allLink.classList.add('active');
+                }
+            }
         });
     }
 
@@ -613,20 +679,20 @@ function initializeFilters() {
 
             const downloadBtn = toolCard.querySelector('.download-btn');
             if (downloadBtn) {
-                 if (downloadBtn.getAttribute('data-requires-platform-selection') === 'true') {
+                if (downloadBtn.getAttribute('data-requires-platform-selection') === 'true') {
                     downloadBtn.addEventListener('click', function (e) {
                         e.preventDefault();
                         e.stopPropagation();
                         showPlatformSelectionModal(tool);
                     });
                 } else if (primaryDownloadUrl !== "#") {
-                     downloadBtn.addEventListener('click', function (e) {
+                    downloadBtn.addEventListener('click', function (e) {
                         e.stopPropagation();
                     });
                 } else {
-                     downloadBtn.classList.add('disabled');
-                     downloadBtn.style.pointerEvents = 'none';
-                     downloadBtn.addEventListener('click', (e) => e.preventDefault());
+                    downloadBtn.classList.add('disabled');
+                    downloadBtn.style.pointerEvents = 'none';
+                    downloadBtn.addEventListener('click', (e) => e.preventDefault());
                 }
             }
 
