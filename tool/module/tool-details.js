@@ -1,207 +1,15 @@
-const toolsData = {
-    'tool1': {
-        title: 'Markdown Editor',
-        image: '../lib/Assets/images/Markdown/markdown.png',
-        imageLarge: '../lib/Assets/images/Markdown/label.png',
-        category: '開発ツール',
-        version: '1.0.0',
-        updated: '2025-04-19',
-        description: 'リアルタイムでMarkdownを編集・プレビューできるWebベースのエディタです。保存、読み込み、エクスポート、共有機能も備えています。',
-        detailedDescription: `
-        <p>ブラウザ上で動作する高機能なMarkdownエディタです。入力したMarkdownテキストがリアルタイムでプレビューされ、直感的に文書を作成できます。</p>
-        <p>Marked.jsによる高速なプレビュー更新、Prettierによるコードフォーマット、LZ-Stringを利用したURL共有など、モダンなWeb技術を活用しています。</p>
-        <h4>主な機能:</h4>
-        <ul>
-            <li>リアルタイムMarkdown編集エリア (contenteditable)</li>
-            <li>リアルタイムHTMLプレビュー (Marked.js使用)</li>
-            <li>Markdownファイル (.md) としてローカルに保存</li>
-            <li>ローカルからMarkdownファイル (.md) を読み込み</li>
-            <li>表示中のプレビューをHTMLファイル (.html) としてエクスポート</li>
-            <li>編集内容を圧縮してURLパラメータで共有 (LZ-String使用)</li>
-            <li>右クリックメニューによる操作:
-                <ul>
-                    <li>サンプルMarkdownの挿入 (リファクター)</li>
-                    <li>Markdownソースのフォーマット (Prettier使用)</li>
-                    <li>プレビューを別ウィンドウで表示</li>
-                </ul>
-            </li>
-        </ul>
-        <h4>技術スタック:</h4>
-        <ul>
-            <li>HTML5, CSS3, JavaScript (ES6)</li>
-            <li>Marked.js (Markdownパーサー)</li>
-            <li>Prettier (コードフォーマッター)</li>
-            <li>LZ-String (データ圧縮)</li>
-        </ul>
-        <h4>システム要件:</h4>
-        <ul>
-            <li>最新のWebブラウザ (Chrome, Firefox, Safari, Edgeなど)</li>
-            <li>インターネット接続 (ライブラリ読み込み・共有機能で必要)</li>
-        </ul>
-        <p>特別なインストールは不要で、提供されたHTMLファイルをWebブラウザで開くだけで利用を開始できます。</p>
-        <br><footer>Create By こう君</footer>
-    `,
-        downloadUrl: './File/markdown.html',
-        docsUrl: './File/markdown.html',
-        platform: 'web',
-        categoryType: 'development'
-    },
-    'tool2': {
-        title: '自動環境セットアップ(TypeScript)',
-        image: '../lib/Assets/images/SetupTool/index.png',
-        imageLarge: 'https://cdn.discordapp.com/attachments/1348212550680182805/1348212550835376198/image.png?ex=6804b1c8&is=68036048&hm=08ef0bd87cb679a16913ea5cf0fa07b45357f100e8716c75e59b6002c1168271&',
-        category: '開発ツール',
-        version: '0.2',
-        updated: '2024-03-09',
-        description: 'このソフトウェアは、自動でマイクラのアドオン開発環境(TypeScript)をセットアップしてくれます。',
-        detailedDescription: `
-        <p>このソフトウェアは、自動でマイクラのアドオン開発環境(TypeScript)をセットアップしてくれます。</p>
-        <h4>特徴:</h4>
-        <ul>
-            <li>自動インストール: 自動でフォルダ構成をセットアップしてくれます</li>
-            <li><code>npm run watch</code>: リアルタイムでtsからjsに変換してくれます</li>
-        </ul>
-        <h4>License:</h4>
-        <p>MIT</p>
-        <h4>Change Log:</h4>
-        <h5>Version 0.2</h5>
-        <ul>
-            <li>自動でモジュールのバージョン指定&更新を可能にしました</li>
-            <li>Google DriveのURL更新</li>
-            <li>既にセットアップ時に自動でコンパイルを開始するように修正</li>
-        </ul>
-        <br><footer>Create By こう君</footer>
-    `,
-        downloadUrl: 'https://drive.usercontent.google.com/download?id=1d1N9swQabGl8Cnj1NPmA_cq_RC_z-KHJ&export=download&authuser=1&confirm=t&uuid=20049fd8-b131-40a6-98e8-4a4037550250&at=AEz70l4JdBzGAUP28geiGX2Kj4w4:1742848531124',
-        docsUrl: "https://discord.com/channels/890315487962095637/1348212550680182805/1348212550680182805",
-        platform: 'windows',
-        categoryType: 'development'
-    },
-    'tool3': {
-        title: 'Hive KB Addon 1.21.70',
-        image: '../lib/Assets/images/HiveKB/kb.png',
-        imageLarge: 'https://th.bing.com/th/id/OIP.Y6QPCmi8ZckeM80BG23X_gAAAA?rs=1&pid=ImgDetMain',
-        category: 'マイクラ',
-        version: '1.0',
-        updated: '2024-03-10',
-        description: 'このアドオンはHiveサーバーのKBを再現する方向性のKBアドオンです',
-        detailedDescription: `
-        <p>このアドオンは、Minecraft Bedrock版のサーバー Hive KB を真似て作ったカスタムkbアドオンです</p>
-        <h4>特徴:</h4>
-        <ul>
-            <li>調整されたKB: PEXserver v2 で実際に使用し直接良いkbになるように調整している為 はめやすいkbになっています</li>
-        </ul>
-        <h4>License:</h4>
-        <p>MIT</p>
-        <h4>Change Log:</h4>
-        <h5>Version 1.0</h5>
-        <ul>
-            <li>Version 1.21.70 に対応 (APIの変更によりkbが少し変わっています)</li>
-        </ul>
-        <br><footer>Create By こう君</footer>
-    `,
-        downloadUrl: 'https://drive.usercontent.google.com/download?id=1d1N9swQabGl8Cnj1NPmA_cq_RC_z-KHJ&export=download&authuser=1&confirm=t&uuid=20049fd8-b131-40a6-98e8-4a4037550250&at=AEz70l4JdBzGAUP28geiGX2Kj4w4:1742848531124',
-        docsUrl: "https://discord.com/channels/890315487962095637/1348212550680182805/1348212550680182805",
-        platform: 'windows',
-        categoryType: 'minecraft'
-    },
-    'tool4': {
-        title: 'SecureShareNet自動化ツール',
-        image: '../lib/Assets/images/PortOpen/index.jpg',
-        imageLarge: '../lib/Assets/images/gray.png',
-        category: '開発ツール',
-        version: '1.0',
-        updated: '2024-03-18',
-        description: 'このソフトウェアは、Secure Share Net というポート開放を無しにサーバーを公開できるツールを自動するソフトウェアです',
-        detailedDescription: `
-        <p>このソフトウェアは、Secure Share Net というポート開放を無しにサーバーを公開できるツールを自動するソフトウェアです</p>
-        <h4>特徴:</h4>
-        <ul>
-            <li>Discord連携(一部): ポートの準備が出来たら自動でDiscordに通知を行ってくれます</li>
-            <li>コンソール: コンソールには現在開放中のport等が一覧表示されます</li>
-        </ul>
-        <h4>License:</h4>
-        <p>MIT</p>
-        <h4>Change Log:</h4>
-        <h5>Version 1.0</h5>
-        <ul>
-            <li>PEXserver.github.ioに追加</li>
-        </ul>
-        <br><footer>Create By こう君</footer>
-    `,
-        downloadUrl_windows: 'https://drive.usercontent.google.com/download?id=1Lp_8bqDpa24yw9lHE7Aglmoe9F0DPJzP&export=download&authuser=1&confirm=t&uuid=c7d7b5bb-7016-4836-9375-7a33ee82c0a5&at=AEz70l5yKZtb9jNf5VUn_8JTLiEE:1742849812200',
-        downloadUrl_linux: "https://drive.usercontent.google.com/download?id=1tPk27pgEwOZN7f_oPqOO5LsphOFf-5eD&export=download&authuser=1&confirm=t&uuid=9d1be45b-c3a0-4bfa-8630-551269a0bf7b&at=AEz70l58_02ZQAV5MFkFp77r805W:1742849868952",
-        docsUrl: "https://discord.com/channels/890315487962095637/1348212550680182805/1348212550680182805",
-        platform: 'windows,linux',
-        categoryType: 'development'
-    },
-    'tool5': {
-        title: 'ChestUI Editor',
-        image: '../lib/Assets/images/ChestUI/chest.png',
-        imageLarge: '../lib/Assets/images/gray.pngg',
-        category: '開発ツール',
-        version: '1.0.0',
-        updated: '2025-04-21',
-        description: 'リアルタイムでChestUIの関数を生成できます。',
-        detailedDescription: `
-        <p>Minecraft Bedrock Editionのアドオン開発者向けに、<code>ChestFormData</code> APIを使用したチェストメニューUIを視覚的に作成するためのWebベースのビルダーです。</p>
-<p>複雑なコードを手書きすることなく、グラフィカルなインターフェースを通じてスロットの配置やアイテム情報を設定し、対応するTypeScriptコードを生成できます。既存のコードをインポートして編集することも可能です。</p>
-<h4>主な機能:</h4>
-<ul>
-    <li>チェストメニューのサイズ選択 (Small: 27スロット / Large: 54スロット)</li>
-    <li>フォームのタイトル設定 (書式コード対応)</li>
-    <li>生成されるTypeScript関数の名前設定</li>
-    <li>インタラクティブなチェストグリッド表示:
-        <ul>
-            <li><b>Editモード:</b> スロットをクリックして個別にアイテム情報を編集</li>
-            <li><b>Selectモード:</b> ドラッグまたはクリックで複数スロットを選択し、一括操作</li>
-        </ul>
-    </li>
-    <li>個別スロット設定 (Editモード):
-        <ul>
-            <li>アイテム名 (書式コード対応)</li>
-            <li>アイテム説明 (複数行、書式コード対応)</li>
-            <li>テクスチャ指定 (例: <code>minecraft:apple</code>)</li>
-            <li>スタックサイズ (1-99)</li>
-            <li>耐久値 (0-99)</li>
-            <li>エンチャント風エフェクトの有無</li>
-            <li>設定したスロットデータのクリア</li>
-        </ul>
-    </li>
-    <li>パターン機能 (Selectモード):
-        <ul>
-            <li>選択した複数のスロットに共通のアイテム（背景アイテムなど）を一括で設定</li>
-            <li>パターン用のキー文字、アイテム情報（名前、説明、テクスチャ、スタックサイズ、耐久値、エンチャント）を設定</li>
-            <li>設定したパターン全体のクリア</li>
-        </ul>
-    </li>
-    <li>選択範囲に対する操作 (Selectモード):
-        <ul>
-            <li>選択範囲のクリア</li>
-            <li>選択されたスロットの「個別設定」を一括で削除</li>
-            <li>選択されたスロットを「パターン」の割り当てから除外</li>
-        </ul>
-    </li>
-    <li>生成されたTypeScriptコードのリアルタイム表示とコピー機能</li>
-    <li>既存の<code>ChestFormData</code> TypeScriptコードをインポートして編集を再開する機能</li>
-</ul>
-<h4>技術スタック:</h4>
-<ul>
-    <li>HTML5, CSS3, JavaScript (ES6)</li>
-</ul>
-<h4>システム要件:</h4>
-<ul>
-    <li>最新のWebブラウザ (Chrome, Firefox, Safari, Edgeなど)</li>
-</ul>
-<p>特別なインストールは不要で、提供されたHTMLファイルをWebブラウザで開くだけで利用を開始できます。</p>
-<br><footer>Create By こう君</footer>
-    `,
-        downloadUrl: "./File/ChestUI/en.html",
-        docsUrl: './File/ChestUI/en.html',
-        platform: 'web',
-        categoryType: 'development'
-    },
-};
+let toolsData = {};
+
+async function getToolJson() {
+    try {
+        const response = await fetch('./module/tools.json');
+        return await response.json();
+    } catch (err) {
+        console.error('tools.json の読み込みに失敗しました', err);
+        return {};
+    }
+}
+
 
 function getToolDetails(id) {
     return toolsData[id] || null;
@@ -317,7 +125,10 @@ function showPlatformSelectionModal(toolData) {
     platformModal.style.display = 'flex'; // Show the modal
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
+    const data = await getToolJson();
+    console.log(JSON.stringify(data))
+    toolsData = data
     ensurePlatformModalExists();
     initializeToolModals();
     initializeFilters();
@@ -696,9 +507,8 @@ function initializeFilters() {
                 }
             }
 
-            fragment.appendChild(toolCard);
+            fragment.appendChild(toolCard)
         });
-
-        toolGrid.appendChild(fragment);
+        toolGrid.appendChild(fragment)
     }
 }

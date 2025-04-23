@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>コメント削除 & フォーマットツール</title>
+    <script src="https://unpkg.com/prettier@3.x/standalone.js"></script>
+    <script src="https://unpkg.com/prettier@3.x/plugins/typescript.js"></script>
+    <script src="https://unpkg.com/prettier@3.x/plugins/babel.js"></script>
+    <script src="https://unpkg.com/prettier@3.x/plugins/html.js"></script>
+
+    <style>
+      body {
+        font-family: sans-serif;
+        display: flex;
+        gap: 30px;
+        padding: 20px;
+        background-color: #f9f9f9;
+        min-height: 100vh;
+        box-sizing: border-box;
+      }
+
+      .area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        max-height: calc(100vh - 40px);
+        transition: background-color 0.2s, border 0.2s;
+        border: 2px dashed transparent;
+      }
+
+      .area.drag-over {
+        border: 2px dashed #007bff;
+        background-color: #e9f5ff;
+      }
+
+      h2 {
+        margin-top: 0;
+        color: #333;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+      }
+
+      .controls {
+        margin-bottom: 15px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      label {
+        margin-right: 5px;
+        font-weight: bold;
+        color: #555;
+      }
+
+      label[for="formatCheckbox"] {
+        font-weight: normal;
+        color: #555;
+      }
+
+      input[type="file"],
+      select,
+      button,
+      input[type="checkbox"] {
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        vertical-align: middle;
+      }
+
+      input[type="checkbox"] {
+        padding: 0;
+        margin-right: 4px;
+        width: auto;
+        height: auto;
+        cursor: pointer;
+      }
+
+      input[type="file"] {
+        flex-grow: 1;
+      }
+
+      button {
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+
+      textarea,
+      pre {
+        width: 100%;
+        flex-grow: 1;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 10px;
+        box-sizing: border-box;
+        font-family: "Courier New", Courier, monospace;
+        font-size: 14px;
+        line-height: 1.4;
+        margin-bottom: 15px;
+        overflow: auto;
+        resize: vertical;
+        min-height: 150px;
+      }
+
+      pre {
+        background-color: #f4f4f4;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        height: auto;
+        flex-grow: 1;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 10px;
+      }
+
+      .file-priority .manual-input-elements,
+      .manual-priority .file-input-elements {
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      .initial-mode .file-input-elements,
+      .initial-mode .manual-input-elements {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      #loadingIndicator {
+        display: none;
+        margin-left: 10px;
+        font-style: italic;
+        color: #666;
+      }
+
+      #formatNote {
+        font-size: 0.9em;
+        color: #777;
+        margin-top: 5px;
+      }
+
+      #copySuccess {
+        display: none;
+        color: #4caf50;
+        font-weight: bold;
+        margin-left: 10px;
+      }
+
+      .drop-instruction {
+        text-align: center;
+        color: #888;
+        font-size: 0.9em;
+        margin-top: 10px;
+        border: 1px dashed #ccc;
+        padding: 15px;
+        border-radius: 4px;
+        background-color: #fdfdfd;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="area" id="inputArea">
+      <h2>入力</h2>
+      <div class="file-input-elements">
+        <div class="controls">
+          <label for="fileInput">ファイルを選択:</label>
+          <input type="file" id="fileInput" accept=".ts,.js,.html,.py,.jsonc" />
+        </div>
+        <p class="drop-instruction">
+          または、ファイルをここにドラッグ＆ドロップ
+        </p>
+      </div>
+      <div class="manual-input-elements">
+        <p>または、ソースコードを貼り付け:</p>
+        <textarea
+          id="codeInput"
+          placeholder="ここにソースコードを貼り付けてください..."
+        ></textarea>
+        <div class="controls">
+          <label for="langType">言語タイプ:</label>
+          <select id="langType">
+            <option value="js">JavaScript (.js)</option>
+            <option value="ts">TypeScript (.ts)</option>
+            <option value="html">HTML (.html)</option>
+            <option value="py">Python (.py)</option>
+            <option value="jsonc">JSON with Comments (.jsonc)</option>
+          </select>
+        </div>
+      </div>
+      <div class="controls">
+        <label for="commentType">削除するコメント:</label>
+        <select id="commentType"></select>
+      </div>
+      <div class="controls">
+        <input type="checkbox" id="formatCheckbox" />
+        <label for="formatCheckbox"
+          >コードをフォーマットする (対応言語のみ)</label
+        >
+      </div>
+      <div class="button-group">
+        <button id="removeButton">コメント削除実行</button>
+        <span id="loadingIndicator">処理中...</span>
+        <button id="clearButton">クリア</button>
+      </div>
+      <p id="formatNote"></p>
+    </div>
+
+    <div class="area" id="outputArea">
+      <h2>出力</h2>
+      <pre id="outputCode"></pre>
+      <div class="button-group">
+        <button id="copyButton" disabled>クリップボードにコピー</button>
+        <span id="copySuccess">コピーしました!</span>
+      </div>
+    </div>
+
+    <script>
+      const fileInput = document.getElementById("fileInput");
+      const codeInput = document.getElementById("codeInput");
+      const langTypeSelect = document.getElementById("langType");
+      const commentTypeSelect = document.getElementById("commentType");
+      const removeButton = document.getElementById("removeButton");
+      const clearButton = document.getElementById("clearButton");
+      const outputCode = document.getElementById("outputCode");
+      const copyButton = document.getElementById("copyButton");
+      const copySuccess = document.getElementById("copySuccess");
+      const inputArea = document.getElementById("inputArea");
+      const outputArea = document.getElementById("outputArea");
+      const loadingIndicator = document.getElementById("loadingIndicator");
+      const formatNote = document.getElementById("formatNote");
+      const formatCheckbox = document.getElementById("formatCheckbox");
+
+      const prettierPlugins = window.prettierPlugins;
+
+      let currentLang = langTypeSelect.value;
+      let currentUIMode = "initial";
+      const supportedExtensions = ["ts", "js", "html", "py", "jsonc"];
+
+      function setUIMode(mode) {
+        currentUIMode = mode;
+        inputArea.classList.remove(
+          "initial-mode",
+          "file-priority",
+          "manual-priority"
+        );
+
+        if (mode === "initial") {
+          inputArea.classList.add("initial-mode");
+          fileInput.disabled = false;
+          codeInput.disabled = false;
+          langTypeSelect.disabled = false;
+          if (fileInput.value) {
+            fileInput.value = "";
+          }
+        } else if (mode === "file") {
+          inputArea.classList.add("file-priority");
+          fileInput.disabled = false;
+          codeInput.disabled = false;
+          langTypeSelect.disabled = true;
+        } else if (mode === "manual") {
+          inputArea.classList.add("manual-priority");
+          fileInput.disabled = true;
+          codeInput.disabled = false;
+          langTypeSelect.disabled = false;
+          if (fileInput.value) {
+            fileInput.value = "";
+          }
+        }
+
+        updateCommentTypeOptions(currentLang);
+        updateFormatNote(currentLang);
+      }
+
+      function updateCommentTypeOptions(language) {
+        commentTypeSelect.innerHTML = "";
+        const options = [{ value: "all", text: "すべて" }];
+
+        if (language === "js" || language === "ts" || language === "jsonc") {
+          options[0].text = "すべて (// と /* */)";
+          options.push({ value: "single", text: "単一行 (//)" });
+          options.push({ value: "multi", text: "複数行 (/* */)" });
+        } else if (language === "html") {
+          options[0].text = "すべて (<!-- -->, //, /* */)";
+          options.push({
+            value: "html_native",
+            text: "HTMLコメント (<!-- -->)",
+          });
+          options.push({ value: "js_single", text: "スクリプト単一行 (//)" });
+          options.push({ value: "js_multi", text: "スクリプト複数行 (/* */)" });
+        } else if (language === "py") {
+          options[0].text = "すべて (#)";
+          options.push({ value: "single", text: "単一行 (#)" });
+        }
+
+        options.forEach((optData) => {
+          const option = document.createElement("option");
+          option.value = optData.value;
+          option.textContent = optData.text;
+          commentTypeSelect.appendChild(option);
+        });
+        commentTypeSelect.value = "all";
+      }
+
+      function updateFormatNote(language) {
+        const parser = getPrettierParser(language);
+        if (parser) {
+          formatNote.textContent = `フォーマットは Prettier (${parser} パーサー) で行われます（オプション有効時）。Create by Koukunn_`;
+        } else {
+          formatNote.textContent = `${language.toUpperCase()} のコードフォーマットはサポートされていません。コメント削除のみ行われます。`;
+        }
+      }
+
+      function getPrettierParser(language) {
+        switch (language) {
+          case "ts":
+            return "typescript";
+          case "js":
+            return "babel";
+          case "html":
+            return "html";
+          case "py":
+            return null;
+          case "jsonc":
+            return null;
+          default:
+            return null;
+        }
+      }
+
+      function handleFileSelect(file) {
+        if (!file) return;
+
+        outputCode.textContent = "";
+        copyButton.disabled = true;
+        copySuccess.style.display = "none";
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          codeInput.value = e.target.result;
+          const extension = file.name.split(".").pop().toLowerCase();
+          if (supportedExtensions.includes(extension)) {
+            currentLang = extension;
+            langTypeSelect.value = extension;
+            setUIMode("file");
+          } else {
+            alert(
+              `対応していないファイル形式です: .${extension}\n対応形式: ${supportedExtensions.join(
+                ", "
+              )}`
+            );
+            clearAll();
+          }
+        };
+        reader.onerror = () => {
+          alert("ファイルの読み込みに失敗しました。");
+          clearAll();
+        };
+        reader.readAsText(file);
+      }
+
+      fileInput.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        handleFileSelect(file);
+      });
+
+      inputArea.addEventListener("dragenter", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        inputArea.classList.add("drag-over");
+      });
+
+      inputArea.addEventListener("dragover", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        inputArea.classList.add("drag-over");
+      });
+
+      inputArea.addEventListener("dragleave", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (e.target === inputArea || !inputArea.contains(e.relatedTarget)) {
+          inputArea.classList.remove("drag-over");
+        }
+      });
+
+      inputArea.addEventListener("drop", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        inputArea.classList.remove("drag-over");
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          if (files.length > 1) {
+            alert("一度にドロップできるファイルは1つだけです。");
+            return;
+          }
+          handleFileSelect(files[0]);
+        }
+      });
+
+      document.body.addEventListener("dragover", (e) => {
+        e.preventDefault();
+      });
+      document.body.addEventListener("drop", (e) => {
+        e.preventDefault();
+      });
+
+      codeInput.addEventListener("input", () => {
+        if (currentUIMode !== "manual") {
+          setUIMode("manual");
+          currentLang = langTypeSelect.value;
+          updateCommentTypeOptions(currentLang);
+          updateFormatNote(currentLang);
+        }
+        outputCode.textContent = "";
+        copyButton.disabled = true;
+        copySuccess.style.display = "none";
+      });
+
+      langTypeSelect.addEventListener("change", () => {
+        if (currentUIMode === "manual" || currentUIMode === "initial") {
+          currentLang = langTypeSelect.value;
+          updateCommentTypeOptions(currentLang);
+          updateFormatNote(currentLang);
+        }
+      });
+
+      removeButton.addEventListener("click", async () => {
+        const code = codeInput.value;
+        if (!code.trim()) {
+          alert("ソースコードが入力されていません。");
+          return;
+        }
+
+        removeButton.disabled = true;
+        clearButton.disabled = true;
+        loadingIndicator.style.display = "inline";
+        outputCode.textContent = "";
+        copyButton.disabled = true;
+        copySuccess.style.display = "none";
+
+        if (currentUIMode !== "file") {
+          currentLang = langTypeSelect.value;
+        }
+        const commentType = commentTypeSelect.value;
+        const shouldFormat = formatCheckbox.checked;
+
+        try {
+          let result = removeComments(code, currentLang, commentType);
+          let formattedResult = result;
+          let formatSkipped = false;
+          let formatErrorOccurred = false;
+          let formatErrorMessage = "";
+
+          const parser = getPrettierParser(currentLang);
+
+          if (shouldFormat && parser) {
+            try {
+              if (typeof prettier === "undefined" || !prettierPlugins) {
+                throw new Error(
+                  "Prettierライブラリまたはプラグインが読み込まれていません。"
+                );
+              }
+              console.log(`Prettierでフォーマット中... パーサー: ${parser}`);
+
+              const pluginsToUse = [];
+              if (
+                prettierPlugins.babel &&
+                (parser === "babel" || parser === "typescript")
+              )
+                pluginsToUse.push(prettierPlugins.babel);
+              if (prettierPlugins.typescript && parser === "typescript")
+                pluginsToUse.push(prettierPlugins.typescript);
+              if (prettierPlugins.html && parser === "html")
+                pluginsToUse.push(prettierPlugins.html);
+
+              if (pluginsToUse.length > 0) {
+                formattedResult = await prettier.format(result, {
+                  parser: parser,
+                  plugins: pluginsToUse,
+                });
+                console.log("フォーマット成功");
+              } else {
+                throw new Error(
+                  `パーサー '${parser}' に対応する有効な Prettier プラグインが見つかりません。`
+                );
+              }
+            } catch (formatError) {
+              console.warn("Prettierでのフォーマット中にエラー:", formatError);
+              formattedResult = result;
+              formatErrorOccurred = true;
+              formatErrorMessage = `コードのフォーマットに失敗しました (構文エラーの可能性)。\nエラー: ${formatError.message}`;
+            }
+          } else if (shouldFormat && !parser) {
+            console.log(
+              `フォーマットが選択されましたが、${currentLang.toUpperCase()} はフォーマット対象外です。コメント削除のみ行います。`
+            );
+            formatSkipped = true;
+          } else {
+            console.log(
+              `フォーマットは選択されていません。コメント削除のみ行います。`
+            );
+            formatSkipped = true;
+          }
+
+          outputCode.textContent = formattedResult;
+          copyButton.disabled = !formattedResult;
+
+          if (formatErrorOccurred) {
+            console.error(formatErrorMessage);
+            outputCode.textContent += `\n\n/* --- フォーマットエラー --- \n${formatErrorMessage.replace(
+              /\n/g,
+              "\n * "
+            )}\n */`;
+          } else if (formatSkipped && shouldFormat && !parser) {
+            console.log("フォーマットはスキップされました（言語未対応）。");
+          }
+        } catch (removeError) {
+          console.error("コメント削除処理中にエラー:", removeError);
+          outputCode.textContent =
+            "コメント削除中にエラーが発生しました。\n" + removeError;
+          copyButton.disabled = true;
+          alert("コメント削除処理中にエラーが発生しました。");
+        } finally {
+          removeButton.disabled = false;
+          clearButton.disabled = false;
+          loadingIndicator.style.display = "none";
+        }
+      });
+
+      copyButton.addEventListener("click", async () => {
+        const content = outputCode.textContent;
+        if (!content) return;
+
+        try {
+          await navigator.clipboard.writeText(content);
+          copySuccess.style.display = "inline";
+          setTimeout(() => {
+            copySuccess.style.display = "none";
+          }, 2000);
+        } catch (err) {
+          alert("クリップボードへのコピーに失敗しました。");
+        }
+      });
+
+      clearButton.addEventListener("click", clearAll);
+
+
+
+      // Algorithm Create by Gemini
+      function removeComments(code, language, type) {
+            console.log(`コメント削除 - 言語: ${language}, タイプ: ${type}`);
+
+            // --- ヘルパー: リテラル保護、コメント削除、リテラル復元 ---
+            const protectAndRemove = (text, lang, commentRegexesToRemove) => {
+                if (!text || !commentRegexesToRemove || commentRegexesToRemove.length === 0) {
+                    return text || ""; // 処理不要なら元のテキストを返す
+                }
+
+                const placeholderPrefix = "___LITERAL_PLACEHOLDER_";
+                const placeholderSuffix = "___";
+                const placeholders = [];
+                let placeholderIndex = 0;
+                let protectedText = text;
+
+                // 1. リテラル保護 (言語に応じて)
+                if (lang === 'js' || lang === 'css') { // JSとCSSの文字列リテラル ('', "", ``) とJSの正規表現リテラル
+                    protectedText = protectedText.replace(
+                        /('[^'\\]*(?:\\.[^'\\]*)*')|("[^"\\]*(?:\\.[^"\\]*)*")|(`[^`\\]*(?:\\.[^`\\]*)*`)|(\/(?![*\/])(?:\\\/|[^/\r\n])+?\/[gimyus]*)/g,
+                        (match, sgl, dbl, tpl, regex, offset, string) => {
+                            if (lang === 'js' && regex) { // JSの場合のみ正規表現リテラルを保護 (基本的な誤判定対策付き)
+                                const precedingChar = offset > 0 ? string[offset - 1].trim() : '';
+                                // 除算演算子などと誤認しそうな場合は保護しない
+                                if (!['(', ',', '=', ':', '[', '{', ';', '?', '!', '&', '|', '+', '-', '*', '%', '<', '>', '\n', '\r', ' '].includes(precedingChar) && precedingChar !== '') {
+                                    return match;
+                                }
+                            } else if (regex && lang !== 'js') { // CSSでは正規表現リテラルは保護しない
+                                return match;
+                            }
+                            // コメントのような文字列は保護しない (例: "//" や "/* ... */")
+                            if (match.startsWith("//") || match.startsWith("/*")) return match;
+
+                            const placeholder = placeholderPrefix + placeholderIndex++ + placeholderSuffix;
+                            placeholders.push(match);
+                            return placeholder;
+                        }
+                    );
+                } else if (lang === 'py') { // Pythonの文字列リテラル
+                    protectedText = protectedText.replace(
+                        /("""[\s\S]*?""")|('''[\s\S]*?''')|('[^'\\]*(?:\\.[^'\\]*)*')|("[^"\\]*(?:\\.[^"\\]*)*")/g,
+                        (match) => {
+                            const placeholder = placeholderPrefix + placeholderIndex++ + placeholderSuffix;
+                            placeholders.push(match);
+                            return placeholder;
+                        }
+                    );
+                }
+                // 他の言語のリテラル保護が必要な場合はここに追加
+
+                // 2. 指定されたコメントを削除
+                let result = protectedText;
+                commentRegexesToRemove.forEach(regex => {
+                    // regex が RegExp インスタンスであることを確認
+                    if (regex instanceof RegExp) {
+                        result = result.replace(regex, '');
+                    } else {
+                        console.warn("Invalid regex passed to protectAndRemove:", regex);
+                    }
+                });
+
+                // 3. リテラルを復元
+                for (let i = placeholders.length - 1; i >= 0; i--) {
+                    // 置換文字列内の特殊文字 ($) が展開されないように関数を使う
+                    result = result.replace(placeholderPrefix + i + placeholderSuffix, () => placeholders[i]);
+                }
+                return result;
+            };
+
+            // --- コメント正規表現定義 ---
+            const multiLineJS_CSS = /\/\*[\s\S]*?\*\//gm;
+            const singleLineJS = /(?<!:)\/\/.*$/gm; // http:// などは除外
+            // HTMLコメントはDOMParserで処理するため、ここでは定義不要
+            const singleLinePy = /^[\t ]*#.*$/gm;
+
+            // --- 言語ごとの処理分岐 ---
+
+            // JavaScript / TypeScript / JSON with Comments
+            if (language === 'js' || language === 'ts' || language === 'jsonc') {
+                const commentsToRemove = [];
+                if (type === 'all' || type === 'multi') commentsToRemove.push(multiLineJS_CSS);
+                if (type === 'all' || type === 'single') commentsToRemove.push(singleLineJS);
+                return protectAndRemove(code, 'js', commentsToRemove);
+            }
+
+            // Python
+            else if (language === 'py') {
+                const commentsToRemove = [];
+                if (type === 'all' || type === 'single') commentsToRemove.push(singleLinePy);
+                return protectAndRemove(code, 'py', commentsToRemove);
+            }
+
+            // HTML
+            else if (language === 'html') {
+                try {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(code, 'text/html');
+
+                    // パースエラーチェック
+                    if (doc.querySelector('parsererror')) {
+                        console.error("DOMParser Error:", doc.querySelector('parsererror').textContent);
+                        throw new Error("HTMLの解析に失敗しました。入力が有効なHTMLではない可能性があります。");
+                    }
+
+                    const rootElement = doc.documentElement; // HTML全体を処理対象に
+
+                    // TreeWalkerで効率的にノード走査
+                    const walker = doc.createTreeWalker(rootElement, NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_ELEMENT);
+                    const nodesToRemove = []; // 削除対象のHTMLコメントノード
+
+                    while (walker.nextNode()) {
+                        const node = walker.currentNode;
+
+                        if (node.nodeType === Node.COMMENT_NODE) { // HTMLコメントノード
+                            if (type === 'all' || type === 'html_native') {
+                                nodesToRemove.push(node); // 削除リストに追加
+                            }
+                        } else if (node.nodeName === 'STYLE') { // <style>要素
+                            if (type === 'all') { // CSSコメント (/* */) を削除する場合
+                                node.textContent = protectAndRemove(node.textContent, 'css', [multiLineJS_CSS]);
+                            }
+                        } else if (node.nodeName === 'SCRIPT') { // <script>要素
+                            const scriptType = node.getAttribute('type');
+                            // 実行可能なJavaScriptかチェック (typeなし, text/javascript, application/javascript)
+                            if (!scriptType || /^(text|application)\/(java|ecma)script$/i.test(scriptType)) {
+                                const commentsToRemoveFromScript = [];
+                                if (type === 'all' || type === 'js_multi') commentsToRemoveFromScript.push(multiLineJS_CSS);
+                                if (type === 'all' || type === 'js_single') commentsToRemoveFromScript.push(singleLineJS);
+
+                                if (commentsToRemoveFromScript.length > 0) {
+                                    node.textContent = protectAndRemove(node.textContent, 'js', commentsToRemoveFromScript);
+                                }
+                            }
+                        }
+                    }
+
+                    // HTMLコメントノードを削除
+                    nodesToRemove.forEach(node => node.remove());
+
+                    // ドキュメント全体を文字列としてシリアライズ
+                    // 元のDOCTYPE宣言を保持する (もし存在すれば)
+                    let doctypeStr = "";
+                    if (doc.doctype) {
+                        const dt = doc.doctype;
+                        doctypeStr = `<!DOCTYPE ${dt.name}${dt.publicId ? ' PUBLIC "' + dt.publicId + '"' : ''}${!dt.publicId && dt.systemId ? ' SYSTEM' : ''}${dt.systemId ? ' "' + dt.systemId + '"' : ''}>\n`;
+                    }
+                    // doc.documentElement.outerHTML を使うと<html>タグから出力される
+                    return doctypeStr + rootElement.outerHTML;
+
+                } catch (error) {
+                    console.error("HTML処理中にエラー:", error);
+                    alert(`HTMLの処理中にエラーが発生しました: ${error.message}\n元のコードを返します。`);
+                    return code; // エラー時は元のコードを返す
+                }
+            }
+
+            // サポート外言語
+            else {
+                console.warn(`コメント削除に未対応の言語です: ${language}`);
+                return code;
+            }
+        }
+
+      function clearAll() {
+        codeInput.value = "";
+        outputCode.textContent = "";
+        copyButton.disabled = true;
+        copySuccess.style.display = "none";
+        langTypeSelect.value = "js";
+        currentLang = "js";
+        formatCheckbox.checked = false;
+        setUIMode("initial");
+        removeButton.disabled = false;
+        clearButton.disabled = false;
+        loadingIndicator.style.display = "none";
+        inputArea.classList.remove("drag-over");
+      }
+
+      setUIMode("initial");
+    </script>
+  </body>
+</html>

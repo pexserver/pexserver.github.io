@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>toolsData Editor</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        h1,
+        h2,
+        h3 {
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            margin-top: 25px;
+        }
+
+        textarea {
+            width: 95%;
+            min-height: 150px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+
+        button {
+            padding: 8px 15px;
+            margin: 5px 5px 5px 0;
+            cursor: pointer;
+        }
+
+        #toolList {
+            margin-top: 15px;
+            border: 1px solid #eee;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .tool-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .tool-item:last-child {
+            border-bottom: none;
+        }
+
+        .tool-item span {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+
+        #editFormContainer {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-top: 20px;
+            background-color: #f9f9f9;
+        }
+
+        #editForm label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        #editForm input[type="text"],
+        #editForm input[type="date"],
+        #editForm input[type="url"],
+        #editForm textarea {
+            width: 95%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            /* Ensures padding doesn't add to width */
+        }
+
+        #editForm textarea {
+            min-height: 80px;
+        }
+
+        #editForm .form-buttons {
+            margin-top: 15px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #outputArea {
+            margin-top: 15px;
+        }
+
+        #outputArea textarea {
+            background-color: #e9e9e9;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>toolsData Editor</h1>
+
+    <!-- Step 1: Input Data -->
+    <section id="inputArea">
+        <h2>1. Load toolsData</h2>
+        <p>既存の <code>toolsData</code> オブジェクトの内容全体 (<code>const toolsData = { ... };</code> の <code>{...}</code>
+            の部分、またはJSON形式) を以下に貼り付けて「Load Data」ボタンを押してください。</p>
+        <textarea id="dataInput" placeholder="{
+    'tool1': {
+        title: 'Example Tool',
+        // ... other properties ...
+    },
+    // ... other tools ...
+}"></textarea>
+        <button id="loadDataBtn">Load Data</button>
+        <div id="loadError" class="error hidden"></div>
+    </section>
+
+    <!-- Step 2: Manage Tools -->
+    <section id="manageArea" class="hidden">
+        <h2>2. Manage Tools</h2>
+        <button id="addToolBtn">Add New Tool</button>
+        <div id="toolList">
+            <!-- Tool list will be populated here -->
+        </div>
+
+        <!-- Edit/Add Form -->
+        <div id="editFormContainer" class="hidden">
+            <h3 id="formTitle">Edit Tool</h3>
+            <form id="editForm">
+                <input type="hidden" id="editToolId"> <!-- Stores the original key for editing -->
+
+                <label for="editToolKey">Tool Key (必須, 例: 'tool1', 'myNewTool'):</label>
+                <input type="text" id="editToolKey" required>
+
+                <label for="editTitle">Title:</label>
+                <input type="text" id="editTitle">
+
+                <label for="editImage">Image URL:</label>
+                <input type="text" id="editImage">
+
+                <label for="editImageLarge">Large Image URL:</label>
+                <input type="text" id="editImageLarge">
+
+                <label for="editCategory">Category:</label>
+                <input type="text" id="editCategory">
+
+                <label for="editVersion">Version:</label>
+                <input type="text" id="editVersion">
+
+                <label for="editUpdated">Updated (YYYY-MM-DD):</label>
+                <input type="date" id="editUpdated">
+
+                <label for="editDescription">Description:</label>
+                <textarea id="editDescription"></textarea>
+
+                <label for="editDetailedDescription">Detailed Description (HTML):</label>
+                <textarea id="editDetailedDescription"></textarea>
+
+                <label for="editDownloadUrl">Download URL (単一の場合):</label>
+                <input type="text" id="editDownloadUrl" placeholder="例: ./File/tool.zip">
+
+                <label for="editDownloadUrlWindows">Download URL (Windows):</label>
+                <input type="text" id="editDownloadUrlWindows" placeholder="Windows専用の場合">
+
+                <label for="editDownloadUrlLinux">Download URL (Linux):</label>
+                <input type="text" id="editDownloadUrlLinux" placeholder="Linux専用の場合">
+
+                <label for="editDocsUrl">Docs URL:</label>
+                <input type="text" id="editDocsUrl">
+
+                <label for="editPlatform">Platform (カンマ区切り):</label>
+                <input type="text" id="editPlatform" placeholder="例: web, windows, linux">
+
+                <label for="editCategoryType">Category Type:</label>
+                <input type="text" id="editCategoryType" placeholder="例: development, minecraft">
+
+                <div class="form-buttons">
+                    <button type="submit" id="saveToolBtn">Save Tool</button>
+                    <button type="button" id="deleteToolBtn" class="hidden">Delete Tool</button>
+                    <button type="button" id="cancelEditBtn">Cancel</button>
+                </div>
+                <div id="saveError" class="error hidden"></div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Step 3: Output Data -->
+    <section id="outputArea" class="hidden">
+        <h2>3. Get Updated Data</h2>
+        <p>編集後の <code>toolsData</code> オブジェクトです。コピーしてコードに貼り付けてください。</p>
+        <textarea id="dataOutput" readonly></textarea>
+        <button id="copyOutputBtn">Copy to Clipboard</button>
+        <span id="copyStatus" style="margin-left: 10px; color: green;"></span>
+    </section>
+
+    <script>
+        // --- Global State ---
+        let currentToolsData = {};
+
+        // --- DOM Elements ---
+        const dataInput = document.getElementById('dataInput');
+        const loadDataBtn = document.getElementById('loadDataBtn');
+        const loadError = document.getElementById('loadError');
+        const manageArea = document.getElementById('manageArea');
+        const toolList = document.getElementById('toolList');
+        const addToolBtn = document.getElementById('addToolBtn');
+        const editFormContainer = document.getElementById('editFormContainer');
+        const editForm = document.getElementById('editForm');
+        const formTitle = document.getElementById('formTitle');
+        const saveToolBtn = document.getElementById('saveToolBtn');
+        const deleteToolBtn = document.getElementById('deleteToolBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const saveError = document.getElementById('saveError');
+        const outputArea = document.getElementById('outputArea');
+        const dataOutput = document.getElementById('dataOutput');
+        const copyOutputBtn = document.getElementById('copyOutputBtn');
+        const copyStatus = document.getElementById('copyStatus');
+
+        // --- Event Listeners ---
+        loadDataBtn.addEventListener('click', loadData);
+        addToolBtn.addEventListener('click', () => showEditForm(null)); // Add new tool
+        editForm.addEventListener('submit', saveTool);
+        deleteToolBtn.addEventListener('click', deleteTool);
+        cancelEditBtn.addEventListener('click', hideEditForm);
+        copyOutputBtn.addEventListener('click', copyOutputToClipboard);
+
+        // --- Functions ---
+
+        function displayError(element, message) {
+            element.textContent = message;
+            element.classList.remove('hidden');
+        }
+
+        function clearError(element) {
+            element.textContent = '';
+            element.classList.add('hidden');
+        }
+
+        function loadData() {
+            clearError(loadError);
+            const inputString = dataInput.value.trim();
+            if (!inputString) {
+                displayError(loadError, 'Input data is empty.');
+                return;
+            }
+
+            try {
+                // Attempt to parse as JSON, removing potential surrounding JS code
+                let parsableString = inputString;
+                // Very basic cleanup for common JS object literal pasting
+                if (parsableString.startsWith('const') || parsableString.startsWith('var') || parsableString.startsWith('let')) {
+                    parsableString = parsableString.substring(parsableString.indexOf('{'));
+                }
+                if (parsableString.endsWith(';')) {
+                    parsableString = parsableString.slice(0, -1);
+                }
+
+                // Use Function constructor for slightly safer eval-like behavior than direct eval()
+                // This allows parsing JS object literals with single quotes, comments etc. that JSON.parse forbids
+                currentToolsData = new Function(`return ${parsableString}`)();
+
+                if (typeof currentToolsData !== 'object' || currentToolsData === null) {
+                    throw new Error("Parsed data is not a valid object.");
+                }
+
+                console.log("Data loaded:", currentToolsData);
+                renderToolList();
+                manageArea.classList.remove('hidden');
+                outputArea.classList.remove('hidden');
+                updateOutput(); // Show initial loaded data in output
+                hideEditForm(); // Ensure edit form is hidden initially
+            } catch (error) {
+                console.error("Parsing failed:", error);
+                displayError(loadError, `Failed to parse data. Ensure it's a valid JavaScript object literal or JSON. Error: ${error.message}`);
+                manageArea.classList.add('hidden');
+                outputArea.classList.add('hidden');
+            }
+        }
+
+        function renderToolList() {
+            toolList.innerHTML = ''; // Clear existing list
+            const keys = Object.keys(currentToolsData);
+
+            if (keys.length === 0) {
+                toolList.innerHTML = '<p>No tools loaded or defined yet.</p>';
+                return;
+            }
+
+            keys.sort().forEach(key => {
+                const tool = currentToolsData[key];
+                const item = document.createElement('div');
+                item.classList.add('tool-item');
+
+                const titleSpan = document.createElement('span');
+                titleSpan.textContent = `${key}: ${tool.title || '(No Title)'}`;
+                item.appendChild(titleSpan);
+
+                const editButton = document.createElement('button');
+                editButton.textContent = 'Edit';
+                editButton.addEventListener('click', () => showEditForm(key));
+                item.appendChild(editButton);
+
+                toolList.appendChild(item);
+            });
+        }
+
+        function showEditForm(toolKey) {
+            clearError(saveError);
+            editForm.reset(); // Clear previous form data
+            document.getElementById('editToolId').value = toolKey || ''; // Store original key if editing
+
+            if (toolKey) {
+                // --- Editing Existing Tool ---
+                const toolData = currentToolsData[toolKey];
+                formTitle.textContent = `Edit Tool: ${toolKey}`;
+                deleteToolBtn.classList.remove('hidden');
+                document.getElementById('editToolKey').value = toolKey;
+                document.getElementById('editToolKey').readOnly = true; // Don't allow changing key when editing
+
+                // Populate form fields
+                document.getElementById('editTitle').value = toolData.title || '';
+                document.getElementById('editImage').value = toolData.image || '';
+                document.getElementById('editImageLarge').value = toolData.imageLarge || '';
+                document.getElementById('editCategory').value = toolData.category || '';
+                document.getElementById('editVersion').value = toolData.version || '';
+                document.getElementById('editUpdated').value = toolData.updated || '';
+                document.getElementById('editDescription').value = toolData.description || '';
+                document.getElementById('editDetailedDescription').value = toolData.detailedDescription || '';
+                document.getElementById('editDownloadUrl').value = toolData.downloadUrl || '';
+                document.getElementById('editDownloadUrlWindows').value = toolData.downloadUrl_windows || '';
+                document.getElementById('editDownloadUrlLinux').value = toolData.downloadUrl_linux || '';
+                document.getElementById('editDocsUrl').value = toolData.docsUrl || '';
+                document.getElementById('editPlatform').value = toolData.platform || '';
+                document.getElementById('editCategoryType').value = toolData.categoryType || '';
+
+            } else {
+                // --- Adding New Tool ---
+                formTitle.textContent = 'Add New Tool';
+                deleteToolBtn.classList.add('hidden');
+                document.getElementById('editToolKey').value = `tool${Object.keys(currentToolsData).length + 1}`; // Suggest a new key
+                document.getElementById('editToolKey').readOnly = false; // Allow setting key
+            }
+
+            editFormContainer.classList.remove('hidden');
+            editFormContainer.scrollIntoView({ behavior: 'smooth' }); // Scroll to the form
+        }
+
+        function hideEditForm() {
+            editFormContainer.classList.add('hidden');
+            editForm.reset();
+            clearError(saveError);
+        }
+
+        function saveTool(event) {
+            event.preventDefault(); // Prevent default form submission
+            clearError(saveError);
+
+            const originalKey = document.getElementById('editToolId').value; // Key before potential change
+            const newKey = document.getElementById('editToolKey').value.trim();
+
+            if (!newKey) {
+                displayError(saveError, "Tool Key cannot be empty.");
+                return;
+            }
+
+            // Check for key collisions if adding or renaming
+            if ((!originalKey || originalKey !== newKey) && currentToolsData.hasOwnProperty(newKey)) {
+                displayError(saveError, `Tool Key "${newKey}" already exists. Choose a unique key.`);
+                return;
+            }
+
+            const toolData = {
+                title: document.getElementById('editTitle').value.trim(),
+                image: document.getElementById('editImage').value.trim(),
+                imageLarge: document.getElementById('editImageLarge').value.trim(),
+                category: document.getElementById('editCategory').value.trim(),
+                version: document.getElementById('editVersion').value.trim(),
+                updated: document.getElementById('editUpdated').value.trim(),
+                description: document.getElementById('editDescription').value.trim(),
+                detailedDescription: document.getElementById('editDetailedDescription').value.trim(),
+                // Handle download URLs: prioritize specific ones if present
+                downloadUrl: document.getElementById('editDownloadUrl').value.trim() || undefined, // Store undefined if empty to maybe remove the key
+                downloadUrl_windows: document.getElementById('editDownloadUrlWindows').value.trim() || undefined,
+                downloadUrl_linux: document.getElementById('editDownloadUrlLinux').value.trim() || undefined,
+                docsUrl: document.getElementById('editDocsUrl').value.trim(),
+                platform: document.getElementById('editPlatform').value.trim(),
+                categoryType: document.getElementById('editCategoryType').value.trim()
+            };
+
+            // Clean up undefined properties to avoid cluttering the object
+            Object.keys(toolData).forEach(key => {
+                if (toolData[key] === undefined || toolData[key] === '') {
+                    // If you want to explicitly remove keys for empty strings too, uncomment the next line
+                    // delete toolData[key];
+                }
+            });
+
+            // Special handling for download URLs: If specific ones exist, remove the general one
+            if (toolData.downloadUrl_windows || toolData.downloadUrl_linux) {
+                delete toolData.downloadUrl;
+            }
+            // Remove specific ones if they are empty
+            if (!toolData.downloadUrl_windows) delete toolData.downloadUrl_windows;
+            if (!toolData.downloadUrl_linux) delete toolData.downloadUrl_linux;
+            // If no specific ones AND general one is empty, remove general one too
+            if (!toolData.downloadUrl_windows && !toolData.downloadUrl_linux && !toolData.downloadUrl) {
+                delete toolData.downloadUrl;
+            }
+
+
+            // If the key was changed during an edit, remove the old entry
+            if (originalKey && originalKey !== newKey && currentToolsData.hasOwnProperty(originalKey)) {
+                delete currentToolsData[originalKey];
+            }
+
+            // Add or update the data
+            currentToolsData[newKey] = toolData;
+
+            console.log("Tool saved:", newKey, toolData);
+            renderToolList();
+            updateOutput();
+            hideEditForm();
+        }
+
+        function deleteTool() {
+            const toolKey = document.getElementById('editToolId').value;
+            if (!toolKey || !currentToolsData.hasOwnProperty(toolKey)) {
+                displayError(saveError, "Cannot delete: Invalid tool key.");
+                return;
+            }
+
+            if (confirm(`Are you sure you want to delete the tool "${toolKey}"?`)) {
+                delete currentToolsData[toolKey];
+                console.log("Tool deleted:", toolKey);
+                renderToolList();
+                updateOutput();
+                hideEditForm();
+            }
+        }
+
+        function updateOutput() {
+            // Use JSON.stringify for reliable serialization, null and 2 for pretty printing
+            // To make it look more like a JS object literal, you might need string replacement,
+            // but JSON is generally safer and more standard.
+            try {
+                dataOutput.value = JSON.stringify(currentToolsData, null, 2);
+                clearError(document.getElementById('loadError')); // Clear any previous load errors if output is successful
+            } catch (error) {
+                dataOutput.value = "Error generating output.";
+                console.error("Error stringifying data:", error);
+                displayError(loadError, `Error generating output: ${error.message}`); // Reuse loadError area
+            }
+
+            clearCopyStatus();
+        }
+
+        function copyOutputToClipboard() {
+            dataOutput.select();
+            try {
+                document.execCommand('copy'); // Deprecated but widely supported
+                copyStatus.textContent = 'Copied!';
+                setTimeout(clearCopyStatus, 2000); // Clear message after 2 seconds
+            } catch (err) {
+                copyStatus.textContent = 'Copy failed!';
+                console.error('Failed to copy text: ', err);
+            }
+            // Deselect text
+            window.getSelection().removeAllRanges();
+        }
+        function clearCopyStatus() {
+            copyStatus.textContent = '';
+        }
+
+        // --- Initial Setup ---
+        // Optional: Pre-fill the input with the example data
+        const exampleData = `{
+    'tool1': {
+        title: 'Markdown Editor',
+        image: '../lib/Assets/images/Markdown/markdown.png',
+        imageLarge: '../lib/Assets/images/Markdown/label.png',
+        category: '開発ツール',
+        version: '1.0.0',
+        updated: '2025-04-19',
+        description: 'リアルタイムでMarkdownを編集・プレビューできるWebベースのエディタです。保存、読み込み、エクスポート、共有機能も備えています。',
+        detailedDescription: \`
+        <p>ブラウザ上で動作する高機能なMarkdownエディタです。入力したMarkdownテキストがリアルタイムでプレビューされ、直感的に文書を作成できます。</p>
+        <p>Marked.jsによる高速なプレビュー更新、Prettierによるコードフォーマット、LZ-Stringを利用したURL共有など、モダンなWeb技術を活用しています。</p>
+        <h4>主な機能:</h4>
+        <ul>
+            <li>リアルタイムMarkdown編集エリア (contenteditable)</li>
+            <li>リアルタイムHTMLプレビュー (Marked.js使用)</li>
+            <li>Markdownファイル (.md) としてローカルに保存</li>
+            <li>ローカルからMarkdownファイル (.md) を読み込み</li>
+            <li>表示中のプレビューをHTMLファイル (.html) としてエクスポート</li>
+            <li>編集内容を圧縮してURLパラメータで共有 (LZ-String使用)</li>
+            <li>右クリックメニューによる操作:
+                <ul>
+                    <li>サンプルMarkdownの挿入 (リファクター)</li>
+                    <li>Markdownソースのフォーマット (Prettier使用)</li>
+                    <li>プレビューを別ウィンドウで表示</li>
+                </ul>
+            </li>
+        </ul>
+        <h4>技術スタック:</h4>
+        <ul>
+            <li>HTML5, CSS3, JavaScript (ES6)</li>
+            <li>Marked.js (Markdownパーサー)</li>
+            <li>Prettier (コードフォーマッター)</li>
+            <li>LZ-String (データ圧縮)</li>
+        </ul>
+        <h4>システム要件:</h4>
+        <ul>
+            <li>最新のWebブラウザ (Chrome, Firefox, Safari, Edgeなど)</li>
+            <li>インターネット接続 (ライブラリ読み込み・共有機能で必要)</li>
+        </ul>
+        <p>特別なインストールは不要で、提供されたHTMLファイルをWebブラウザで開くだけで利用を開始できます。</p>
+        <br><footer>Create By こう君</footer>
+    \`,
+        downloadUrl: './File/markdown.html',
+        docsUrl: './File/markdown.html',
+        platform: 'web',
+        categoryType: 'development'
+    },
+    'tool2': { /* ... tool2 data ... */ },
+    'tool3': { /* ... tool3 data ... */ },
+    'tool4': { /* ... tool4 data ... */ },
+    'tool5': { /* ... tool5 data ... */ }
+}`;
+        // dataInput.value = exampleData; // Uncomment to pre-fill
+
+    </script>
+
+</body>
+
+</html>

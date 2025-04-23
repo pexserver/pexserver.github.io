@@ -1,64 +1,816 @@
-body { font-family: sans-serif; padding: 20px; background-color: #f4f4f4; margin: 0; }
-h1, h2, h3 { color: #333; margin-top: 1em; margin-bottom: 0.5em; }
-h1 { border-bottom: 2px solid #ccc; padding-bottom: 10px; }
-.controls { background-color: #eee; padding: 15px; border-radius: 5px; margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center; border: 1px solid #ddd; }
-.controls > div { margin-bottom: 5px; }
-.controls label { display: block; margin-bottom: 3px; font-weight: bold; font-size: 0.9em; color: #555; }
-.controls input[type="text"], .controls select, .editor-panel input[type="text"], .editor-panel input[type="number"], .editor-panel textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; margin-top: 3px; font-size: 1em; }
-.controls input[type="text"]{ min-width: 180px; }
-.controls select { min-width: 150px; }
+:root {
+  /* マインクラフト風配色 - 木製チェスト */
+  --minecraft-brown: #8b5a2b;
+  --minecraft-dark-brown: #6b4423;
+  --minecraft-light-brown: #a67c52;
+  --minecraft-very-light-brown: #d7ba98;
+  --minecraft-text: #3a3a3a;
+  --minecraft-slot: #8b8b8b;
+  --minecraft-slot-hover: #a8a8a8;
+  --minecraft-button: #c6c6c6;
+  --minecraft-button-hover: #d7d7d7;
+  --minecraft-button-active: #a0a0a0;
+  --minecraft-panel: #c6c6c6;
+  --minecraft-border: #555555;
+  --minecraft-border-light: #8b8b8b;
+  --minecraft-input: #ffffff;
+  --minecraft-input-border: #555555;
+  --minecraft-highlight: #5b9bd5;
+  
+  /* 明るいブルーアクセント */
+  --accent-blue: #3aa3f7;
+  --accent-blue-hover: #0d89e3;
+  --accent-green: #5eb228;
+  --accent-green-hover: #4a9320;
+  --accent-red: #d74343;
+  --accent-red-hover: #c13535;
+  --accent-yellow: #ffb338;
+  --accent-yellow-hover: #e89417;
+  
+  /* スロットサイズ (マイクラらしく少し大きめに) */
+  --slot-size: 52px;
+  
+  /* 共通の枠デザイン */
+  --minecraft-inset: inset 2px 2px 0 rgba(255, 255, 255, 0.3), 
+                    inset -2px -2px 0 rgba(0, 0, 0, 0.3);
+  --minecraft-outset: inset -2px -2px 0 rgba(255, 255, 255, 0.3), 
+                      inset 2px 2px 0 rgba(0, 0, 0, 0.3);
+}
 
-.tool-selector { background-color: #f0f0f0; padding: 8px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #ddd; display: inline-block; }
-.tool-selector span { margin-right: 10px; font-weight: bold; color: #555; }
-.tool-button { padding: 6px 12px; margin: 0 3px; border: 1px solid #ccc; background-color: #fff; border-radius: 4px; cursor: pointer; font-size: 1em; transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s; }
-.tool-button:hover { background-color: #e9e9e9; border-color: #bbb; }
-.tool-button.active { background-color: #007bff; color: white; border-color: #0056b3; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); }
-.tool-button.active:hover { background-color: #0069d9; }
+body {
+  font-family: "Minecraft", Arial, sans-serif;
+  padding: 20px;
+  background-color: #f5f5f5;
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAABnSURBVHja7M5BDQAwDASh+jf9N3hMvIEJWAILAAAAAPjnxMAEo8LdDnvM29psn5d4/1f92/qXZu99PuMDAAAAAAAAgP8CAAD//wMAJ6YDx38m5WkAAAAASUVORK5CYII=");
+  margin: 0;
+  color: var(--minecraft-text);
+  line-height: 1.6;
+}
 
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 20px;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
 
-#grid-instruction { font-style: italic; color: #555; margin-bottom: 8px; font-size: 0.9em; }
+/* ヘッダーセクション */
+.header-block {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 3px solid var(--minecraft-brown);
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
 
-#selection-controls { margin-top: 5px; margin-bottom: 10px; min-height: 30px; }
-#selection-controls button { padding: 8px 12px; margin-right: 8px; margin-bottom: 5px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; transition: background-color 0.15s ease; }
-#selection-controls button:disabled { opacity: 0.5; cursor: not-allowed; }
-#clear-selection-button { background-color: #ffc107; color: black; }
-#edit-pattern-button { background-color: #17a2b8; color: white; }
-#clear-individual-button { background-color: #fd7e14; color: white; }
-#clear-pattern-membership-button { background-color: #6f42c1; color: white; }
-#clear-selection-button:not(:disabled):hover { background-color: #e0a800; }
-#edit-pattern-button:not(:disabled):hover { background-color: #138496; }
-#clear-individual-button:not(:disabled):hover { background-color: #e66a02; }
-#clear-pattern-membership-button:not(:disabled):hover { background-color: #5a349a; }
+h1, h2, h3 {
+  color: var(--minecraft-dark-brown);
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.5);
+}
 
-#chest-grid { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; padding: 8px; background-color: #c6c6c6; border: 3px solid #505050; max-width: 500px; margin-bottom: 20px; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; }
-.slot { aspect-ratio: 1 / 1; min-width: 40px; background-color: #8b8b8b; border: 1px solid #373737; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; position: relative; overflow: hidden; text-align: center; box-sizing: border-box; transition: background-color 0.1s ease-in-out; }
-.slot.configured { background-color: #a0a0a0; border-color: #1f1f1f; }
-.slot.pattern-member { background-color: #7a7a7a; border-color: #4a4a4a; }
-.slot.configured::after, .slot.pattern-member::after { content: ''; display: block; position: absolute; bottom: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.5); }
-.slot.configured::after { background-color: lightgreen; }
-.slot.pattern-member::after { background-color: skyblue; }
-.slot.configured.pattern-member::after { background-color: orange; }
-.slot.selected { outline: 3px solid #007bff; outline-offset: -3px; border-color: #007bff; }
-#chest-grid.tool-edit-mode .slot { cursor: pointer; }
-#chest-grid.tool-edit-mode .slot:hover { background-color: #9d9d9d; }
-#chest-grid.tool-select-mode .slot { cursor: crosshair; }
-#chest-grid.tool-select-mode .slot:hover { background-color: #70a0d0; }
+h1 {
+  margin-top: 0;
+  font-size: 28px;
+}
 
+.language-selector {
+  padding: 6px 10px;
+  background-color: var(--minecraft-button);
+  border: 2px solid var(--minecraft-border);
+  border-radius: 3px;
+  box-shadow: var(--minecraft-inset);
+}
 
-.editor-panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 25px; border: 1px solid #ccc; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); border-radius: 6px; z-index: 1000; min-width: 400px; max-width: 90vw; max-height: 90vh; overflow-y: auto; }
-.editor-panel h3 { margin-top: 0; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
-.editor-panel label { margin-top: 15px; margin-bottom: 5px; font-size: 0.9em; display: block; font-weight: bold; }
-.editor-panel label[for*="enchanted"] { display: inline-block; font-weight: normal; margin-top: 15px; }
-.editor-panel input[type="checkbox"] { margin-right: 5px; vertical-align: middle; }
-.editor-buttons { margin-top: 25px; text-align: right; padding-top: 15px; border-top: 1px solid #eee; }
-.editor-buttons button { padding: 10px 18px; margin-left: 10px; cursor: pointer; border: none; border-radius: 4px; font-size: 0.95em; }
-#save-slot-button, #save-pattern-button { background-color: #28a745; color: white; }
-#clear-slot-button, #clear-pattern-from-selected-button { background-color: #dc3545; color: white; }
-#cancel-slot-button, #cancel-pattern-button { background-color: #6c757d; color: white; }
-#save-slot-button:hover, #save-pattern-button:hover { background-color: #218838; }
-#clear-slot-button:hover, #clear-pattern-from-selected-button:hover { background-color: #c82333; }
-#cancel-slot-button:hover, #cancel-pattern-button:hover { background-color: #5a6268; }
-#output-code { width: 100%; min-height: 250px; font-family: 'Courier New', Courier, monospace; font-size: 0.9em; background-color: #272822; color: #f8f8f2; border: 1px solid #ccc; border-radius: 4px; padding: 15px; margin-top: 5px; box-sizing: border-box; line-height: 1.4; white-space: pre; overflow-x: auto; }
-#generate-code-button { display: block; width: 100%; padding: 12px 20px; margin-top: 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1.1em; transition: background-color 0.2s; }
-#generate-code-button:hover { background-color: #0056b3; }
-#overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); z-index: 999; display: none; }
+.language-link {
+  color: var(--minecraft-text);
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.2s;
+}
+
+.language-link:hover {
+  color: var(--accent-blue);
+}
+
+.section {
+  margin: 25px 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 15px;
+  border-radius: 6px;
+  border: 2px solid var(--minecraft-border-light);
+}
+
+.section-title {
+  position: relative;
+  padding-left: 20px;
+  margin-top: 0;
+}
+
+.section-title::before {
+  content: "⛏️";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* チェスト関連スタイル */
+.minecraft-chest {
+  background-color: var(--minecraft-brown);
+  border: 3px solid var(--minecraft-dark-brown);
+  border-radius: 6px;
+  padding: 10px;
+  width: fit-content;
+  margin: 20px auto;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.minecraft-chest::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background-color: var(--minecraft-light-brown);
+  border-bottom: 2px solid var(--minecraft-dark-brown);
+  border-radius: 4px 4px 0 0;
+}
+
+.chest-header {
+  background-color: var(--minecraft-dark-brown);
+  padding: 8px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 2px solid var(--minecraft-border);
+  box-shadow: var(--minecraft-inset);
+}
+
+.chest-title {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--minecraft-very-light-brown);
+  font-family: "Minecraft", Arial, sans-serif;
+  font-size: 18px;
+  text-align: center;
+  padding: 4px;
+  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.5);
+}
+
+.chest-grid-container {
+  background-color: var(--minecraft-dark-brown);
+  padding: 10px;
+  border: 2px solid var(--minecraft-border);
+  border-radius: 4px;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.4);
+}
+
+#chest-grid {
+  display: grid;
+  grid-template-columns: repeat(9, var(--slot-size));
+  gap: 4px;
+  padding: 6px;
+  background-color: var(--minecraft-brown);
+  border: 3px solid var(--minecraft-dark-brown);
+  border-radius: 4px;
+  max-width: calc(9 * var(--slot-size) + 8 * 4px + 12px + 6px);
+  margin: 0 auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.slot {
+  width: var(--slot-size);
+  height: var(--slot-size);
+  background-color: var(--minecraft-slot);
+  border: 2px solid var(--minecraft-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--minecraft-text);
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  box-sizing: border-box;
+  transition: all 0.15s ease-in-out;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.2), 
+              inset -1px -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.slot:hover {
+  background-color: var(--minecraft-slot-hover);
+  transform: scale(1.03);
+  z-index: 1;
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+/* 設定済み・パターンメンバーのスロットのスタイル調整 */
+.slot.configured {
+  background-color: #aed581;
+  border-color: #8bc34a;
+}
+
+.slot.pattern-member {
+  background-color: #90caf9;
+  border-color: #64b5f6;
+}
+
+.slot.configured.pattern-member {
+  background-color: #ffcc80;
+  border-color: #ffa726;
+}
+
+/* インジケーターのスタイル */
+.slot.configured::after,
+.slot.pattern-member::after {
+  content: "";
+  display: block;
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+.slot.configured::after {
+  background-color: #4caf50;
+}
+
+.slot.pattern-member::after {
+  background-color: #2196f3;
+}
+
+.slot.configured.pattern-member::after {
+  background-color: #ff9800;
+}
+
+.slot.selected {
+  outline: 3px solid var(--accent-blue);
+  outline-offset: -3px;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 8px var(--accent-blue);
+  transform: scale(1.05);
+  z-index: 2;
+}
+
+#chest-grid.tool-edit-mode .slot {
+  cursor: pointer;
+}
+
+#chest-grid.tool-select-mode .slot {
+  cursor: crosshair;
+}
+
+#chest-grid.tool-select-mode .slot:hover {
+  background-color: #bbdefb;
+}
+
+/* コントロールパネル */
+.controls-panel {
+  background-color: var(--minecraft-button);
+  border: 2px solid var(--minecraft-border);
+  border-radius: 4px;
+  padding: 16px;
+  margin-top: 20px;
+  box-shadow: var(--minecraft-inset);
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.control-item {
+  margin-bottom: 5px;
+}
+
+.controls label {
+  color: var(--minecraft-text);
+  display: block;
+  margin-bottom: 4px;
+  font-weight: bold;
+  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.5);
+}
+
+.controls input[type="text"],
+.controls select,
+.editor-panel input[type="text"],
+.editor-panel input[type="number"],
+.editor-panel textarea {
+  width: 100%;
+  padding: 8px 10px;
+  background-color: var(--minecraft-input);
+  border: 2px solid var(--minecraft-input-border);
+  color: var(--minecraft-text);
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-top: 3px;
+  font-size: 1em;
+  font-family: "Minecraft", Arial, sans-serif;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.controls input[type="text"]:focus,
+.controls select:focus,
+.editor-panel input[type="text"]:focus,
+.editor-panel input[type="number"]:focus,
+.editor-panel textarea:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 5px rgba(58, 163, 247, 0.5);
+}
+
+/* ツールセレクター */
+.tool-selector {
+  background-color: var(--minecraft-button);
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+  border: 2px solid var(--minecraft-border);
+  display: inline-flex;
+  align-items: center;
+  box-shadow: var(--minecraft-inset);
+}
+
+.tool-label {
+  margin-right: 15px;
+  font-weight: bold;
+  color: var(--minecraft-text);
+  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.5);
+}
+
+.tool-button {
+  background-color: var(--minecraft-button);
+  color: var(--minecraft-text);
+  border: 2px solid var(--minecraft-border);
+  padding: 8px 12px;
+  margin: 0 5px;
+  cursor: pointer;
+  font-size: 1em;
+  font-family: "Minecraft", Arial, sans-serif;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  border-radius: 3px;
+  box-shadow: var(--minecraft-inset);
+}
+
+.tool-icon {
+  margin-right: 6px;
+  font-size: 1.1em;
+}
+
+.tool-button:hover {
+  background-color: var(--minecraft-button-hover);
+  border-color: var(--minecraft-border-light);
+  transform: translateY(-2px);
+}
+
+.tool-button.active {
+  background-color: var(--minecraft-button-active);
+  border-color: var(--minecraft-border);
+  box-shadow: var(--minecraft-outset);
+  transform: translateY(1px);
+}
+
+#grid-instruction {
+  font-style: italic;
+  color: #555555;
+  margin-bottom: 12px;
+  font-size: 0.9em;
+  padding: 8px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+  border-left: 3px solid var(--accent-blue);
+}
+
+/* 選択コントロール */
+#selection-controls {
+  margin-top: 10px;
+  margin-bottom: 15px;
+  min-height: 40px;
+  display: none;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#selection-controls button {
+  padding: 8px 12px;
+  border: 2px solid var(--minecraft-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  font-family: "Minecraft", Arial, sans-serif;
+  transition: all 0.2s;
+  color: var(--minecraft-text);
+  box-shadow: var(--minecraft-inset);
+}
+
+#selection-controls button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #e0e0e0;
+  color: #999999;
+  box-shadow: none;
+}
+
+#selection-controls button:not(:disabled):active {
+  box-shadow: var(--minecraft-outset);
+  transform: translateY(1px);
+}
+
+/* ボタンのスタイル */
+#clear-selection-button {
+  background-color: var(--accent-yellow);
+  border-color: var(--accent-yellow-hover);
+}
+
+#edit-pattern-button {
+  background-color: var(--accent-blue);
+  border-color: var(--accent-blue-hover);
+  color: white;
+}
+
+#clear-individual-button {
+  background-color: var(--accent-red);
+  border-color: var(--accent-red-hover);
+  color: white;
+}
+
+#clear-pattern-membership-button {
+  background-color: #9575cd;
+  border-color: #7e57c2;
+  color: white;
+}
+
+#clear-selection-button:not(:disabled):hover {
+  background-color: var(--accent-yellow-hover);
+  transform: translateY(-2px);
+}
+
+#edit-pattern-button:not(:disabled):hover {
+  background-color: var(--accent-blue-hover);
+  transform: translateY(-2px);
+}
+
+#clear-individual-button:not(:disabled):hover {
+  background-color: var(--accent-red-hover);
+  transform: translateY(-2px);
+}
+
+#clear-pattern-membership-button:not(:disabled):hover {
+  background-color: #7e57c2;
+  transform: translateY(-2px);
+}
+
+/* マインクラフトスタイルのパネル */
+.minecraft-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--minecraft-panel);
+  border: 3px solid var(--minecraft-border);
+  padding: 0;
+  margin-top: 10px;
+  border-radius: 6px;
+  z-index: 1000;
+  min-width: 480px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), var(--minecraft-inset);
+  color: var(--minecraft-text);
+  display: none;
+}
+
+.panel-header {
+  background-color: var(--minecraft-dark-brown);
+  color: var(--minecraft-very-light-brown);
+  padding: 12px 15px;
+  border-bottom: 2px solid var(--minecraft-border);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.panel-header h3 {
+  margin: 0;
+  padding: 0;
+  color: var(--minecraft-very-light-brown);
+  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.5);
+}
+
+.panel-header p {
+  margin: 6px 0 0 0;
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+
+.panel-content {
+  padding: 15px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* フォームグループのスタイル */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: bold;
+  color: var(--minecraft-text);
+  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.5);
+}
+
+.form-group-inline {
+  display: flex;
+  gap: 15px;
+}
+
+.form-group-half {
+  flex: 1;
+}
+
+.checkbox-group {
+  margin-top: 15px;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  font-weight: normal;
+}
+
+.checkbox-group input[type="checkbox"] {
+  margin-right: 8px;
+  width: 18px;
+  height: 18px;
+}
+
+.checkbox-label {
+  font-size: 0.95em;
+}
+
+/* エディターボタン */
+.editor-buttons {
+  margin-top: 5px;
+  padding: 15px;
+  text-align: right;
+  border-top: 2px solid var(--minecraft-border-light);
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* マインクラフトスタイルのボタン */
+.minecraft-button {
+  padding: 10px 16px;
+  background-color: var(--minecraft-button);
+  border: 2px solid var(--minecraft-border);
+    padding: 10px 16px;
+  background-color: var(--minecraft-button);
+  border: 2px solid var(--minecraft-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95em;
+  font-family: "Minecraft", Arial, sans-serif;
+  color: var(--minecraft-text);
+  margin-left: 10px;
+  transition: all 0.2s;
+  box-shadow: var(--minecraft-inset);
+  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.3);
+}
+
+.minecraft-button:hover {
+  background-color: var(--minecraft-button-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), var(--minecraft-inset);
+}
+
+.minecraft-button:active {
+  transform: translateY(1px);
+  box-shadow: var(--minecraft-outset);
+}
+
+.primary-button {
+  background-color: var(--accent-green);
+  border-color: var(--accent-green-hover);
+  color: white;
+  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+}
+
+.primary-button:hover {
+  background-color: var(--accent-green-hover);
+}
+
+.danger-button {
+  background-color: var(--accent-red);
+  border-color: var(--accent-red-hover);
+  color: white;
+  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+}
+
+.danger-button:hover {
+  background-color: var(--accent-red-hover);
+}
+
+/* インポートボタン */
+.import-button {
+  margin-top: 10px;
+  background-color: var(--accent-yellow);
+  border-color: var(--accent-yellow-hover);
+  padding: 12px 20px;
+  font-size: 1em;
+  display: inline-flex;
+  align-items: center;
+}
+
+.import-button::before {
+  content: "📥";
+  margin-right: 8px;
+  font-size: 1.1em;
+}
+
+.import-button:hover {
+  background-color: var(--accent-yellow-hover);
+}
+
+/* インポートモーダル */
+#import-code-area {
+  width: 100%;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.95em;
+  background-color: #fcfcfc;
+  border: 2px solid var(--minecraft-border-light);
+  padding: 10px;
+  box-sizing: border-box;
+  color: #333;
+  min-height: 200px;
+  border-radius: 3px;
+  resize: vertical;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 出力コードエリア */
+#output-code {
+  width: 100%;
+  min-height: 280px;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.95em;
+  background-color: #2c2c2c;
+  color: #f8f8f8;
+  border: 2px solid var(--minecraft-border);
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 5px;
+  box-sizing: border-box;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+  resize: vertical;
+}
+
+/* 生成ボタン */
+.generate-button {
+  display: block;
+  width: 100%;
+  padding: 15px 20px;
+  margin-top: 15px;
+  background-color: var(--accent-blue);
+  border-color: var(--accent-blue-hover);
+  color: white;
+  font-size: 1.1em;
+  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 3px 0 var(--accent-blue-hover), var(--minecraft-inset);
+  transition: all 0.2s;
+}
+
+.generate-button:hover {
+  background-color: var(--accent-blue-hover);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 0 var(--accent-blue-hover), var(--minecraft-inset);
+}
+
+.generate-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 0 var(--accent-blue-hover), var(--minecraft-outset);
+}
+
+.generate-button::before {
+  content: "⚡";
+  margin-right: 10px;
+  font-size: 1.2em;
+}
+
+/* オーバーレイ */
+#overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(20, 20, 20, 0.7);
+  z-index: 999;
+  display: none;
+  backdrop-filter: blur(2px);
+  transition: opacity 0.3s;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .minecraft-chest {
+    width: 100%;
+    overflow-x: auto;
+  }
+  
+  .form-group-inline {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .minecraft-panel {
+    min-width: 300px;
+    width: 95%;
+  }
+  
+  .tool-selector {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+  #selection-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  #selection-controls button {
+    margin: 5px 0;
+  }
+}
+
+/* アニメーション */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+.slot.selected {
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* 特殊なマインクラフトエフェクト - エンチャント輝き */
+.slot.enchanted::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 25%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 75%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: enchant 2s infinite linear;
+  pointer-events: none;
+}
+
+@keyframes enchant {
+  0% { background-position: -200px -200px; }
+  100% { background-position: 200px 200px; }
+}
+/* お知らせ(announcement)用スタイル */
+.announcement {
+  background-color: #f0f0f0;
+  border: 2px solid var(--minecraft-border-light);
+  color: var(--minecraft-dark-brown);
+  padding: 12px 18px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  margin-top: 0;
+  text-align: center;
+  font-size: 1.05em;
+  font-family: "Minecraft", Arial, sans-serif;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  text-shadow: 1px 1px 0px rgba(255,255,255,0.4);
+}
