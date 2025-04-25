@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一時ファイル共有 (GitHub Pages)</title>
+
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h2 class="text-center mb-4">一時ファイル共有 (GitHub Pages版)</h2>
+        <p class="text-center text-muted">ファイルをアップロードして、<span class="font-weight-bold"
+                id="expirationMinutesText"></span>有効な共有リンクを生成します。</p>
+        <p class="text-center text-danger mb-4">最大ファイルサイズ: <span class="font-weight-bold" id="maxFileSizeText"></span>
+        </p>
+
+        <form id="uploadForm">
+            <div class="custom-file mb-3">
+                <input type="file" class="custom-file-input" id="fileInput" lang="ja" required="">
+                <label class="custom-file-label" for="fileInput" id="fileInputLabel"
+                    data-browse="ファイル選択">ファイルを選択してください...</label>
+                <div class="invalid-feedback" id="fileSizeWarning">ファイルサイズが大きすぎます。</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" id="uploadButton" disabled="">
+                <span id="buttonText">アップロード</span>
+                <span class="spinner-border spinner-border-sm" id="buttonSpinner" role="status" aria-hidden="true"
+                    style="display: none;"></span>
+            </button>
+        </form>
+
+        <div id="progressBarContainer">
+            <div class="progress">
+                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                    style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+            </div>
+            <p class="text-center mt-2" id="progressText"></p>
+        </div>
+
+        <div id="result">
+
+        </div>
+
+    </div>
+    <script src="script.js"></script>
+
+
+</body>
+
+</html>

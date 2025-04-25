@@ -1,0 +1,9 @@
+body { padding-top: 20px; padding-bottom: 20px; background-color: #f8f9fa; }
+.container { max-width: 600px; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+#progressBarContainer { display: none; margin-top: 20px; }
+#result { margin-top: 25px; }
+.spinner-border { vertical-align: middle; margin-right: 8px; }
+.copy-button { cursor: pointer; }
+.file-info { font-size: 0.9em; color: #6c757d; margin-top: 5px; }
+#fileInputLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.custom-file-input:lang(ja) ~ .custom-file-label::after { content: "参照"; }

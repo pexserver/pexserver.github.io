@@ -83,5 +83,19 @@
         "docsUrl": "./File/ClearComment/index.html",
         "platform": "web",
         "categoryType": "development"
+    },
+    "tool7": {
+        "title": "ファイル共有サービス",
+        "image": "../lib/Assets/images/Share/image0.png",
+        "imageLarge": "../lib/Assets/images/Share/image1.png",
+        "category": "開発ツール",
+        "version": "0.0.1",
+        "updated": "2024-04-25",
+        "description": "Webブラウザから手軽にファイルをアップロードし、一時的なダウンロードリンクを生成するシステムです\n\n注意点； 30 分間のみ有効です",
+        "detailedDescription": "<p>Webブラウザから手軽にファイルをアップロードし、一時的なダウンロードリンクを生成するシステムです。</p>\n<p>Google Apps Script (GAS) をバックエンドとして利用し、サーバー側の複雑な設定なしにファイルの一時保管と共有を実現します。アップロード状況はプログレスバーで視覚的に確認できます。</p>\n<h4>主な機能:</h4>\n<ul>\n    <li>ローカルファイルの選択とアップロード</li>\n    <li>ファイルサイズ上限チェック (最大 {{MAX_FILE_SIZE_MB}}MB)</li>\n    <li>アップロード進捗状況の表示:\n        <ul>\n            <li>ファイル読み込み (0% - 50%)</li>\n            <li>サーバーへの転送・処理 (50% - 98%, シミュレーション)</li>\n        </ul>\n    </li>\n    <li>アップロード完了時に一時ダウンロードリンクを生成</li>\n    <li>ダウンロードリンクの有効期限設定 (約 {{EXPIRATION_MINUTES}} 分間)</li>\n    <li>生成されたダウンロードリンクのクリップボードコピー機能</li>\n    <li>各種エラーハンドリングとユーザーへの通知 (ファイルサイズ超過、設定エラー、通信エラー等)</li>\n</ul>\n<h4>技術スタック:</h4>\n<ul>\n    <li>HTML5, CSS3, JavaScript</li>\n    <li>Google Apps Script (Web App, Google Drive API)</li>\n    <li>jQuery (GAS Web Appとの通信に使用)</li>\n</ul>\n<h4>システム要件:</h4>\n<ul>\n    <li>最新のWebブラウザ (Chrome, Firefox, Safari, Edgeなど)</li>\n    <li>インターネット接続 (ファイルのアップロードとGAS連携に必須)</li>\n    <li>正しくデプロイされ、設定されたGoogle Apps Script Web AppのURL</li>\n</ul>\n<p>利用するには、提供されたHTMLファイルとJavaScriptファイルを用意し、JavaScript内の `GAS_WEB_APP_URL` 定数に、ご自身で作成・デプロイしたGAS Web AppのURLを設定する必要があります。</p>\n<br><footer>Create By こう君</footer>",
+        "downloadUrl": "./File/Share/index.html",
+        "docsUrl": "./File/Share/index.html",
+        "platform": "web",
+        "categoryType": "development"
     }
 }
