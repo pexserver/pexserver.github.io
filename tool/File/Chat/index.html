@@ -1,1230 +1,1273 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
     <base target="_top" />
     <title>マルチスレッドチャット v2</title>
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta property="og:image" href="./lib/Assets/images/home.png">
+    <link rel="icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon">
+    <link rel="shortcut icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon">
     <style>
-      html {
-        font-size: 16px;
-      }
-
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-
-      body {
-        font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
-        background: linear-gradient(135deg, #e0f7fa 0%, #f8bbd0 100%);
-        color: #222;
-        min-height: 100vh;
-        padding: 0;
-        margin: 0;
-      }
-
-      h1 {
-        font-size: 2.1em;
-        text-align: center;
-        margin: 0 0 1.2em 0;
-        padding: 1.2em 0 0.7em 0;
-        background: rgba(255, 255, 255, 0.7);
-        border-bottom: 2px solid #e1bee7;
-        letter-spacing: 0.05em;
-      }
-
-      h2 {
-        font-size: 1.3em;
-        margin-bottom: 1em;
-        border-left: 5px solid #26c6da;
-        padding-left: 0.7em;
-        color: #333;
-      }
-
-      h3 {
-        font-size: 1.15em;
-        margin-bottom: 0.6em;
-        color: #333;
-      }
-
-      button {
-        padding: 0.8em 1.6em;
-        background: linear-gradient(90deg, #26c6da 60%, #ec407a 100%);
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        font-size: 1em;
-        font-weight: 600;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(38, 198, 218, 0.08);
-        margin: 0.2em 0.3em 0.2em 0;
-        transition: background 0.2s, box-shadow 0.2s;
-      }
-
-      button:hover:not(:disabled),
-      button:focus-visible {
-        background: linear-gradient(90deg, #00bcd4 60%, #d81b60 100%);
-        box-shadow: 0 4px 16px rgba(38, 198, 218, 0.13);
-      }
-
-      button:disabled {
-        background: #bdbdbd;
-        color: #eee;
-        cursor: not-allowed;
-      }
-
-      input[type="text"],
-      input[type="password"],
-      textarea {
-        width: 100%;
-        padding: 0.9em 1em;
-        border: 1.5px solid #b2ebf2;
-        border-radius: 8px;
-        font-size: 1em;
-        margin-bottom: 1.1em;
-        background: #f9f9f9;
-        transition: border 0.2s;
-      }
-
-      input:focus,
-      textarea:focus {
-        border-color: #26c6da;
-        outline: none;
-        background: #fff;
-      }
-
-      textarea {
-        min-height: 90px;
-        resize: vertical;
-      }
-
-      label {
-        font-weight: 600;
-        color: #444;
-        margin-bottom: 0.3em;
-        display: block;
-      }
-
-      .hidden {
-        display: none !important;
-      }
-
-      .section {
-        background: #fff;
-        margin: 1.5em auto;
-        padding: 2em 1.2em;
-        border-radius: 18px;
-        box-shadow: 0 4px 24px rgba(38, 198, 218, 0.1),
-          0 1.5px 6px rgba(233, 30, 99, 0.07);
-        max-width: 480px;
-        width: 96vw;
-      }
-
-      .status {
-        margin-top: 1em;
-        font-size: 1em;
-        border-radius: 6px;
-        padding: 0.7em 1em;
-        min-height: 1.5em;
-      }
-
-      .success {
-        background: #e0f2f1;
-        color: #00796b;
-        border: 1px solid #4dd0e1;
-      }
-
-      .error {
-        background: #ffebee;
-        color: #c62828;
-        border: 1px solid #ef9a9a;
-      }
-
-      .loading {
-        color: #888;
-        text-align: center;
-        font-style: italic;
-        padding: 1em 0;
-      }
-
-      .small-text {
-        font-size: 0.92em;
-        color: #888;
-      }
-
-      .thread-list-container {
-        margin-top: 1em;
-      }
-
-      .thread-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-
-      .thread-list li {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background: #f5fafd;
-        border: 1.5px solid #b2ebf2;
-        border-radius: 10px;
-        margin-bottom: 0.7em;
-        padding: 1em 1.1em;
-        cursor: pointer;
-        transition: background 0.18s, box-shadow 0.18s;
-        box-shadow: 0 1px 4px rgba(38, 198, 218, 0.06);
-      }
-
-      .thread-list li:hover,
-      .thread-list li:active {
-        background: #e1f5fe;
-        box-shadow: 0 2px 8px rgba(38, 198, 218, 0.13);
-      }
-
-      .thread-name {
-        font-weight: 700;
-        font-size: 1.08em;
-        color: #222;
-        flex: 1;
-      }
-
-      .thread-type {
-        font-size: 0.85em;
-        padding: 0.3em 1em;
-        border-radius: 12px;
-        margin-left: 0.8em;
-        font-weight: 600;
-        letter-spacing: 0.03em;
-      }
-
-      .thread-type.Public {
-        background: #26c6da;
-        color: #fff;
-      }
-
-      .thread-type.Private {
-        background: #ec407a;
-        color: #fff;
-      }
-
-      .no-threads {
-        color: #aaa;
-        text-align: center;
-        font-style: italic;
-        margin: 1.2em 0;
-      }
-
-      .chat-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.7em;
-        border-bottom: 1.5px solid #e1bee7;
-        padding-bottom: 0.7em;
-        margin-bottom: 1.2em;
-      }
-
-      .chat-header h2 {
-        border: none;
-        padding: 0;
-        margin: 0;
-        font-size: 1.15em;
-      }
-
-      .chatbox {
-        border: 1.5px solid #b2ebf2;
-        padding: 1.1em 0.7em;
-        margin-bottom: 1.2em;
-        height: 52vh;
-        min-height: 220px;
-        overflow-y: auto;
-        background: #f9f9f9;
-        border-radius: 10px;
-        box-shadow: 0 1px 6px rgba(38, 198, 218, 0.07);
-      }
-
-      .message-item {
-        margin-bottom: 1.1em;
-        padding-bottom: 0.7em;
-        border-bottom: 1px dashed #e1bee7;
-      }
-
-      .message-meta {
-        font-size: 0.98em;
-        color: #26c6da;
-        margin-bottom: 0.2em;
-      }
-
-      .message-meta .name {
-        font-weight: bold;
-        color: #ec407a;
-      }
-
-      .message-meta .timestamp {
-        color: #888;
-        margin-left: 0.6em;
-      }
-
-      .message-body {
-        margin-left: 0.7em;
-        word-break: break-word;
-        line-height: 1.6;
-        color: #222;
-        font-size: 1.01em;
-      }
-
-      .form-area {
-        margin-top: 1.5em;
-      }
-
-      .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(38, 198, 218, 0.13);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-      }
-
-      .modal-content {
-        background: #fff;
-        padding: 2.2em 1.5em 1.5em 1.5em;
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(38, 198, 218, 0.18),
-          0 2px 8px rgba(233, 30, 99, 0.09);
-        width: 92vw;
-        max-width: 370px;
-        position: relative;
-      }
-
-      .modal-close-btn {
-        position: absolute;
-        top: 0.7em;
-        right: 1.1em;
-        font-size: 2em;
-        color: #888;
-        background: none;
-        border: none;
-        cursor: pointer;
-      }
-
-      .modal-content h3 {
-        margin-top: 0;
-        margin-bottom: 1.1em;
-        color: #222;
-        font-size: 1.15em;
-      }
-
-      .modal-buttons {
-        margin-top: 1.2em;
-        text-align: right;
-      }
-
-      .modal-buttons button {
-        margin-left: 0.7em;
-      }
-
-      @media (max-width: 600px) {
         html {
-          font-size: 15px;
+            font-size: 16px;
         }
 
-        .section {
-          padding: 1.2em 0.5em;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
-        .chatbox {
-          height: 38vh;
-          min-height: 120px;
-        }
-
-        .modal-content {
-          padding: 1.2em 0.7em 1em 0.7em;
+        body {
+            font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #e0f7fa 0%, #f8bbd0 100%);
+            color: #222;
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
         }
 
         h1 {
-          font-size: 1.3em;
-          padding: 0.8em 0 0.5em 0;
+            font-size: 2.1em;
+            text-align: center;
+            margin: 0 0 1.2em 0;
+            padding: 1.2em 0 0.7em 0;
+            background: rgba(255, 255, 255, 0.7);
+            border-bottom: 2px solid #e1bee7;
+            letter-spacing: 0.05em;
         }
-      }
 
-      @media (max-width: 400px) {
-        html {
-          font-size: 13px;
+        h2 {
+            font-size: 1.3em;
+            margin-bottom: 1em;
+            border-left: 5px solid #26c6da;
+            padding-left: 0.7em;
+            color: #333;
+        }
+
+        h3 {
+            font-size: 1.15em;
+            margin-bottom: 0.6em;
+            color: #333;
+        }
+
+        button {
+            padding: 0.8em 1.6em;
+            background: linear-gradient(90deg, #26c6da 60%, #ec407a 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(38, 198, 218, 0.08);
+            margin: 0.2em 0.3em 0.2em 0;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover:not(:disabled),
+        button:focus-visible {
+            background: linear-gradient(90deg, #00bcd4 60%, #d81b60 100%);
+            box-shadow: 0 4px 16px rgba(38, 198, 218, 0.13);
+        }
+
+        button:disabled {
+            background: #bdbdbd;
+            color: #eee;
+            cursor: not-allowed;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            padding: 0.9em 1em;
+            border: 1.5px solid #b2ebf2;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-bottom: 1.1em;
+            background: #f9f9f9;
+            transition: border 0.2s;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: #26c6da;
+            outline: none;
+            background: #fff;
+        }
+
+        textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        label {
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 0.3em;
+            display: block;
+        }
+
+        .hidden {
+            display: none !important;
         }
 
         .section {
-          padding: 0.7em 0.2em;
+            background: #fff;
+            margin: 1.5em auto;
+            padding: 2em 1.2em;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(38, 198, 218, 0.1),
+                0 1.5px 6px rgba(233, 30, 99, 0.07);
+            max-width: 480px;
+            width: 96vw;
         }
-      }
 
-      .share-url-area {
-        margin: 1.2em 0 0.5em 0;
-        display: flex;
-        gap: 0.5em;
-        align-items: center;
-      }
+        .status {
+            margin-top: 1em;
+            font-size: 1em;
+            border-radius: 6px;
+            padding: 0.7em 1em;
+            min-height: 1.5em;
+        }
 
-      .share-url-input {
-        flex: 1;
-        padding: 0.6em 1em;
-        border: 1.5px solid #b2ebf2;
-        border-radius: 8px;
-        font-size: 1em;
-        background: #f9f9f9;
-      }
+        .success {
+            background: #e0f2f1;
+            color: #00796b;
+            border: 1px solid #4dd0e1;
+        }
 
-      .share-url-copy-btn {
-        padding: 0.6em 1.2em;
-        border-radius: 8px;
-        background: #26c6da;
-        color: #fff;
-        border: none;
-        font-size: 0.98em;
-        cursor: pointer;
-        transition: background 0.2s;
-      }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
 
-      .share-url-copy-btn:hover {
-        background: #00bcd4;
-      }
+        .loading {
+            color: #888;
+            text-align: center;
+            font-style: italic;
+            padding: 1em 0;
+        }
 
-      .user-id-label {
-        font-size: 0.92em;
-        color: #888;
-        margin-bottom: 0.5em;
-        display: block;
-        text-align: right;
-      }
+        .small-text {
+            font-size: 0.92em;
+            color: #888;
+        }
+
+        .thread-list-container {
+            margin-top: 1em;
+        }
+
+        .thread-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .thread-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f5fafd;
+            border: 1.5px solid #b2ebf2;
+            border-radius: 10px;
+            margin-bottom: 0.7em;
+            padding: 1em 1.1em;
+            cursor: pointer;
+            transition: background 0.18s, box-shadow 0.18s;
+            box-shadow: 0 1px 4px rgba(38, 198, 218, 0.06);
+        }
+
+        .thread-list li:hover,
+        .thread-list li:active {
+            background: #e1f5fe;
+            box-shadow: 0 2px 8px rgba(38, 198, 218, 0.13);
+        }
+
+        .thread-name {
+            font-weight: 700;
+            font-size: 1.08em;
+            color: #222;
+            flex: 1;
+        }
+
+        .thread-type {
+            font-size: 0.85em;
+            padding: 0.3em 1em;
+            border-radius: 12px;
+            margin-left: 0.8em;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+        }
+
+        .thread-type.Public {
+            background: #26c6da;
+            color: #fff;
+        }
+
+        .thread-type.Private {
+            background: #ec407a;
+            color: #fff;
+        }
+
+        .no-threads {
+            color: #aaa;
+            text-align: center;
+            font-style: italic;
+            margin: 1.2em 0;
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.7em;
+            border-bottom: 1.5px solid #e1bee7;
+            padding-bottom: 0.7em;
+            margin-bottom: 1.2em;
+        }
+
+        .chat-header h2 {
+            border: none;
+            padding: 0;
+            margin: 0;
+            font-size: 1.15em;
+        }
+
+        .chatbox {
+            border: 1.5px solid #b2ebf2;
+            padding: 1.1em 0.7em;
+            margin-bottom: 1.2em;
+            height: 52vh;
+            min-height: 220px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0 1px 6px rgba(38, 198, 218, 0.07);
+        }
+
+        .message-item {
+            margin-bottom: 1.1em;
+            padding-bottom: 0.7em;
+            border-bottom: 1px dashed #e1bee7;
+        }
+
+        .message-meta {
+            font-size: 0.98em;
+            color: #26c6da;
+            margin-bottom: 0.2em;
+        }
+
+        .message-meta .name {
+            font-weight: bold;
+            color: #ec407a;
+        }
+
+        .message-meta .timestamp {
+            color: #888;
+            margin-left: 0.6em;
+        }
+
+        .message-body {
+            margin-left: 0.7em;
+            word-break: break-word;
+            line-height: 1.6;
+            color: #222;
+            font-size: 1.01em;
+        }
+
+        .message-body img {
+            max-width: 90%;
+            height: auto;
+            display: block;
+            margin: 0.5em auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(38, 198, 218, 0.08);
+        }
+
+        .message-body ul,
+        .message-body ol {
+            margin: 0.7em 0 0.7em 1.5em;
+            padding-left: 1.2em;
+        }
+
+
+        .message-body ul {
+            list-style-type: disc;
+        }
+
+        .message-body ol {
+            list-style-type: decimal;
+        }
+
+        .message-body li {
+            margin-bottom: 0.3em;
+            line-height: 1.6;
+            font-size: 1em;
+        }
+
+        .message-body code {
+            background: #f5f5f5;
+            color: #d6336c;
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-family: "Consolas", "Menlo", "Monaco", "monospace";
+            font-size: 0.98em;
+            word-break: break-all;
+        }
+
+        .message-body pre {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 1em;
+            border-radius: 6px;
+            font-family: "Consolas", "Menlo", "Monaco", "monospace";
+            font-size: 0.98em;
+            overflow-x: auto;
+            margin: 1em 0;
+            line-height: 1.6;
+        }
+
+        .message-body pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+            border-radius: 0;
+            font-size: 1em;
+        }
+
+        .message-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1em 0;
+            background: #fafbfc;
+            font-size: 0.98em;
+        }
+
+        .message-body th,
+        .message-body td {
+            border: 1px solid #b2ebf2;
+            padding: 0.5em 0.8em;
+            text-align: left;
+        }
+
+        .message-body th {
+            background: #e0f7fa;
+            color: #00796b;
+            font-weight: bold;
+        }
+
+        .message-body tr:nth-child(even) {
+            background: #f5fafd;
+        }
+
+        .form-area {
+            margin-top: 1.5em;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(38, 198, 218, 0.13);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 2.2em 1.5em 1.5em 1.5em;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(38, 198, 218, 0.18),
+                0 2px 8px rgba(233, 30, 99, 0.09);
+            width: 92vw;
+            max-width: 370px;
+            position: relative;
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 0.7em;
+            right: 0.7em;
+            font-size: 1.5em;
+            color: #888;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .modal-close-btn:hover,
+        .modal-close-btn:focus {
+            color: #ec407a;
+            /* ホバー時に大きな背景色が出ないように色のみ変化 */
+            background: none;
+            outline: none;
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            margin-bottom: 1.1em;
+            color: #222;
+            font-size: 1.15em;
+        }
+
+        .modal-buttons {
+            margin-top: 1.2em;
+            text-align: right;
+        }
+
+        .modal-buttons button {
+            margin-left: 0.7em;
+        }
+
+        @media (max-width: 600px) {
+            html {
+                font-size: 15px;
+            }
+
+            .section {
+                padding: 1.2em 0.5em;
+            }
+
+            .chatbox {
+                height: 38vh;
+                min-height: 120px;
+            }
+
+            .modal-content {
+                padding: 1.2em 0.7em 1em 0.7em;
+            }
+
+            h1 {
+                font-size: 1.3em;
+                padding: 0.8em 0 0.5em 0;
+            }
+        }
+
+        @media (max-width: 400px) {
+            html {
+                font-size: 13px;
+            }
+
+            .section {
+                padding: 0.7em 0.2em;
+            }
+        }
+
+        .share-url-area {
+            margin: 1.2em 0 0.5em 0;
+            display: flex;
+            gap: 0.5em;
+            align-items: center;
+        }
+
+        .share-url-input {
+            flex: 1;
+            padding: 0.6em 1em;
+            border: 1.5px solid #b2ebf2;
+            border-radius: 8px;
+            font-size: 1em;
+            background: #f9f9f9;
+        }
+
+        .share-url-copy-btn {
+            padding: 0.6em 1.2em;
+            border-radius: 8px;
+            background: #26c6da;
+            color: #fff;
+            border: none;
+            font-size: 0.98em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .share-url-copy-btn:hover {
+            background: #00bcd4;
+        }
+
+        .user-id-label {
+            font-size: 0.92em;
+            color: #888;
+            margin-bottom: 0.5em;
+            display: block;
+            text-align: right;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://unpkg.com/prettier@2.8.8/standalone.js"></script>
     <script src="https://unpkg.com/prettier@2.8.8/parser-markdown.js"></script>
-  </head>
+</head>
 
-  <body>
+<body>
     <h1>
-      マルチスレッドチャット
-      <span style="font-size: 0.7em; color: #26c6da">v2</span>
+        マルチスレッドチャット
+        <span style="font-size: 0.7em; color: #26c6da">v2</span>
     </h1>
     <div id="globalStatus" class="status hidden"></div>
 
     <div id="threadSelectionView" class="section">
-      <h2>スレッド一覧</h2>
-      <div class="thread-list-container">
-        <div id="threadListLoading" class="loading">読み込み中...</div>
-        <ul id="threadList" class="thread-list"></ul>
-        <p id="noThreadsMessage" class="no-threads hidden">
-          利用可能なスレッドはありません。
-        </p>
-      </div>
-      <button
-        onclick="app.fetchThreads()"
-        style="width: 100%; margin-top: 0.7em"
-      >
-        リスト更新
-      </button>
-
-      <h2 style="margin-top: 2em">プライベートスレッド作成</h2>
-      <form id="createThreadForm" autocomplete="off">
-        <div>
-          <label for="newThreadName">スレッド名</label>
-          <input
-            type="text"
-            id="newThreadName"
-            required=""
-            placeholder="例: 雑談部屋"
-          />
+        <h2>スレッド一覧</h2>
+        <div class="thread-list-container">
+            <div id="threadListLoading" class="loading">読み込み中...</div>
+            <ul id="threadList" class="thread-list"></ul>
+            <p id="noThreadsMessage" class="no-threads hidden">
+                利用可能なスレッドはありません。
+            </p>
         </div>
-        <div>
-          <label for="newThreadPassword">合言葉</label>
-          <input
-            type="password"
-            id="newThreadPassword"
-            required=""
-            placeholder="4文字以上"
-          />
-        </div>
-        <button type="submit" id="createThreadBtn" style="width: 100%">
-          作成
+        <button onclick="app.fetchThreads()" style="width: 100%; margin-top: 0.7em">
+            リスト更新
         </button>
-        <div id="createThreadStatus" class="status hidden"></div>
-      </form>
+
+        <h2 style="margin-top: 2em">プライベートスレッド作成</h2>
+        <form id="createThreadForm" autocomplete="off">
+            <div>
+                <label for="newThreadName">スレッド名</label>
+                <input type="text" id="newThreadName" required="" placeholder="例: 雑談部屋" />
+            </div>
+            <div>
+                <label for="newThreadPassword">合言葉</label>
+                <input type="password" id="newThreadPassword" required="" placeholder="4文字以上" />
+            </div>
+            <button type="submit" id="createThreadBtn" style="width: 100%">
+                作成
+            </button>
+            <div id="createThreadStatus" class="status hidden"></div>
+        </form>
     </div>
 
     <div id="chatView" class="section hidden">
-      <div class="chat-header">
-        <h2 id="currentThreadName"></h2>
-        <button
-          onclick="app.showView('threadSelectionView')"
-          style="font-size: 0.98em"
-        >
-          ← スレッド一覧
-        </button>
-      </div>
-      <div class="share-url-area">
-        <input
-          type="text"
-          id="shareUrlInput"
-          class="share-url-input"
-          readonly=""
-          value=""
-          title="このスレッドの共有URL"
-        />
-        <button id="shareUrlCopyBtn" class="share-url-copy-btn">
-          URLコピー
-        </button>
-      </div>
-      <span class="user-id-label" id="userIdLabel"></span>
-      <div class="chatbox" id="chatbox">
-        <div id="chatLoading" class="loading">読み込み中...</div>
-      </div>
-      <div class="form-area">
-        <h3><span id="msgFormNumber" class="small-text"></span> 書き込む</h3>
-        <form id="messageForm" autocomplete="off">
-          <div>
-            <label for="nameInput">名前</label>
-            <div style="display: flex; align-items: center; gap: 0.5em">
-              <span style="font-size: 1em; color: #888"
-                >ID:<span id="userIdPrefix"></span
-              ></span>
-              <input
-                type="text"
-                id="nameInput"
-                placeholder="名無し"
-                style="flex: 1"
-              />
-              <span>さん</span>
-            </div>
-          </div>
-          <div>
-            <label for="messageInput">メッセージ</label>
-            <textarea
-              id="messageInput"
-              required=""
-              placeholder="メッセージを入力"
-            ></textarea>
-          </div>
-          <button type="submit" id="submitBtn" style="width: 100%">
-            書き込む
-          </button>
-          <div id="messageStatus" class="status hidden"></div>
-        </form>
-      </div>
+        <div class="chat-header">
+            <h2 id="currentThreadName"></h2>
+            <button onclick="app.showView('threadSelectionView')" style="font-size: 0.98em">
+                ← スレッド一覧
+            </button>
+        </div>
+        <div class="share-url-area">
+            <input type="text" id="shareUrlInput" class="share-url-input" readonly="" value="" title="このスレッドの共有URL" />
+            <button id="shareUrlCopyBtn" class="share-url-copy-btn">
+                URLコピー
+            </button>
+        </div>
+        <span class="user-id-label" id="userIdLabel"></span>
+        <div class="chatbox" id="chatbox">
+            <div id="chatLoading" class="loading">読み込み中...</div>
+        </div>
+        <div class="form-area">
+            <h3><span id="msgFormNumber" class="small-text"></span> 書き込む</h3>
+            <form id="messageForm" autocomplete="off">
+                <div>
+                    <label for="nameInput">名前</label>
+                    <div style="display: flex; align-items: center; gap: 0.5em">
+                        <span style="font-size: 1em; color: #888">ID:<span id="userIdPrefix"></span></span>
+                        <input type="text" id="nameInput" placeholder="名無し" style="flex: 1" />
+                        <span>さん</span>
+                    </div>
+                </div>
+                <div>
+                    <label for="messageInput">メッセージ</label>
+                    <textarea id="messageInput" required="" placeholder="メッセージを入力"></textarea>
+                </div>
+                <button type="submit" id="submitBtn" style="width: 100%">
+                    書き込む
+                </button>
+                <div id="messageStatus" class="status hidden"></div>
+            </form>
+        </div>
     </div>
 
     <div id="passwordModal" class="modal-overlay hidden">
-      <div class="modal-content">
-        <button id="closeModalBtn" class="modal-close-btn" aria-label="閉じる">
-          ×
-        </button>
-        <h3 id="passwordModalTitle">プライベートスレッドに参加</h3>
-        <p class="small-text">合言葉を入力してください。</p>
-        <form id="passwordForm" autocomplete="off">
-          <label for="threadPasswordInput">合言葉</label>
-          <input
-            type="password"
-            id="threadPasswordInput"
-            required=""
-            placeholder="合言葉"
-          />
-          <div id="passwordModalStatus" class="status hidden"></div>
-          <div class="modal-buttons">
-            <button type="button" id="cancelModalBtn">キャンセル</button>
-            <button type="submit" id="joinThreadBtn">参加</button>
-          </div>
-        </form>
-      </div>
+        <div class="modal-content">
+            <button id="closeModalBtn" class="modal-close-btn" aria-label="閉じる">
+                ×
+            </button>
+            <h3 id="passwordModalTitle">プライベートスレッドに参加</h3>
+            <p class="small-text">合言葉を入力してください。</p>
+            <form id="passwordForm" autocomplete="off">
+                <label for="threadPasswordInput">合言葉</label>
+                <input type="password" id="threadPasswordInput" required="" placeholder="合言葉" />
+                <div id="passwordModalStatus" class="status hidden"></div>
+                <div class="modal-buttons">
+                    <button type="button" id="cancelModalBtn">キャンセル</button>
+                    <button type="submit" id="joinThreadBtn">参加</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
-      const escapeHtml = (str) => {
-        if (typeof str !== "string") return str;
-        return str.replace(/[&<>"']/g, (match) => {
-          const map = {
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#39;",
-          };
-          return map[match];
-        });
-      };
+        const escapeHtml = (str) => {
+            if (typeof str !== "string") return str;
+            return str.replace(/[&<>"']/g, (match) => {
+                const map = {
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#39;",
+                };
+                return map[match];
+            });
+        };
 
-      function getOrCreateUserId() {
-        const key = "chatUserId";
-        let id = getCookie(key);
-        if (!id) {
-          id = Math.random().toString(36).slice(2, 12);
-          setCookie(key, id, 3650);
+
+        function getOrCreateUserId() {
+            const key = "chatUserId";
+            let id = localStorage.getItem(key);
+            if (!id) {
+                id = Math.random().toString(36).slice(2, 12);
+                localStorage.setItem(key, id);
+            }
+            return id;
         }
-        return id;
-      }
-      function setCookie(name, value, days) {
-        const d = new Date();
-        d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
-        document.cookie =
-          name +
-          "=" +
-          encodeURIComponent(value) +
-          ";expires=" +
-          d.toUTCString() +
-          ";path=/";
-      }
-      function getCookie(name) {
-        const v = document.cookie.match(
-          "(^|;)\\s*" + name + "\\s*=\\s*([^;]+)"
-        );
-        return v ? decodeURIComponent(v.pop()) : "";
-      }
 
-      const userId = getOrCreateUserId();
+        function getSavedUserName() {
+            return localStorage.getItem("chatUserName") || "";
+        }
+        function saveUserName(name) {
+            localStorage.setItem("chatUserName", name);
+        }
 
-      function getSavedUserName() {
-        return getCookie("chatUserName") || "";
-      }
-      function saveUserName(name) {
-        setCookie("chatUserName", name, 3650);
-      }
+        const userId = getOrCreateUserId();
 
-      document.addEventListener("DOMContentLoaded", () => {
-        const userIdPrefix = document.getElementById("userIdPrefix");
-        if (userIdPrefix) userIdPrefix.textContent = userId;
+        document.addEventListener("DOMContentLoaded", () => {
+            const userIdPrefix = document.getElementById("userIdPrefix");
+            if (userIdPrefix) userIdPrefix.textContent = userId;
 
-        const nameInput = document.getElementById("nameInput");
-        const savedName = getSavedUserName();
-        if (nameInput) nameInput.value = savedName;
+            const nameInput = document.getElementById("nameInput");
+            const savedName = getSavedUserName();
+            if (nameInput) nameInput.value = savedName;
 
-        const userIdLabel = document.getElementById("userIdLabel");
-        if (userIdLabel) userIdLabel.textContent = `あなたのID: ${userId}`;
-      });
+            const userIdLabel = document.getElementById("userIdLabel");
+            if (userIdLabel) userIdLabel.textContent = `あなたのID: ${userId}`;
+        });
 
-      const app = {
-        state: {
-          currentThreadId: null,
-          currentThreadName: null,
-          currentThreadType: null,
-          currentPassword: "",
-          messageCount: 0,
-          messageUpdateIntervalId: null,
-          messageUpdateInterval: 15000,
-          isFetchingMessages: false,
-          isGasCallInProgress: false,
-          targetPrivateThread: null,
-        },
+        const app = {
+            state: {
+                currentThreadId: null,
+                currentThreadName: null,
+                currentThreadType: null,
+                currentPassword: "",
+                messageCount: 0,
+                messageUpdateIntervalId: null,
+                messageUpdateInterval: 15000,
+                isFetchingMessages: false,
+                isGasCallInProgress: false,
+                targetPrivateThread: null,
+            },
 
-        elements: {
-          globalStatus: document.getElementById("globalStatus"),
-          threadSelectionView: document.getElementById("threadSelectionView"),
-          chatView: document.getElementById("chatView"),
-          threadList: document.getElementById("threadList"),
-          threadListLoading: document.getElementById("threadListLoading"),
-          noThreadsMessage: document.getElementById("noThreadsMessage"),
-          createThreadForm: document.getElementById("createThreadForm"),
-          createThreadBtn: document.getElementById("createThreadBtn"),
-          createThreadStatus: document.getElementById("createThreadStatus"),
-          currentThreadName: document.getElementById("currentThreadName"),
-          chatbox: document.getElementById("chatbox"),
-          chatLoading: document.getElementById("chatLoading"),
-          messageForm: document.getElementById("messageForm"),
-          nameInput: document.getElementById("nameInput"),
-          messageInput: document.getElementById("messageInput"),
-          submitBtn: document.getElementById("submitBtn"),
-          messageStatus: document.getElementById("messageStatus"),
-          msgFormNumber: document.getElementById("msgFormNumber"),
+            elements: {
+                globalStatus: document.getElementById("globalStatus"),
+                threadSelectionView: document.getElementById("threadSelectionView"),
+                chatView: document.getElementById("chatView"),
+                threadList: document.getElementById("threadList"),
+                threadListLoading: document.getElementById("threadListLoading"),
+                noThreadsMessage: document.getElementById("noThreadsMessage"),
+                createThreadForm: document.getElementById("createThreadForm"),
+                createThreadBtn: document.getElementById("createThreadBtn"),
+                createThreadStatus: document.getElementById("createThreadStatus"),
+                currentThreadName: document.getElementById("currentThreadName"),
+                chatbox: document.getElementById("chatbox"),
+                chatLoading: document.getElementById("chatLoading"),
+                messageForm: document.getElementById("messageForm"),
+                nameInput: document.getElementById("nameInput"),
+                messageInput: document.getElementById("messageInput"),
+                submitBtn: document.getElementById("submitBtn"),
+                messageStatus: document.getElementById("messageStatus"),
+                msgFormNumber: document.getElementById("msgFormNumber"),
 
-          passwordModal: document.getElementById("passwordModal"),
-          passwordModalTitle: document.getElementById("passwordModalTitle"),
-          passwordForm: document.getElementById("passwordForm"),
-          threadPasswordInput: document.getElementById("threadPasswordInput"),
-          passwordModalStatus: document.getElementById("passwordModalStatus"),
-          closeModalBtn: document.getElementById("closeModalBtn"),
-          cancelModalBtn: document.getElementById("cancelModalBtn"),
-          joinThreadBtn: document.getElementById("joinThreadBtn"),
-          shareUrlInput: document.getElementById("shareUrlInput"),
-          shareUrlCopyBtn: document.getElementById("shareUrlCopyBtn"),
-          userIdLabel: document.getElementById("userIdLabel"),
-        },
+                passwordModal: document.getElementById("passwordModal"),
+                passwordModalTitle: document.getElementById("passwordModalTitle"),
+                passwordForm: document.getElementById("passwordForm"),
+                threadPasswordInput: document.getElementById("threadPasswordInput"),
+                passwordModalStatus: document.getElementById("passwordModalStatus"),
+                closeModalBtn: document.getElementById("closeModalBtn"),
+                cancelModalBtn: document.getElementById("cancelModalBtn"),
+                joinThreadBtn: document.getElementById("joinThreadBtn"),
+                shareUrlInput: document.getElementById("shareUrlInput"),
+                shareUrlCopyBtn: document.getElementById("shareUrlCopyBtn"),
+                userIdLabel: document.getElementById("userIdLabel"),
+            },
 
-        init() {
-          this.addEventListeners();
-          this.showView("threadSelectionView");
-          this.elements.userIdLabel.textContent = `あなたのID: ${userId}`;
-          this.elements.shareUrlInput.value = "";
-        },
+            init() {
+                this.addEventListeners();
+                this.showView("threadSelectionView");
+                this.elements.userIdLabel.textContent = `あなたのID: ${userId}`;
+                this.elements.shareUrlInput.value = "";
+            },
 
-        addEventListeners() {
-          this.elements.createThreadForm.addEventListener("submit", (e) => {
-            e.preventDefault();
-            const name = document.getElementById("newThreadName").value;
-            const password = document.getElementById("newThreadPassword").value;
-            this.createPrivateThread(name, password);
-          });
+            addEventListeners() {
+                this.elements.createThreadForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById("newThreadName").value;
+                    const password = document.getElementById("newThreadPassword").value;
+                    this.createPrivateThread(name, password);
+                });
 
-          this.elements.messageForm.addEventListener("submit", (e) => {
-            e.preventDefault();
-            this.addMessage();
-          });
+                this.elements.messageForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    this.addMessage();
+                });
 
-          this.elements.closeModalBtn.addEventListener("click", () =>
-            this.hidePasswordModal()
-          );
-          this.elements.cancelModalBtn.addEventListener("click", () =>
-            this.hidePasswordModal()
-          );
-          this.elements.passwordForm.addEventListener("submit", (e) => {
-            e.preventDefault();
-            this.attemptJoinPrivateThread();
-          });
+                this.elements.closeModalBtn.addEventListener("click", () =>
+                    this.hidePasswordModal()
+                );
+                this.elements.cancelModalBtn.addEventListener("click", () =>
+                    this.hidePasswordModal()
+                );
+                this.elements.passwordForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    this.attemptJoinPrivateThread();
+                });
 
-          this.elements.threadList.addEventListener("click", (e) => {
-            const listItem = e.target.closest("li[data-thread-id]");
-            if (listItem) {
-              const threadId = listItem.dataset.threadId;
-              const threadName = listItem.dataset.threadName;
-              const threadType = listItem.dataset.threadType;
-              this.handleThreadSelection({
-                id: threadId,
-                name: threadName,
-                type: threadType,
-              });
-            }
-          });
+                this.elements.threadList.addEventListener("click", (e) => {
+                    const listItem = e.target.closest("li[data-thread-id]");
+                    if (listItem) {
+                        const threadId = listItem.dataset.threadId;
+                        const threadName = listItem.dataset.threadName;
+                        const threadType = listItem.dataset.threadType;
+                        this.handleThreadSelection({
+                            id: threadId,
+                            name: threadName,
+                            type: threadType,
+                        });
+                    }
+                });
 
-          document.addEventListener("visibilitychange", () =>
-            this.handleVisibilityChange()
-          );
+                document.addEventListener("visibilitychange", () =>
+                    this.handleVisibilityChange()
+                );
 
-          this.elements.shareUrlCopyBtn.addEventListener("click", function () {
-            const input = app.elements.shareUrlInput;
-            input.select();
-            input.setSelectionRange(0, 99999);
-            document.execCommand("copy");
-            this.textContent = "コピー完了";
-            setTimeout(() => {
-              this.textContent = "URLコピー";
-            }, 1200);
-          });
-        },
+                this.elements.shareUrlCopyBtn.addEventListener("click", function () {
+                    const input = app.elements.shareUrlInput;
+                    input.select();
+                    input.setSelectionRange(0, 99999);
+                    document.execCommand("copy");
+                    this.textContent = "コピー完了";
+                    setTimeout(() => {
+                        this.textContent = "URLコピー";
+                    }, 1200);
+                });
+            },
 
-        callGas(functionName, ...args) {
-          return new Promise((resolve, reject) => {
-            if (
-              this.state.isGasCallInProgress &&
-              !["getMessagesApi"].includes(functionName)
-            ) {
-              console.warn(
-                "GAS call already in progress, skipping:",
-                functionName
-              );
-              return reject(new Error("Previous operation still in progress."));
-            }
-            this.state.isGasCallInProgress = true;
-            this.setGlobalLoading(true);
+            callGas(functionName, ...args) {
+                return new Promise((resolve, reject) => {
+                    if (
+                        this.state.isGasCallInProgress &&
+                        !["getMessagesApi"].includes(functionName)
+                    ) {
+                        console.warn(
+                            "GAS call already in progress, skipping:",
+                            functionName
+                        );
+                        return reject(new Error("Previous operation still in progress."));
+                    }
+                    this.state.isGasCallInProgress = true;
+                    this.setGlobalLoading(true);
 
-            google.script.run
-              .withSuccessHandler((responseJson) => {
-                this.state.isGasCallInProgress = false;
-                this.setGlobalLoading(false);
-                try {
-                  const response = JSON.parse(responseJson);
-                  if (response.status === "success") {
-                    resolve(response.data || {});
-                  } else {
-                    console.error(
-                      `GAS Error (${functionName}):`,
-                      response.message
-                    );
-                    reject(
-                      new Error(
-                        response.message || "サーバーでエラーが発生しました。"
-                      )
-                    );
-                  }
-                } catch (parseError) {
-                  console.error(
-                    `GAS JSON Parse Error (${functionName}):`,
-                    parseError,
-                    responseJson
-                  );
-                  reject(new Error("サーバーからの応答が無効です。"));
+                    google.script.run
+                        .withSuccessHandler((responseJson) => {
+                            this.state.isGasCallInProgress = false;
+                            this.setGlobalLoading(false);
+                            try {
+                                const response = JSON.parse(responseJson);
+                                if (response.status === "success") {
+                                    resolve(response.data || {});
+                                } else {
+                                    console.error(
+                                        `GAS Error (${functionName}):`,
+                                        response.message
+                                    );
+                                    reject(
+                                        new Error(
+                                            response.message || "サーバーでエラーが発生しました。"
+                                        )
+                                    );
+                                }
+                            } catch (parseError) {
+                                console.error(
+                                    `GAS JSON Parse Error (${functionName}):`,
+                                    parseError,
+                                    responseJson
+                                );
+                                reject(new Error("サーバーからの応答が無効です。"));
+                            }
+                        })
+                        .withFailureHandler((error) => {
+                            this.state.isGasCallInProgress = false;
+                            this.setGlobalLoading(false);
+                            console.error(`GAS Failure (${functionName}):`, error);
+                            reject(
+                                new Error(`サーバーとの通信に失敗しました: ${error.message}`)
+                            );
+                        })
+                    [functionName](...args);
+                });
+            },
+
+            showView(viewId) {
+                console.log(
+                    `--- showView Called --- Switching to: ${viewId}, Current Thread ID BEFORE action: ${this.state.currentThreadId}`
+                );
+
+                ["threadSelectionView", "chatView"].forEach((id) => {
+                    this.elements[id].classList.add("hidden");
+                });
+                if (this.elements[viewId]) {
+                    this.elements[viewId].classList.remove("hidden");
                 }
-              })
-              .withFailureHandler((error) => {
-                this.state.isGasCallInProgress = false;
-                this.setGlobalLoading(false);
-                console.error(`GAS Failure (${functionName}):`, error);
-                reject(
-                  new Error(`サーバーとの通信に失敗しました: ${error.message}`)
-                );
-              })
-              [functionName](...args);
-          });
-        },
 
-        showView(viewId) {
-          console.log(
-            `--- showView Called --- Switching to: ${viewId}, Current Thread ID BEFORE action: ${this.state.currentThreadId}`
-          );
+                this.clearAllStatus();
 
-          ["threadSelectionView", "chatView"].forEach((id) => {
-            this.elements[id].classList.add("hidden");
-          });
-          if (this.elements[viewId]) {
-            this.elements[viewId].classList.remove("hidden");
-          }
+                if (viewId !== "chatView") {
+                    console.log(
+                        "Resetting currentThreadId because view is not chatView."
+                    );
+                    this.state.currentThreadId = null;
+                    this.state.currentPassword = "";
+                } else {
+                    console.log(
+                        "Not resetting currentThreadId because switching to chatView."
+                    );
+                }
 
-          this.clearAllStatus();
+                clearInterval(this.state.messageUpdateIntervalId);
 
-          if (viewId !== "chatView") {
-            console.log(
-              "Resetting currentThreadId because view is not chatView."
-            );
-            this.state.currentThreadId = null;
-            this.state.currentPassword = "";
-          } else {
-            console.log(
-              "Not resetting currentThreadId because switching to chatView."
-            );
-          }
+                if (viewId === "threadSelectionView") {
+                    this.fetchThreads();
+                }
+            },
 
-          clearInterval(this.state.messageUpdateIntervalId);
+            setGlobalLoading(isLoading) { },
 
-          if (viewId === "threadSelectionView") {
-            this.fetchThreads();
-          }
-        },
+            fetchThreads() {
+                this.elements.threadListLoading.classList.remove("hidden");
+                this.elements.threadList.innerHTML = "";
+                this.elements.noThreadsMessage.classList.add("hidden");
 
-        setGlobalLoading(isLoading) {},
+                this.callGas("getActiveThreadsApi")
+                    .then((data) => {
+                        this.elements.threadListLoading.classList.add("hidden");
+                        if (data.threads && data.threads.length > 0) {
+                            this.renderThreadList(data.threads);
+                        } else {
+                            this.elements.noThreadsMessage.classList.remove("hidden");
+                        }
+                    })
+                    .catch((error) => {
+                        this.elements.threadListLoading.classList.add("hidden");
+                        this.setGlobalStatus(
+                            `スレッドリスト取得失敗: ${error.message}`,
+                            "error"
+                        );
+                    });
+            },
 
-        fetchThreads() {
-          this.elements.threadListLoading.classList.remove("hidden");
-          this.elements.threadList.innerHTML = "";
-          this.elements.noThreadsMessage.classList.add("hidden");
+            renderThreadList(threads) {
+                this.elements.threadList.innerHTML = "";
+                threads.forEach((thread) => {
+                    const li = document.createElement("li");
+                    li.dataset.threadId = thread.id;
+                    li.dataset.threadName = thread.name;
+                    li.dataset.threadType = thread.type;
 
-          this.callGas("getActiveThreadsApi")
-            .then((data) => {
-              this.elements.threadListLoading.classList.add("hidden");
-              if (data.threads && data.threads.length > 0) {
-                this.renderThreadList(data.threads);
-              } else {
-                this.elements.noThreadsMessage.classList.remove("hidden");
-              }
-            })
-            .catch((error) => {
-              this.elements.threadListLoading.classList.add("hidden");
-              this.setGlobalStatus(
-                `スレッドリスト取得失敗: ${error.message}`,
-                "error"
-              );
-            });
-        },
+                    const nameSpan = document.createElement("span");
+                    nameSpan.classList.add("thread-name");
+                    nameSpan.textContent = this.escapeHtml(thread.name);
+                    li.appendChild(nameSpan);
 
-        renderThreadList(threads) {
-          this.elements.threadList.innerHTML = "";
-          threads.forEach((thread) => {
-            const li = document.createElement("li");
-            li.dataset.threadId = thread.id;
-            li.dataset.threadName = thread.name;
-            li.dataset.threadType = thread.type;
+                    const typeSpan = document.createElement("span");
+                    typeSpan.classList.add("thread-type", thread.type);
+                    typeSpan.textContent = thread.type;
+                    li.appendChild(typeSpan);
 
-            const nameSpan = document.createElement("span");
-            nameSpan.classList.add("thread-name");
-            nameSpan.textContent = this.escapeHtml(thread.name);
-            li.appendChild(nameSpan);
+                    this.elements.threadList.appendChild(li);
+                });
+            },
 
-            const typeSpan = document.createElement("span");
-            typeSpan.classList.add("thread-type", thread.type);
-            typeSpan.textContent = thread.type;
-            li.appendChild(typeSpan);
+            handleThreadSelection(thread) {
+                this.clearAllStatus();
+                if (thread.type === "Public") {
+                    this.state.currentPassword = "";
+                    this.enterChatRoom(thread);
+                } else {
+                    this.state.targetPrivateThread = {
+                        id: thread.id,
+                        name: thread.name,
+                    };
+                    this.showPasswordModal(thread.name);
+                }
+            },
 
-            this.elements.threadList.appendChild(li);
-          });
-        },
+            createPrivateThread(threadName, password) {
+                if (!threadName.trim() || !password.trim()) {
+                    this.setStatus(
+                        this.elements.createThreadStatus,
+                        "スレッド名と合言葉を入力してください。",
+                        "error"
+                    );
+                    return;
+                }
+                this.setStatus(this.elements.createThreadStatus, "作成中...", "");
+                this.elements.createThreadBtn.disabled = true;
 
-        handleThreadSelection(thread) {
-          this.clearAllStatus();
-          if (thread.type === "Public") {
-            this.state.currentPassword = "";
-            this.enterChatRoom(thread);
-          } else {
-            this.state.targetPrivateThread = {
-              id: thread.id,
-              name: thread.name,
-            };
-            this.showPasswordModal(thread.name);
-          }
-        },
+                this.callGas("createPrivateThreadApi", threadName, password)
+                    .then((data) => {
+                        this.setStatus(
+                            this.elements.createThreadStatus,
+                            `スレッド「${this.escapeHtml(
+                                data.thread.name
+                            )}」を作成しました。`,
+                            "success"
+                        );
+                        document.getElementById("newThreadName").value = "";
+                        document.getElementById("newThreadPassword").value = "";
+                        this.state.currentPassword = password;
+                        this.fetchThreads();
+                        this.enterChatRoom(data.thread);
+                    })
+                    .catch((error) =>
+                        this.setStatus(
+                            this.elements.createThreadStatus,
+                            `作成失敗: ${error.message}`,
+                            "error"
+                        )
+                    )
+                    .finally(() => {
+                        this.elements.createThreadBtn.disabled = false;
+                    });
+            },
 
-        createPrivateThread(threadName, password) {
-          if (!threadName.trim() || !password.trim()) {
-            this.setStatus(
-              this.elements.createThreadStatus,
-              "スレッド名と合言葉を入力してください。",
-              "error"
-            );
-            return;
-          }
-          this.setStatus(this.elements.createThreadStatus, "作成中...", "");
-          this.elements.createThreadBtn.disabled = true;
+            showPasswordModal(threadName) {
+                this.elements.passwordModalTitle.textContent = `「${this.escapeHtml(
+                    threadName
+                )}」に参加`;
+                this.elements.threadPasswordInput.value = "";
+                this.elements.passwordModalStatus.classList.add("hidden");
+                this.elements.passwordModal.classList.remove("hidden");
+                this.elements.threadPasswordInput.focus();
+            },
 
-          this.callGas("createPrivateThreadApi", threadName, password)
-            .then((data) => {
-              this.setStatus(
-                this.elements.createThreadStatus,
-                `スレッド「${this.escapeHtml(
-                  data.thread.name
-                )}」を作成しました。`,
-                "success"
-              );
-              document.getElementById("newThreadName").value = "";
-              document.getElementById("newThreadPassword").value = "";
-              this.state.currentPassword = password;
-              this.fetchThreads();
-              this.enterChatRoom(data.thread);
-            })
-            .catch((error) =>
-              this.setStatus(
-                this.elements.createThreadStatus,
-                `作成失敗: ${error.message}`,
-                "error"
-              )
-            )
-            .finally(() => {
-              this.elements.createThreadBtn.disabled = false;
-            });
-        },
+            hidePasswordModal() {
+                this.elements.passwordModal.classList.add("hidden");
+                this.state.targetPrivateThread = null;
+            },
 
-        showPasswordModal(threadName) {
-          this.elements.passwordModalTitle.textContent = `「${this.escapeHtml(
-            threadName
-          )}」に参加`;
-          this.elements.threadPasswordInput.value = "";
-          this.elements.passwordModalStatus.classList.add("hidden");
-          this.elements.passwordModal.classList.remove("hidden");
-          this.elements.threadPasswordInput.focus();
-        },
+            attemptJoinPrivateThread() {
+                if (!this.state.targetPrivateThread) return;
+                const threadId = this.state.targetPrivateThread.id;
+                const threadName = this.state.targetPrivateThread.name;
+                const password = this.elements.threadPasswordInput.value;
 
-        hidePasswordModal() {
-          this.elements.passwordModal.classList.add("hidden");
-          this.state.targetPrivateThread = null;
-        },
+                if (!password) {
+                    this.setStatus(
+                        this.elements.passwordModalStatus,
+                        "合言葉を入力してください。",
+                        "error"
+                    );
+                    return;
+                }
 
-        attemptJoinPrivateThread() {
-          if (!this.state.targetPrivateThread) return;
-          const threadId = this.state.targetPrivateThread.id;
-          const threadName = this.state.targetPrivateThread.name;
-          const password = this.elements.threadPasswordInput.value;
+                this.setStatus(this.elements.passwordModalStatus, "確認中...", "");
+                this.elements.joinThreadBtn.disabled = true;
+                this.elements.cancelModalBtn.disabled = true;
 
-          if (!password) {
-            this.setStatus(
-              this.elements.passwordModalStatus,
-              "合言葉を入力してください。",
-              "error"
-            );
-            return;
-          }
+                this.callGas("checkPrivateThreadAccessApi", threadId, password)
+                    .then((data) => {
+                        if (data.accessible) {
+                            this.state.currentPassword = password;
+                            this.hidePasswordModal();
+                            this.enterChatRoom(data.thread);
+                        } else {
+                            this.setStatus(
+                                this.elements.passwordModalStatus,
+                                "参加できませんでした。",
+                                "error"
+                            );
+                        }
+                    })
+                    .catch((error) => {
+                        this.setStatus(
+                            this.elements.passwordModalStatus,
+                            `参加失敗: ${error.message}`,
+                            "error"
+                        );
+                    })
+                    .finally(() => {
+                        this.elements.joinThreadBtn.disabled = false;
+                        this.elements.cancelModalBtn.disabled = false;
+                    });
+            },
 
-          this.setStatus(this.elements.passwordModalStatus, "確認中...", "");
-          this.elements.joinThreadBtn.disabled = true;
-          this.elements.cancelModalBtn.disabled = true;
+            enterChatRoom(thread) {
+                console.log("--- enterChatRoom Called --- Received thread:", thread);
 
-          this.callGas("checkPrivateThreadAccessApi", threadId, password)
-            .then((data) => {
-              if (data.accessible) {
-                this.state.currentPassword = password;
-                this.hidePasswordModal();
-                this.enterChatRoom(data.thread);
-              } else {
-                this.setStatus(
-                  this.elements.passwordModalStatus,
-                  "参加できませんでした。",
-                  "error"
-                );
-              }
-            })
-            .catch((error) => {
-              this.setStatus(
-                this.elements.passwordModalStatus,
-                `参加失敗: ${error.message}`,
-                "error"
-              );
-            })
-            .finally(() => {
-              this.elements.joinThreadBtn.disabled = false;
-              this.elements.cancelModalBtn.disabled = false;
-            });
-        },
+                if (!thread || !thread.id || !thread.name || !thread.type) {
+                    console.error(
+                        "Error entering chat room: Invalid or incomplete thread data received.",
+                        thread
+                    );
+                    this.setGlobalStatus(
+                        "エラー: チャットルーム情報の取得に失敗しました。一覧からやり直してください。",
+                        "error"
+                    );
 
-        enterChatRoom(thread) {
-          console.log("--- enterChatRoom Called --- Received thread:", thread);
+                    return;
+                }
 
-          if (!thread || !thread.id || !thread.name || !thread.type) {
-            console.error(
-              "Error entering chat room: Invalid or incomplete thread data received.",
-              thread
-            );
-            this.setGlobalStatus(
-              "エラー: チャットルーム情報の取得に失敗しました。一覧からやり直してください。",
-              "error"
-            );
+                this.state.currentThreadId = thread.id;
+                this.state.currentThreadName = thread.name;
+                this.state.currentThreadType = thread.type;
+                console.log("Set currentThreadId to:", this.state.currentThreadId);
 
-            return;
-          }
-
-          this.state.currentThreadId = thread.id;
-          this.state.currentThreadName = thread.name;
-          this.state.currentThreadType = thread.type;
-          console.log("Set currentThreadId to:", this.state.currentThreadId);
-
-          this.elements.currentThreadName.innerHTML = `${this.escapeHtml(
-            thread.name
-          )} <span class="thread-type ${thread.type}">${thread.type}</span>`;
-          this.elements.chatbox.innerHTML = "";
-          this.elements.chatLoading.classList.remove("hidden");
-          this.state.messageCount = 0;
-          this.updateMsgFormNumber();
-
-          this.showView("chatView");
-
-          const url = new URL(
-            "https://script.google.com/macros/s/AKfycbz4IfCCvthP8iEurPNmk3JOUGvGX0MSb-mUGNijxQTa_parpN9QQH0w9HBcR0555QH1/exec"
-          );
-          url.searchParams.set("thread", thread.id);
-          this.elements.shareUrlInput.value = url.toString();
-
-          this.startMessageFetching();
-        },
-
-        startMessageFetching() {
-          clearInterval(this.state.messageUpdateIntervalId);
-          this.fetchMessages();
-          this.state.messageUpdateIntervalId = setInterval(
-            () => this.fetchMessages(),
-            this.state.messageUpdateInterval
-          );
-        },
-
-        fetchMessages() {
-          if (!this.state.currentThreadId || this.state.isFetchingMessages)
-            return;
-          this.state.isFetchingMessages = true;
-
-          this.callGas(
-            "getMessagesApi",
-            this.state.currentThreadId,
-            this.state.currentPassword
-          )
-            .then((data) => {
-              this.elements.chatLoading.classList.add("hidden");
-              this.renderMessages(data.messages);
-
-              if (
-                data.messages &&
-                data.messages.length !== this.state.messageCount
-              ) {
-                this.state.messageCount = data.messages.length;
+                this.elements.currentThreadName.innerHTML = `${this.escapeHtml(
+                    thread.name
+                )} <span class="thread-type ${thread.type}">${thread.type}</span>`;
+                this.elements.chatbox.innerHTML = "";
+                this.elements.chatLoading.classList.remove("hidden");
+                this.state.messageCount = 0;
                 this.updateMsgFormNumber();
-              }
-            })
-            .catch((error) => {
-              this.setStatus(
-                this.elements.messageStatus,
-                `メッセージ取得エラー: ${error.message}`,
-                "error"
-              );
-            })
-            .finally(() => {
-              this.state.isFetchingMessages = false;
-            });
-        },
 
-        renderMessages(messages) {
-          const shouldScroll =
-            this.elements.chatbox.scrollTop +
-              this.elements.chatbox.clientHeight >=
-            this.elements.chatbox.scrollHeight - 30;
-          const fragment = document.createDocumentFragment();
-          if (messages && messages.length > 0) {
-            messages.forEach((msg) => {
-              const itemDiv = document.createElement("div");
-              itemDiv.classList.add("message-item");
+                this.showView("chatView");
 
-              let safeMessage = escapeHtml(msg.message);
+                const url = new URL(
+                    "https://script.google.com/macros/s/AKfycbz4IfCCvthP8iEurPNmk3JOUGvGX0MSb-mUGNijxQTa_parpN9QQH0w9HBcR0555QH1/exec"
+                );
+                url.searchParams.set("thread", thread.id);
+                this.elements.shareUrlInput.value = url.toString();
 
-              const isMarkdown = /(\*\*|__|`|#|\*|-|\[.+\]\(.+\)|\d+\.)/.test(
-                msg.message
-              );
+                this.startMessageFetching();
+            },
 
-              let mdHtml = "";
-              if (isMarkdown) {
-                try {
-                  safeMessage = prettier.format(safeMessage, {
-                    parser: "markdown",
-                    plugins: prettierPlugins,
-                  });
-                } catch (e) {}
-                mdHtml = marked.parse(safeMessage);
-              } else {
-                mdHtml = safeMessage.replace(/\r?\n/g, "<br>");
-              }
+            startMessageFetching() {
+                clearInterval(this.state.messageUpdateIntervalId);
+                this.fetchMessages();
+                this.state.messageUpdateIntervalId = setInterval(
+                    () => this.fetchMessages(),
+                    this.state.messageUpdateInterval
+                );
+            },
 
-              itemDiv.innerHTML = `
+            fetchMessages() {
+                if (!this.state.currentThreadId || this.state.isFetchingMessages)
+                    return;
+                this.state.isFetchingMessages = true;
+
+                this.callGas(
+                    "getMessagesApi",
+                    this.state.currentThreadId,
+                    this.state.currentPassword
+                )
+                    .then((data) => {
+                        this.elements.chatLoading.classList.add("hidden");
+                        this.renderMessages(data.messages);
+
+                        if (
+                            data.messages &&
+                            data.messages.length !== this.state.messageCount
+                        ) {
+                            this.state.messageCount = data.messages.length;
+                            this.updateMsgFormNumber();
+                        }
+                    })
+                    .catch((error) => {
+                        this.setStatus(
+                            this.elements.messageStatus,
+                            `メッセージ取得エラー: ${error.message}`,
+                            "error"
+                        );
+                    })
+                    .finally(() => {
+                        this.state.isFetchingMessages = false;
+                    });
+            },
+
+            renderMessages(messages) {
+                const shouldScroll =
+                    this.elements.chatbox.scrollTop +
+                    this.elements.chatbox.clientHeight >=
+                    this.elements.chatbox.scrollHeight - 30;
+                const fragment = document.createDocumentFragment();
+                if (messages && messages.length > 0) {
+                    messages.forEach((msg) => {
+                        const itemDiv = document.createElement("div");
+                        itemDiv.classList.add("message-item");
+
+                        let safeMessage = escapeHtml(msg.message);
+
+                        const isMarkdown = /(\*\*|__|`|#|\*|-|\[.+\]\(.+\)|\d+\.)/.test(
+                            msg.message
+                        );
+
+                        let mdHtml = "";
+                        if (isMarkdown) {
+                            try {
+                                safeMessage = prettier.format(safeMessage, {
+                                    parser: "markdown",
+                                    plugins: prettierPlugins,
+                                });
+                            } catch (e) { }
+                            mdHtml = marked.parse(safeMessage);
+                        } else {
+                            mdHtml = safeMessage.replace(/\r?\n/g, "<br>");
+                        }
+
+                        itemDiv.innerHTML = `
                             <div class="message-meta">
                                 ${escapeHtml(
-                                  msg.number
-                                )} <span class="name">${escapeHtml(
-                msg.name
-              )}</span>
+                            msg.number
+                        )} <span class="name">${escapeHtml(
+                            msg.name
+                        )}</span>
                                 <span class="timestamp">：${escapeHtml(
-                                  msg.timestamp
-                                )}</span>
+                            msg.timestamp
+                        )}</span>
                             </div>
                             <div class="message-body">${mdHtml}</div>
                         `;
-              fragment.appendChild(itemDiv);
-            });
-            this.elements.chatbox.innerHTML = "";
-            this.elements.chatbox.appendChild(fragment);
-          } else {
-            this.elements.chatbox.innerHTML =
-              '<p class="no-threads" style="text-align: center;">まだ書き込みがありません。</p>';
-          }
-          if (shouldScroll) {
-            this.elements.chatbox.scrollTop =
-              this.elements.chatbox.scrollHeight;
-          }
-        },
+                        fragment.appendChild(itemDiv);
+                    });
+                    this.elements.chatbox.innerHTML = "";
+                    this.elements.chatbox.appendChild(fragment);
+                } else {
+                    this.elements.chatbox.innerHTML =
+                        '<p class="no-threads" style="text-align: center;">まだ書き込みがありません。</p>';
+                }
+                if (shouldScroll) {
+                    this.elements.chatbox.scrollTop =
+                        this.elements.chatbox.scrollHeight;
+                }
+            },
 
-        addMessage() {
-          const name = this.elements.nameInput.value.trim();
-          const message = this.elements.messageInput.value;
+            addMessage() {
+                const name = this.elements.nameInput.value.trim();
+                const message = this.elements.messageInput.value;
 
-          saveUserName(name);
+                saveUserName(name);
 
-          if (!this.state.currentThreadId) {
-            this.setStatus(
-              this.elements.messageStatus,
-              "エラー: スレッドが正しく選択されていません。一覧に戻って再試行してください。",
-              "error"
-            );
-            return;
-          }
-          if (!message.trim()) {
-            this.setStatus(
-              this.elements.messageStatus,
-              "メッセージを入力してください。",
-              "error"
-            );
-            return;
-          }
+                if (!this.state.currentThreadId) {
+                    this.setStatus(
+                        this.elements.messageStatus,
+                        "エラー: スレッドが正しく選択されていません。一覧に戻って再試行してください。",
+                        "error"
+                    );
+                    return;
+                }
+                if (!message.trim()) {
+                    this.setStatus(
+                        this.elements.messageStatus,
+                        "メッセージを入力してください。",
+                        "error"
+                    );
+                    return;
+                }
 
-          let finalName = `ID:${userId} ${name || "名無し"} さん`;
+                let finalName = `ID:${userId} ${name || "名無し"} さん`;
 
-          this.setStatus(this.elements.messageStatus, "送信中...", "");
-          this.elements.submitBtn.disabled = true;
-          this.callGas(
-            "addMessageApi",
-            this.state.currentThreadId,
-            finalName,
-            message,
-            this.state.currentPassword
-          )
-            .then(() => {
-              this.setStatus(
-                this.elements.messageStatus,
-                "書き込みました。",
-                "success"
-              );
-              this.elements.messageInput.value = "";
-              this.fetchMessages();
-            })
-            .catch((error) =>
-              this.setStatus(
-                this.elements.messageStatus,
-                `書き込みエラー: ${error.message}`,
-                "error"
-              )
-            )
-            .finally(() => {
-              this.elements.submitBtn.disabled = false;
-            });
-        },
+                this.setStatus(this.elements.messageStatus, "送信中...", "");
+                this.elements.submitBtn.disabled = true;
+                this.callGas(
+                    "addMessageApi",
+                    this.state.currentThreadId,
+                    finalName,
+                    message,
+                    this.state.currentPassword
+                )
+                    .then(() => {
+                        this.setStatus(
+                            this.elements.messageStatus,
+                            "書き込みました。",
+                            "success"
+                        );
+                        this.elements.messageInput.value = "";
+                        this.fetchMessages();
+                    })
+                    .catch((error) =>
+                        this.setStatus(
+                            this.elements.messageStatus,
+                            `書き込みエラー: ${error.message}`,
+                            "error"
+                        )
+                    )
+                    .finally(() => {
+                        this.elements.submitBtn.disabled = false;
+                    });
+            },
 
-        updateMsgFormNumber() {
-          this.elements.msgFormNumber.textContent = `(${
-            this.state.messageCount + 1
-          })`;
-        },
+            updateMsgFormNumber() {
+                this.elements.msgFormNumber.textContent = `(${this.state.messageCount + 1
+                    })`;
+            },
 
-        setStatus(element, message, type = "") {
-          if (!element) return;
-          element.textContent = message;
-          element.className = `status ${type}`;
-          element.classList.toggle("hidden", !message);
-        },
+            setStatus(element, message, type = "") {
+                if (!element) return;
+                element.textContent = message;
+                element.className = `status ${type}`;
+                element.classList.toggle("hidden", !message);
+            },
 
-        clearAllStatus() {
-          this.setStatus(this.elements.globalStatus, "");
-          this.setStatus(this.elements.createThreadStatus, "");
-          this.setStatus(this.elements.messageStatus, "");
-          this.setStatus(this.elements.passwordModalStatus, "");
-        },
+            clearAllStatus() {
+                this.setStatus(this.elements.globalStatus, "");
+                this.setStatus(this.elements.createThreadStatus, "");
+                this.setStatus(this.elements.messageStatus, "");
+                this.setStatus(this.elements.passwordModalStatus, "");
+            },
 
-        escapeHtml(str) {
-          if (typeof str !== "string") return str;
-          const div = document.createElement("div");
-          div.appendChild(document.createTextNode(str));
-          return div.innerHTML;
-        },
+            escapeHtml(str) {
+                if (typeof str !== "string") return str;
+                const div = document.createElement("div");
+                div.appendChild(document.createTextNode(str));
+                return div.innerHTML;
+            },
 
-        handleVisibilityChange() {
-          if (!this.state.currentThreadId) return;
-          if (document.hidden) {
-            clearInterval(this.state.messageUpdateIntervalId);
-          } else {
-            this.startMessageFetching();
-          }
-        },
-      };
+            handleVisibilityChange() {
+                if (!this.state.currentThreadId) return;
+                if (document.hidden) {
+                    clearInterval(this.state.messageUpdateIntervalId);
+                } else {
+                    this.startMessageFetching();
+                }
+            },
+        };
 
-      const prettierPlugins =
-        window.prettierPlugins ||
-        [window.prettierPluginsMarkdown].filter(Boolean);
+        const prettierPlugins =
+            window.prettierPlugins ||
+            [window.prettierPluginsMarkdown].filter(Boolean);
 
-      document.addEventListener("DOMContentLoaded", () => {
-        app.init();
+        document.addEventListener("DOMContentLoaded", () => {
+            app.init();
 
-        const params = new URLSearchParams(window.location.search);
-        const threadId = params.get("thread");
-        if (threadId) {
-          setTimeout(() => {
-            const threads =
-              app.elements.threadList.querySelectorAll("li[data-thread-id]");
-            for (const li of threads) {
-              if (li.dataset.threadId === threadId) {
-                app.handleThreadSelection({
-                  id: li.dataset.threadId,
-                  name: li.dataset.threadName,
-                  type: li.dataset.threadType,
-                });
-                break;
-              }
+            const params = new URLSearchParams(window.location.search);
+            const threadId = params.get("thread");
+            if (threadId) {
+                setTimeout(() => {
+                    const threads =
+                        app.elements.threadList.querySelectorAll("li[data-thread-id]");
+                    for (const li of threads) {
+                        if (li.dataset.threadId === threadId) {
+                            app.handleThreadSelection({
+                                id: li.dataset.threadId,
+                                name: li.dataset.threadName,
+                                type: li.dataset.threadType,
+                            });
+                            break;
+                        }
+                    }
+                }, 800);
             }
-          }, 800);
-        }
-      });
+        });
     </script>
-  </body>
+</body>
+
 </html>
+```
