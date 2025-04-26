@@ -1137,6 +1137,16 @@
                         <div class="form-input-group"><label for="messageInput" class="hidden">メッセージ
                                 (Ctrl+Enterで送信)</label><textarea id="messageInput" required=""
                                 placeholder="メッセージを入力 (Ctrl+Enterで送信)"></textarea></div>
+                        <div class="message-toolbar" style="margin-bottom: 0.7em;">
+                            <button type="button" id="imageUploadBtn" title="画像を挿入" class="toolbar-button"
+                                style="background: #e0f7fa; color: #00796b; border: 1px solid #b2ebf2; border-radius: 5px; padding: 0.3em 0.6em; font-size: 1em; cursor: pointer; line-height: 1; margin:0;">
+                                <i class="fas fa-image"></i> 画像挿入
+                            </button>
+                            <input type="file" id="imageFileInput" accept="image/*" style="display: none;">
+                            <span id="imageUploadStatus" class="small-text"
+                                style="margin-left: 0.5em; color: #00796b;"></span>
+                        </div>
+
                         <div id="mobileSettingsArea">
                             <div class="form-input-group"><label for="nameInput">名前</label>
                                 <div id="mobileNameInputContainer"><span class="id-prefix">ID:<span
@@ -1145,6 +1155,15 @@
                                 </div>
                             </div>
                             <span class="user-id-label" id="mobileUserIdLabel"></span>
+                            <div class="message-toolbar" style="margin-bottom: 0.7em;">
+                                <button type="button" id="mobileImageUploadBtn" title="画像を挿入" class="toolbar-button"
+                                    style="background: #e0f7fa; color: #00796b; border: 1px solid #b2ebf2; border-radius: 5px; padding: 0.3em 0.6em; font-size: 1em; cursor: pointer; line-height: 1; margin:0;">
+                                    <i class="fas fa-image"></i> 画像挿入
+                                </button>
+                                <input type="file" id="mobileImageFileInput" accept="image/*" style="display: none;">
+                                <span id="mobileImageUploadStatus" class="small-text"
+                                    style="margin-left: 0.5em; color: #00796b;"></span>
+                            </div>
                             <details id="mobileMessagePreviewDetails">
                                 <summary>プレビュー表示/非表示</summary>
                                 <div id="mobileMessagePreview" class="message-preview"></div>
@@ -1251,18 +1270,18 @@
                         userIdLabel: document.getElementById('userIdLabel'),
                         userIdPrefix: document.getElementById('userIdPrefix'),
                         mobileUserIdLabel: document.getElementById('mobileUserIdLabel'),
-                        mobileUserIdPrefix: document.getElementById('mobileUserIdPrefix'), // Corrected ID
+                        mobileUserIdPrefix: document.getElementById('mobileUserIdPrefix'),
                         chatbox: document.getElementById('chatbox'),
                         chatLoading: document.getElementById('chatLoading'),
                         messageForm: document.getElementById('messageForm'),
-                        nameInput: document.getElementById('nameInput'), // Sidebar Name Input
-                        messageInput: document.getElementById('messageInput'), // Main message input
-                        messagePreview: document.getElementById('messagePreview'), // Sidebar preview
-                        mobileNameInput: document.getElementById('mobileNameInput'), // Mobile Name Input
-                        mobileMessagePreview: document.getElementById('mobileMessagePreview'), // Mobile preview
+                        nameInput: document.getElementById('nameInput'),
+                        messageInput: document.getElementById('messageInput'),
+                        messagePreview: document.getElementById('messagePreview'),
+                        mobileNameInput: document.getElementById('mobileNameInput'),
+                        mobileMessagePreview: document.getElementById('mobileMessagePreview'),
                         submitBtn: document.getElementById('submitBtn'),
                         messageStatus: document.getElementById('messageStatus'),
-                        msgFormNumber: document.getElementById('msgFormNumber'), // Sidebar message number
+                        msgFormNumber: document.getElementById('msgFormNumber'),
                         passwordModal: document.getElementById('passwordModal'),
                         passwordModalTitle: document.getElementById('passwordModalTitle'),
                         passwordForm: document.getElementById('passwordForm'),
@@ -1271,6 +1290,12 @@
                         closeModalBtn: document.getElementById('closeModalBtn'),
                         cancelModalBtn: document.getElementById('cancelModalBtn'),
                         joinThreadBtn: document.getElementById('joinThreadBtn'),
+                        imageUploadBtn: document.getElementById('imageUploadBtn'),
+                        imageFileInput: document.getElementById('imageFileInput'),
+                        imageUploadStatus: document.getElementById('imageUploadStatus'),
+                        mobileImageUploadBtn: document.getElementById('mobileImageUploadBtn'),
+                        mobileImageFileInput: document.getElementById('mobileImageFileInput'),
+                        mobileImageUploadStatus: document.getElementById('mobileImageUploadStatus'),
                     };
                     this.addEventListeners();
                     this.updateLayoutState();
@@ -1416,6 +1441,22 @@
                             }
                         }, 250);
                     });
+
+                    const setupImageUpload = (button, fileInput, statusElement) => {
+                        if (button && fileInput) {
+                            button.addEventListener('click', () => {
+                                fileInput.click(); // 非表示のファイル入力をトリガー
+                            });
+                            fileInput.addEventListener('change', (event) => {
+                                this.handleImageUpload(event, statusElement, button); // ステータス要素とボタンも渡す
+                            });
+                        }
+                    };
+
+
+                    setupImageUpload(this.elements.imageUploadBtn, this.elements.imageFileInput, this.elements.imageUploadStatus);
+                    setupImageUpload(this.elements.mobileImageUploadBtn, this.elements.mobileImageFileInput, this.elements.mobileImageUploadStatus);
+
                     // Visibility change
                     document.addEventListener('visibilitychange', () => this.handleVisibilityChange());
                     this._listenersAdded = true;
@@ -1967,6 +2008,122 @@
                     } else if (!message) { // Ensure it's hidden if message is empty
                         element.classList.add('hidden');
                     }
+                },
+
+                /**
+     * 画像ファイルが選択されたときの処理
+     * @param {Event} event - ファイル入力のchangeイベント
+     * @param {HTMLElement} statusElement - ステータス表示用の要素
+     * @param {HTMLButtonElement} buttonElement - 画像挿入ボタン要素
+     */
+                handleImageUpload(event, statusElement, buttonElement) {
+                    const fileInput = event.target;
+                    const file = fileInput.files?.[0];
+
+                    const clearStatus = (delay = 3000) => {
+                        setTimeout(() => { if (statusElement) statusElement.textContent = ''; }, delay);
+                    };
+
+                    const setStatus = (text, isError = false) => {
+                        if (statusElement) {
+                            statusElement.textContent = text;
+                            statusElement.style.color = isError ? '#c62828' : '#00796b'; // エラー時は赤文字
+                        }
+                    };
+
+                    if (!file) {
+                        console.log('No file selected.');
+                        return;
+                    }
+
+                    if (!file.type.startsWith('image/')) {
+                        console.warn('Selected file is not an image:', file.type);
+                        setStatus('画像ファイルを選択してください。', true);
+                        clearStatus();
+                        fileInput.value = null; // Reset input
+                        return;
+                    }
+
+                    // オプション: ファイルサイズチェック (例: 5MB)
+                    const maxSize = 5 * 1024 * 1024;
+                    if (file.size > maxSize) {
+                        console.warn('File size exceeds limit:', file.size);
+                        setStatus(`サイズが大きすぎます (最大${maxSize / 1024 / 1024}MB)`, true);
+                        clearStatus(4000); // 少し長めに表示
+                        fileInput.value = null; // Reset input
+                        return;
+                    }
+
+
+                    const reader = new FileReader();
+
+                    reader.onloadstart = () => {
+                        console.log('Reading image file...');
+                        setStatus('画像を読込中...');
+                        if (buttonElement) buttonElement.disabled = true; // 読み込み中はボタン無効化
+                    };
+
+                    reader.onloadend = () => {
+                        console.log('Image file read complete.');
+                        setStatus('読込完了');
+                        if (buttonElement) buttonElement.disabled = false; // ボタン有効化
+                        clearStatus(1500); // 少し経ったらステータス消す
+
+                        if (reader.result && typeof reader.result === 'string') {
+                            // Base64データURLが取得できた場合
+                            this.insertImageMarkdown(reader.result);
+                        } else {
+                            console.error('Failed to read file as Base64.');
+                            setStatus('画像の読込に失敗', true);
+                            clearStatus();
+                        }
+                        // 同じファイルを再度選択できるように入力をリセット
+                        fileInput.value = null;
+                    };
+
+                    reader.onerror = (error) => {
+                        console.error('FileReader error:', error);
+                        setStatus('ファイル読込エラー', true);
+                        if (buttonElement) buttonElement.disabled = false;
+                        clearStatus();
+                        fileInput.value = null; // エラー時もリセット
+                    };
+
+                    // ファイルをBase64データURLとして読み込む
+                    reader.readAsDataURL(file);
+                },
+
+                /**
+                 * 画像のMarkdownをメッセージ入力欄に挿入する
+                 * @param {string} imageUrl - Base64エンコードされた画像のData URL
+                 */
+                insertImageMarkdown(imageUrl) {
+                    const textArea = this.elements.messageInput;
+                    if (!textArea) return;
+
+                    const altText = "画像"; // 代替テキスト（必要ならファイル名などから生成）
+                    // Markdown文字列を生成（改行を前後に入れると見やすい場合がある）
+                    const markdown = `\n![${altText}](${imageUrl})\n`;
+
+                    const start = textArea.selectionStart; // 現在のカーソル開始位置
+                    const end = textArea.selectionEnd; // 現在のカーソル終了位置
+                    const currentText = textArea.value;
+
+                    // カーソル位置にMarkdownを挿入
+                    const newText = currentText.substring(0, start) + markdown + currentText.substring(end);
+                    textArea.value = newText;
+
+                    // カーソルを挿入したMarkdownの後ろに移動
+                    // +1 は前に入れた改行分を考慮 (後ろの改行はカーソル移動には影響しない)
+                    const newCursorPos = start + markdown.length - 1; // 末尾の改行を除いた位置
+                    textArea.selectionStart = newCursorPos;
+                    textArea.selectionEnd = newCursorPos;
+
+                    // テキストエリアにフォーカスを戻す
+                    textArea.focus();
+
+                    // プレビューを更新（リアルタイムプレビューがあれば）
+                    this.updatePreview();
                 },
 
                 clearAllStatus() {

@@ -255,6 +255,19 @@ function addMessageApi(threadId, name, message, password) {
         }
 
         const sanitizedMessage = message.replace(/<.*?>/g, "");
+
+        const filterRules = getFilterRules(); // フィルタリングルールを取得
+        if (filterRules.length > 0) {
+            const messageLowerCase = sanitizedMessage.toLowerCase(); 
+            for (const rule of filterRules) {
+                const ruleLowerCase = rule.toLowerCase(); 
+                if (messageLowerCase.includes(ruleLowerCase)) {
+                    Logger.log(`フィルタリングによりメッセージをブロック (Thread: ${threadId}, Rule: ${rule}, Message: ${message})`);
+                    throw new Error("メッセージに不適切な単語が含まれているため、書き込みできません。");
+                }
+            }
+        }
+
         logSheet.appendRow([threadId, new Date(), sanitizedName, sanitizedMessage]);
 
         return JSON.stringify({ status: "success", message: "書き込みました。" });
