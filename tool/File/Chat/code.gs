@@ -23,9 +23,16 @@ const COL_LOG = { THREAD_ID: 1, TIMESTAMP: 2, NAME: 3, MESSAGE: 4 };
 // === Web App Entry Point ===
 function doGet(e) {
     const template = HtmlService.createTemplateFromFile('index');
-    return template.evaluate()
-        .setTitle('マルチスレッドチャット v2')
-        .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    template.requestedPageId = e.parameter.page || ''; 
+
+    const htmlOutput = template.evaluate()
+        .setTitle('マルチスレッドチャット v2.3 (スマホ最適化)')
+        .addMetaTag('viewport', 'width=device-width, initial-scale=1'); 
+
+    htmlOutput.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    
+
+    return htmlOutput;
 }
 
 // === API Functions (Called from JavaScript) ===
@@ -181,9 +188,17 @@ function addMessageApi(threadId, name, message, password) {
             throw new Error("このスレッドには現在書き込みできません。");
         }
 
-        // サニタイズ (簡易) & 書き込み
-        const sanitizedName = name ? name.replace(/<.*?>/g, '') : '名無しさん';
-        const sanitizedMessage = message.replace(/<.*?>/g, '');
+        // サニタイズ & 書き込み
+        const MAX_NAME_LENGTH = 20; // 名前の最大文字数を10に変更
+        let sanitizedName = name ? name.replace(/<.*?>/g, '').trim() : '名無しさん';
+        if (sanitizedName.length > MAX_NAME_LENGTH) {
+            sanitizedName = sanitizedName.substring(0, MAX_NAME_LENGTH); // 最大文字数で切り捨てる
+        }
+        if (sanitizedName === '') { // 空になった場合はデフォルト名にする
+            sanitizedName = '名無しさん';
+        }
+
+        const sanitizedMessage = message.replace(/<.*?>/g, ''); // メッセージのサニタイズは維持
         logSheet.appendRow([threadId, new Date(), sanitizedName, sanitizedMessage]);
 
         return JSON.stringify({ status: 'success', message: '書き込みました。' });
@@ -193,7 +208,6 @@ function addMessageApi(threadId, name, message, password) {
         return JSON.stringify({ status: 'error', message: `書き込みエラー: ${error.message}` });
     }
 }
-
 // === Internal Helper Functions ===
 
 /**

@@ -121,8 +121,8 @@
         "updated": "2025-04-25",
         "description": "ブラウザ上で動作する多機能マルチスレッドチャットサービスです。匿名IDと名前で手軽に参加でき、Markdown記法によるリッチな投稿や、スレッドごとの会話が楽しめます。",
         "detailedDescription": "<p>ブラウザ上で動作する多機能マルチスレッドチャットサービスです。匿名IDと名前で手軽に参加でき、Markdown記法によるリッチな投稿や、スレッドごとの会話が楽しめます。</p>\n    <p>Google Apps Scriptとスプレッドシートを活用し、リアルタイムなメッセージ共有やプライベートスレッド機能、URLによるスレッド共有など、現代的なWeb技術を取り入れています。</p>\n    <h4>主な機能:</h4>\n    <ul>\n        <li>匿名ID＋名前による投稿（IDは自動生成・半永久保存）</li>\n        <li>Markdown記法対応（太字・リスト・リンク等が使えます）</li>\n        <li>スレッドごとの会話（パブリック・プライベート両対応）</li>\n        <li>スレッドごとに共有URLを自動生成・ワンクリックコピー</li>\n        <li>プライベートスレッドは合言葉で入室制限</li>\n        <li>スマートフォン・PC両対応のシンプルなUI</li>\n    </ul>\n    <h4>技術スタック:</h4>\n    <ul>\n        <li>HTML5, CSS3, JavaScript (ES6)</li>\n        <li>Google Apps Script (GAS) + Googleスプレッドシート</li>\n        <li>Marked.js（Markdownパーサー）</li>\n        <li>Prettier（Markdown整形）</li>\n    </ul>\n    <h4>ご利用方法:</h4>\n    <ul>\n        <li>インストール不要、ブラウザで開くだけですぐ利用可能</li>\n        <li>スレッドを選択・作成し、匿名ID＋名前で投稿できます</li>\n        <li>Markdown記法でリッチなメッセージもOK</li>\n    </ul>\n    <p>手軽に使える匿名チャットとして、雑談・質問・情報共有など幅広くご活用ください。</p>\n    <br>\n    <footer>Create By こう君</footer>",
-        "downloadUrl": "https://script.google.com/macros/s/AKfycbz4IfCCvthP8iEurPNmk3JOUGvGX0MSb-mUGNijxQTa_parpN9QQH0w9HBcR0555QH1/exec",
-        "docsUrl": "https://script.google.com/macros/s/AKfycbz4IfCCvthP8iEurPNmk3JOUGvGX0MSb-mUGNijxQTa_parpN9QQH0w9HBcR0555QH1/exec",
+        "downloadUrl": "./File/Chat/chat.html",
+        "docsUrl": "./File/Chat/chat.html",
         "platform": "web",
         "categoryType": "other"
     }
