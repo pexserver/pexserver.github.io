@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>改良版シンプルマージエディター</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2ea44f;
+            --primary-hover: #2c974b;
+            --danger: #cf222e;
+            --danger-hover: #a40e26;
+            --warning: #f9c513;
+            --warning-text: #6a4f03;
+            --border: #d0d7de;
+            --bg-light: #f6f8fa;
+            --bg-canvas: #ffffff;
+            --text: #1f2328;
+            --text-muted: #656d76;
+            --diff-add-bg: #ddf4ff;
+            --diff-add-border: #9cd9fb;
+            --diff-add-text: #0550ae;
+            --diff-remove-bg: #ffebe9;
+            --diff-remove-border: #ffc8c4;
+            --diff-remove-text: #cf222e;
+            --conflict-bg: #fffbdd;
+            --conflict-border: #eac54f;
+            --conflict-text: var(--warning-text);
+            --font-mono: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+            margin: 0;
+            padding: 24px;
+            background-color: var(--bg-light);
+            color: var(--text);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 16px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header p {
+            margin: 0;
+            color: var(--text-muted);
+        }
+
+        .editor-grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: 1fr 1fr;
+            /* Source A and B side-by-side */
+            grid-template-areas:
+                "source-a source-b"
+                "diff-view diff-view"
+                "merge-result merge-result";
+        }
+
+        @media (max-width: 992px) {
+            .editor-grid {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "source-a"
+                    "source-b"
+                    "diff-view"
+                    "merge-result";
+            }
+        }
+
+        .editor-section {
+            background-color: var(--bg-canvas);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #source-a-section {
+            grid-area: source-a;
+        }
+
+        #source-b-section {
+            grid-area: source-b;
+        }
+
+        #diff-view-section {
+            grid-area: diff-view;
+        }
+
+        #merge-result-section {
+            grid-area: merge-result;
+        }
+
+
+        .editor-header {
+            background-color: #f6f8fa;
+            /* Slightly different from body bg */
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .editor-header .title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .editor-body {
+            padding: 16px;
+            flex-grow: 1;
+            /* Allow body to fill space */
+            display: flex;
+            flex-direction: column;
+        }
+
+        textarea,
+        .diff-view {
+            width: 100%;
+            font-family: var(--font-mono);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        textarea {
+            min-height: 250px;
+            padding: 10px;
+            resize: vertical;
+            flex-grow: 1;
+            /* Take available space in flex column */
+        }
+
+        .diff-view {
+            background-color: var(--bg-canvas);
+            padding: 0;
+            /* Padding applied to lines */
+            max-height: 450px;
+            overflow-y: auto;
+            white-space: pre;
+            /* Use pre for better whitespace handling */
+        }
+
+        .diff-line-container {
+            display: flex;
+        }
+
+        .diff-line-number {
+            flex: 0 0 40px;
+            /* Fixed width for line numbers */
+            text-align: right;
+            padding: 1px 8px;
+            background-color: var(--bg-light);
+            color: var(--text-muted);
+            border-right: 1px solid var(--border);
+            user-select: none;
+            /* Prevent selecting line numbers */
+            font-size: 12px;
+        }
+
+        .diff-line-number.added {
+            background-color: #a6f1b4;
+        }
+
+        .diff-line-number.removed {
+            background-color: #ffdce0;
+        }
+
+        .diff-line-content {
+            flex-grow: 1;
+            padding: 1px 10px;
+        }
+
+        .diff-added .diff-line-content {
+            background-color: var(--diff-add-bg);
+            border-left: 3px solid var(--diff-add-border);
+            color: var(--diff-add-text);
+        }
+
+        .diff-removed .diff-line-content {
+            background-color: var(--diff-remove-bg);
+            border-left: 3px solid var(--diff-remove-border);
+            color: var(--diff-remove-text);
+        }
+
+        /* Common line style */
+        .diff-common .diff-line-content {
+            background-color: var(--bg-canvas);
+        }
+
+        /* Empty placeholder */
+        .diff-empty {
+            height: 1.5em;
+            /* Match line height */
+            background-color: #f6f8fa;
+            /* Light gray */
+        }
+
+        .diff-empty .diff-line-number {
+            background-color: #e1e4e8;
+        }
+
+        .diff-empty .diff-line-content {
+            background-color: #f6f8fa;
+        }
+
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-outline {
+            background-color: var(--bg-canvas);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-outline:hover {
+            background-color: #f2f8f4;
+            border-color: var(--primary-hover);
+            color: var(--primary-hover);
+        }
+
+        .btn-danger-outline {
+            background-color: var(--bg-canvas);
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .btn-danger-outline:hover {
+            background-color: #fff5f5;
+            color: var(--danger-hover);
+            border-color: var(--danger-hover);
+        }
+
+        .merge-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+
+        #merge-status {
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        #merge-status.status-conflicts {
+            background-color: var(--conflict-bg);
+            border: 1px solid var(--conflict-border);
+            color: var(--conflict-text);
+        }
+
+        #merge-status.status-merged {
+            background-color: var(--diff-add-bg);
+            border: 1px solid var(--diff-add-border);
+            color: var(--diff-add-text);
+        }
+
+        #conflicts-list {
+            margin-top: 20px;
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+        }
+
+        #conflicts-list h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .conflict-item {
+            background-color: #fff;
+            /* White background for contrast */
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--warning);
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            border-radius: 6px;
+        }
+
+        .conflict-item.resolved {
+            border-left-color: var(--primary);
+            opacity: 0.7;
+        }
+
+        .conflict-item.resolved .conflict-header {
+            color: var(--text-muted);
+        }
+
+        .conflict-header {
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .conflict-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--warning-text);
+        }
+
+        .conflict-item.resolved .conflict-title {
+            color: var(--primary);
+            text-decoration: line-through;
+        }
+
+        .conflict-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 600px) {
+            .conflict-body {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .conflict-source {
+            padding: 10px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+        }
+
+        .conflict-source-a {
+            background-color: rgba(207, 34, 46, 0.05);
+            border: 1px solid var(--diff-remove-border);
+        }
+
+        .conflict-source-b {
+            background-color: rgba(34, 134, 58, 0.05);
+            border: 1px solid var(--diff-add-border);
+        }
+
+        .conflict-source-header {
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .conflict-source pre {
+            margin: 0 0 8px 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 3px;
+        }
+
+        /* Tooltip styles */
+        .copy-tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            width: 80px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 4px 0;
+            position: absolute;
+            z-index: 1;
+            bottom: 130%;
+            /* Position above the button */
+            left: 50%;
+            margin-left: -40px;
+            /* Center the tooltip */
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 11px;
+        }
+
+        .copy-tooltip .tooltip-text::after {
+            /* Tooltip arrow */
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+
+        .copy-tooltip button:focus+.tooltip-text,
+        .copy-tooltip button:active+.tooltip-text {
+            /* Show on click/focus */
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Hide tooltip after a delay */
+        .copy-tooltip .tooltip-text.show {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-code-merge"></i> 改良版シンプルマージエディター</h1>
+            <p>2つのテキストを比較し、競合を解決してマージします。より分かりやすい差分表示と競合解決機能を提供します。</p>
+        </div>
+
+        <div class="editor-grid">
+            <div class="editor-section" id="source-a-section">
+                <div class="editor-header">
+                    <div class="title"><i class="fas fa-file-lines"></i> ソースA</div>
+                    <div class="copy-tooltip">
+                        <button class="btn btn-outline" onclick="copyText('source-a', 'tooltip-a')">
+                            <i class="fas fa-copy"></i> コピー
+                        </button>
+                        <span class="tooltip-text" id="tooltip-a">コピーしました</span>
+                    </div>
+                </div>
+                <div class="editor-body">
+                    <textarea id="source-a" placeholder="ソースAのテキストを入力" oninput="scheduleUpdate()"></textarea>
+                </div>
+            </div>
+
+            <div class="editor-section" id="source-b-section">
+                <div class="editor-header">
+                    <div class="title"><i class="fas fa-file-lines"></i> ソースB</div>
+                    <div class="copy-tooltip">
+                        <button class="btn btn-outline" onclick="copyText('source-b', 'tooltip-b')">
+                            <i class="fas fa-copy"></i> コピー
+                        </button>
+                        <span class="tooltip-text" id="tooltip-b">コピーしました</span>
+                    </div>
+                </div>
+                <div class="editor-body">
+                    <textarea id="source-b" placeholder="ソースBのテキストを入力" oninput="scheduleUpdate()"></textarea>
+                </div>
+            </div>
+
+            <div class="editor-section" id="diff-view-section">
+                <div class="editor-header">
+                    <div class="title"><i class="fas fa-exchange-alt"></i> 差分表示 (ソースA vs ソースB)</div>
+                    <button class="btn" onclick="updateAll()">
+                        <i class="fas fa-sync-alt"></i> 手動更新
+                    </button>
+                </div>
+                <div class="editor-body" style="padding: 0;"> <!-- Remove padding for diff-view itself -->
+                    <div id="diff-view" class="diff-view">
+                        <p style="padding: 16px; color: var(--text-muted);">テキストを入力または変更すると差分が自動更新されます。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="editor-section" id="merge-result-section">
+                <div class="editor-header">
+                    <div class="title"><i class="fas fa-tasks"></i> マージ結果</div>
+                    <div class="copy-tooltip">
+                        <button class="btn btn-outline" onclick="copyText('merge-result', 'tooltip-result')">
+                            <i class="fas fa-copy"></i> コピー
+                        </button>
+                        <span class="tooltip-text" id="tooltip-result">コピーしました</span>
+                    </div>
+                </div>
+                <div class="editor-body">
+                    <div id="merge-status" style="display: none;"></div>
+                    <div class="merge-controls">
+                        <button class="btn" onclick="acceptSource('a')">
+                            <i class="fas fa-arrow-left"></i> 全てソースAを採用
+                        </button>
+                        <button class="btn" onclick="acceptSource('b')">
+                            <i class="fas fa-arrow-right"></i> 全てソースBを採用
+                        </button>
+                        <button id="btn-cleanup" class="btn btn-danger-outline" onclick="cleanupConflictMarkers()"
+                            disabled>
+                            <i class="fas fa-broom"></i> 残りの競合マーカーを削除 (A優先)
+                        </button>
+                    </div>
+                    <textarea id="merge-result" placeholder="マージ結果はここに表示されます。競合がある場合は手動で解決してください。"
+                        oninput="handleMergeResultManualEdit()"></textarea>
+                    <div id="conflicts-list" style="display: none;">
+                        <h3><i class="fas fa-exclamation-triangle" style="color: var(--warning);"></i> 解決が必要な競合</h3>
+                        <div id="conflict-items"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let conflicts = [];
+        let updateTimeout = null;
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSampleData();
+            initializeEditor();
+            // Add listener for manual merge result edits
+            document.getElementById('merge-result').addEventListener('input', handleMergeResultManualEdit);
+        });
+
+        function initializeEditor() {
+            updateAll(); // Perform initial diff and merge
+        }
+
+        // --- Core Logic (Diff & Merge) ---
+
+        // LCS (Longest Common Subsequence) based diff algorithm
+        function computeDiff(linesA, linesB) {
+            const m = linesA.length;
+            const n = linesB.length;
+            const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+            const backtrack = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0)); // 0: diag, 1: up, 2: left
+
+            for (let i = 1; i <= m; i++) {
+                for (let j = 1; j <= n; j++) {
+                    if (linesA[i - 1] === linesB[j - 1]) {
+                        dp[i][j] = dp[i - 1][j - 1] + 1;
+                        backtrack[i][j] = 0; // Diagonal (match)
+                    } else if (dp[i - 1][j] >= dp[i][j - 1]) {
+                        dp[i][j] = dp[i - 1][j];
+                        backtrack[i][j] = 1; // Up (deletion from A)
+                    } else {
+                        dp[i][j] = dp[i][j - 1];
+                        backtrack[i][j] = 2; // Left (insertion from B)
+                    }
+                }
+            }
+
+            const diffResult = [];
+            let i = m, j = n;
+            while (i > 0 || j > 0) {
+                if (i > 0 && j > 0 && backtrack[i][j] === 0) { // Common line
+                    diffResult.unshift({ value: linesA[i - 1], type: 'common', lineA: i, lineB: j });
+                    i--; j--;
+                } else if (i > 0 && (j === 0 || backtrack[i][j] === 1)) { // Removed from A
+                    diffResult.unshift({ value: linesA[i - 1], type: 'removed', lineA: i, lineB: null });
+                    i--;
+                } else if (j > 0 && (i === 0 || backtrack[i][j] === 2)) { // Added from B
+                    diffResult.unshift({ value: linesB[j - 1], type: 'added', lineA: null, lineB: j });
+                    j--;
+                } else { // Should not happen in standard LCS backtrack
+                    break;
+                }
+            }
+            return diffResult;
+        }
+
+        // Generate HTML for the diff view
+        function generateDiffView(diff) {
+            const diffView = document.getElementById('diff-view');
+            diffView.innerHTML = ''; // Clear previous diff
+
+            if (diff.length === 0) {
+                diffView.innerHTML = '<p style="padding: 16px; color: var(--text-muted);">入力されたテキストは同一です。</p>';
+                return;
+            }
+
+            diff.forEach(part => {
+                const container = document.createElement('div');
+                container.classList.add('diff-line-container');
+
+                const numA = document.createElement('div');
+                numA.classList.add('diff-line-number');
+                numA.textContent = part.lineA !== null ? part.lineA : '';
+
+                const numB = document.createElement('div');
+                numB.classList.add('diff-line-number');
+                numB.textContent = part.lineB !== null ? part.lineB : '';
+
+                const content = document.createElement('div');
+                content.classList.add('diff-line-content');
+                content.textContent = part.value; // Keep original whitespace
+
+                switch (part.type) {
+                    case 'added':
+                        container.classList.add('diff-added');
+                        numA.classList.add('empty'); // Mark A line number as empty conceptually
+                        numB.classList.add('added');
+                        content.innerHTML = `<span style="color: var(--diff-add-text); font-weight: bold;">+ </span>${escapeHtml(part.value)}`;
+                        container.appendChild(numA);
+                        container.appendChild(numB);
+                        break;
+                    case 'removed':
+                        container.classList.add('diff-removed');
+                        numA.classList.add('removed');
+                        numB.classList.add('empty'); // Mark B line number as empty
+                        content.innerHTML = `<span style="color: var(--diff-remove-text); font-weight: bold;">- </span>${escapeHtml(part.value)}`;
+                        container.appendChild(numA);
+                        container.appendChild(numB);
+                        break;
+                    default: // common
+                        container.classList.add('diff-common');
+                        content.innerHTML = `  ${escapeHtml(part.value)}`; // Add space for alignment
+                        container.appendChild(numA);
+                        container.appendChild(numB);
+                }
+                container.appendChild(content);
+                diffView.appendChild(container);
+            });
+        }
+
+
+        // Merge logic using LCS diff result
+        function mergeChanges(diff) {
+            const sourceA = document.getElementById('source-a').value.split('\n');
+            const sourceB = document.getElementById('source-b').value.split('\n');
+            const mergeResult = document.getElementById('merge-result');
+
+            const mergedLines = [];
+            conflicts = []; // Reset global conflicts array
+            let conflictIndex = 0;
+
+            let i = 0;
+            while (i < diff.length) {
+                const current = diff[i];
+
+                if (current.type === 'common') {
+                    mergedLines.push(current.value);
+                    i++;
+                } else {
+                    // Potential conflict or simple change
+                    let blockA = [];
+                    let blockB = [];
+                    let startIdx = i;
+
+                    // Collect consecutive added/removed lines
+                    while (i < diff.length && diff[i].type !== 'common') {
+                        if (diff[i].type === 'removed') {
+                            blockA.push(diff[i].value);
+                        } else { // added
+                            blockB.push(diff[i].value);
+                        }
+                        i++;
+                    }
+
+                    if (blockA.length > 0 && blockB.length > 0) {
+                        // --- Conflict detected ---
+                        const conflictId = conflictIndex++;
+                        mergedLines.push(`<<<<<<< SOURCE A (Conflict ${conflictId + 1})`);
+                        mergedLines.push(...blockA);
+                        mergedLines.push('=======');
+                        mergedLines.push(...blockB);
+                        mergedLines.push(`>>>>>>> SOURCE B (Conflict ${conflictId + 1})`);
+
+                        conflicts.push({
+                            id: conflictId,
+                            sourceA: blockA.join('\n'),
+                            sourceB: blockB.join('\n'),
+                            resolved: false
+                        });
+                    } else if (blockA.length > 0) {
+                        // Only removals (lines only in A) - keep them in merge by default? (Or discard? Let's keep)
+                        mergedLines.push(...blockA);
+                    } else if (blockB.length > 0) {
+                        // Only additions (lines only in B) - keep them
+                        mergedLines.push(...blockB);
+                    }
+                }
+            }
+
+            mergeResult.value = mergedLines.join('\n');
+            updateConflictsList();
+            updateMergeStatus();
+        }
+
+        // --- UI Update Functions ---
+
+        function updateAll() {
+            const sourceA = document.getElementById('source-a').value.split('\n');
+            const sourceB = document.getElementById('source-b').value.split('\n');
+
+            // 1. Compute Diff
+            const diffResult = computeDiff(sourceA, sourceB);
+
+            // 2. Generate Diff View
+            generateDiffView(diffResult);
+
+            // 3. Perform Merge
+            mergeChanges(diffResult);
+        }
+
+        // Schedule update to avoid excessive processing on fast typing
+        function scheduleUpdate() {
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(updateAll, 300); // Update after 300ms of inactivity
+        }
+
+        function updateConflictsList() {
+            const conflictItems = document.getElementById('conflict-items');
+            const conflictsList = document.getElementById('conflicts-list');
+            const cleanupBtn = document.getElementById('btn-cleanup');
+
+            conflictItems.innerHTML = ''; // Clear previous list
+
+            const unresolvedConflicts = conflicts.filter(c => !c.resolved);
+
+            if (unresolvedConflicts.length > 0) {
+                conflictsList.style.display = 'block';
+                cleanupBtn.disabled = false;
+
+                unresolvedConflicts.forEach(conflict => {
+                    const conflictItem = document.createElement('div');
+                    conflictItem.classList.add('conflict-item');
+                    conflictItem.id = `conflict-item-${conflict.id}`;
+                    conflictItem.dataset.conflictId = conflict.id;
+
+                    conflictItem.innerHTML = `
+                        <div class="conflict-header">
+                            <div class="conflict-title">
+                                <i class="fas fa-exclamation-triangle"></i> 競合 #${conflict.id + 1}
+                            </div>
+                            <button class="btn btn-outline btn-sm" onclick="scrollToConflict(${conflict.id})">
+                                <i class="fas fa-anchor"></i> 場所へ移動
+                            </button>
+                        </div>
+                        <div class="conflict-body">
+                            <div class="conflict-source conflict-source-a">
+                                <div class="conflict-source-header"><i class="fas fa-file-lines"></i> ソースAの内容:</div>
+                                <pre>${escapeHtml(conflict.sourceA)}</pre>
+                                <button class="btn btn-outline" onclick="resolveConflict(${conflict.id}, 'a')">
+                                    <i class="fas fa-check"></i> これを採用
+                                </button>
+                            </div>
+                            <div class="conflict-source conflict-source-b">
+                                <div class="conflict-source-header"><i class="fas fa-file-lines"></i> ソースBの内容:</div>
+                                <pre>${escapeHtml(conflict.sourceB)}</pre>
+                                <button class="btn btn-outline" onclick="resolveConflict(${conflict.id}, 'b')">
+                                    <i class="fas fa-check"></i> これを採用
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    conflictItems.appendChild(conflictItem);
+                });
+            } else {
+                conflictsList.style.display = 'none';
+                cleanupBtn.disabled = true;
+            }
+            updateMergeStatus(); // Update status after list update
+        }
+
+        function updateMergeStatus() {
+            const statusDiv = document.getElementById('merge-status');
+            const unresolvedConflicts = conflicts.filter(c => !c.resolved).length;
+
+            if (conflicts.length === 0) {
+                statusDiv.textContent = '✅ マージは正常に完了しました。競合はありません。';
+                statusDiv.className = 'status-merged';
+                statusDiv.style.display = 'block';
+            } else if (unresolvedConflicts > 0) {
+                statusDiv.textContent = `⚠️ ${unresolvedConflicts}件の競合があります。解決してください。`;
+                statusDiv.className = 'status-conflicts';
+                statusDiv.style.display = 'block';
+            } else {
+                statusDiv.textContent = '✅ 全ての競合が解決されました。';
+                statusDiv.className = 'status-merged';
+                statusDiv.style.display = 'block';
+            }
+        }
+
+        // Handle manual edits in the merge result textarea
+        function handleMergeResultManualEdit() {
+            // Basic check: if merge result still contains markers, re-evaluate conflicts
+            const mergeResultText = document.getElementById('merge-result').value;
+            const hasMarkers = /<<<<<<< |=======|>>>>>>> /.test(mergeResultText);
+
+            if (!hasMarkers) {
+                // If user manually removed all markers, assume conflicts are resolved
+                conflicts.forEach(c => c.resolved = true);
+            } else {
+                // Very basic re-evaluation: Find markers and update conflict status
+                // This is not perfect as it doesn't map back to original conflict IDs precisely without complex parsing
+                // For simplicity, let's just re-run the status update based on whether *any* markers exist.
+                // A more robust solution would parse the text on each edit.
+                const markerCount = (mergeResultText.match(/<<<<<<< /g) || []).length;
+                if (markerCount < conflicts.length) {
+                    // Some conflicts *might* have been resolved manually.
+                    // We can't be sure which ones without parsing.
+                    // For now, just update the status message based on marker presence.
+                    updateMergeStatusBasedOnMarkers(mergeResultText);
+
+                }
+            }
+            // Always try to update the list display (it might clear if all markers gone)
+            // Consider a more intelligent update if performance becomes an issue
+            // updateConflictsList(); // Re-rendering list based on markers is complex
+            updateMergeStatusBasedOnMarkers(mergeResultText); // Update status based on markers
+        }
+
+        // Simplified status update based on presence of markers
+        function updateMergeStatusBasedOnMarkers(text) {
+            const statusDiv = document.getElementById('merge-status');
+            const cleanupBtn = document.getElementById('btn-cleanup');
+            if (/<<<<<<< |=======|>>>>>>> /.test(text)) {
+                statusDiv.textContent = `⚠️ 競合マーカーが検出されました。手動で解決またはボタンを使用してください。`;
+                statusDiv.className = 'status-conflicts';
+                statusDiv.style.display = 'block';
+                cleanupBtn.disabled = false;
+            } else {
+                statusDiv.textContent = '✅ 競合マーカーは見つかりません。';
+                statusDiv.className = 'status-merged';
+                statusDiv.style.display = 'block';
+                cleanupBtn.disabled = true;
+                // Hide the conflict list if no markers are found
+                document.getElementById('conflicts-list').style.display = 'none';
+            }
+        }
+
+
+        // --- Action Handlers ---
+
+        function resolveConflict(conflictId, sourceToKeep) {
+            const mergeResult = document.getElementById('merge-result');
+            let currentText = mergeResult.value;
+            const conflict = conflicts.find(c => c.id === conflictId);
+
+            if (!conflict || conflict.resolved) return; // Already resolved or not found
+
+            // Use regex to find the specific conflict block
+            // Ensure regex handles potential special characters in conflict IDs if they change
+            const conflictStartMarker = `<<<<<<< SOURCE A (Conflict ${conflictId + 1})`;
+            const conflictMidMarker = '=======';
+            const conflictEndMarker = `>>>>>>> SOURCE B (Conflict ${conflictId + 1})`;
+
+            // Escape markers for regex + handle multiline content with [\s\S]*?
+            const regex = new RegExp(
+                escapeRegExp(conflictStartMarker) +
+                "([\\s\\S]*?)" + // Capture source A content
+                escapeRegExp(conflictMidMarker) +
+                "([\\s\\S]*?)" + // Capture source B content
+                escapeRegExp(conflictEndMarker),
+                "g" // Global flag to find the right block if text was edited
+            );
+
+
+            // Find the correct block and replace it
+            let matchFound = false;
+            currentText = currentText.replace(regex, (match, contentA, contentB) => {
+                matchFound = true; // Mark that we found and replaced the block
+                // Keep the chosen source content, trim potentially leading/trailing newlines from capture
+                return sourceToKeep === 'a' ? contentA.trim() : contentB.trim();
+            });
+
+
+            if (matchFound) {
+                mergeResult.value = currentText;
+                conflict.resolved = true;
+
+                // Visually mark the conflict item as resolved
+                const conflictItem = document.getElementById(`conflict-item-${conflictId}`);
+                if (conflictItem) {
+                    conflictItem.classList.add('resolved');
+                    // Disable buttons within the resolved conflict item
+                    conflictItem.querySelectorAll('button').forEach(btn => btn.disabled = true);
+                }
+
+                updateConflictsList(); // Re-render list to remove resolved item (or update visuals)
+                updateMergeStatus(); // Update overall status
+
+            } else {
+                console.warn(`Could not find conflict block for ID ${conflictId}. It might have been manually edited.`);
+                // Maybe re-run merge to reconstruct? Or just inform user.
+                alert(`競合ブロック ${conflictId + 1} が見つかりませんでした。手動で編集された可能性があります。`);
+            }
+        }
+
+
+        function acceptSource(source) {
+            const sourceId = source === 'a' ? 'source-a' : 'source-b';
+            const sourceText = document.getElementById(sourceId).value;
+            document.getElementById('merge-result').value = sourceText;
+
+            // Clear conflicts as we're overwriting everything
+            conflicts = [];
+            updateConflictsList();
+            updateMergeStatus();
+            // Also update the diff view if desired, though it might be redundant
+            // updateAll(); // This would recalculate everything based on identical A/B if merge = A/B
+        }
+
+        function cleanupConflictMarkers() {
+            const mergeResult = document.getElementById('merge-result');
+            let text = mergeResult.value;
+
+            // Remove conflict markers, defaulting to Source A content
+            const regex = /<<<<<<< SOURCE A(?: \(Conflict \d+\))?([\s\S]*?)=======([\s\S]*?)>>>>>>> SOURCE B(?: \(Conflict \d+\))?/g;
+            text = text.replace(regex, (match, sourceAContent) => sourceAContent.trim());
+
+            mergeResult.value = text;
+
+            // Assume all conflicts are resolved by this action
+            conflicts.forEach(c => c.resolved = true);
+            updateConflictsList();
+            updateMergeStatus();
+            handleMergeResultManualEdit(); // Update status based on final text
+        }
+
+        function scrollToConflict(conflictId) {
+            const mergeResult = document.getElementById('merge-result');
+            const text = mergeResult.value;
+            const marker = `<<<<<<< SOURCE A (Conflict ${conflictId + 1})`;
+            const index = text.indexOf(marker);
+
+            if (index !== -1) {
+                // Calculate line number approximately
+                const textBefore = text.substring(0, index);
+                const lineNumber = textBefore.split('\n').length;
+
+                // Focus and scroll (scrolling might need more work depending on browser/textarea)
+                mergeResult.focus();
+                // Setting scrollTop works reliably for most textareas
+                const avgLineHeight = 19.5; // Estimate or calculate line height
+                mergeResult.scrollTop = (lineNumber - 3) * avgLineHeight; // Scroll slightly above
+            }
+        }
+
+
+        // --- Utility Functions ---
+
+        function copyText(elementId, tooltipId) {
+            const element = document.getElementById(elementId);
+            element.select();
+            // For mobile friendliness and modern browsers
+            try {
+                navigator.clipboard.writeText(element.value).then(() => {
+                    showTooltip(tooltipId);
+                }).catch(err => {
+                    console.error('Async copy failed: ', err);
+                    // Fallback to execCommand
+                    fallbackCopyText(element, tooltipId);
+                });
+            } catch (err) {
+                console.warn('navigator.clipboard not available');
+                fallbackCopyText(element, tooltipId);
+            }
+        }
+
+        function fallbackCopyText(element, tooltipId) {
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showTooltip(tooltipId);
+                } else {
+                    console.error('Fallback copy failed');
+                    alert('コピーに失敗しました。');
+                }
+            } catch (err) {
+                console.error('Fallback copy error:', err);
+                alert('コピー中にエラーが発生しました。');
+            }
+        }
+
+
+        function showTooltip(tooltipId) {
+            const tooltip = document.getElementById(tooltipId);
+            tooltip.classList.add('show');
+            setTimeout(() => {
+                tooltip.classList.remove('show');
+            }, 1500);
+        }
+
+        function escapeHtml(unsafe) {
+                if (typeof unsafe !== 'string') return unsafe;
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#39;");
+            }
+
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+        }
+
+        // --- Sample Data ---
+        function loadSampleData() {
+            const sampleA = `import React from 'react';
+
+function Greeting({ name }) {
+  // Simple greeting component
+  return <h1>Hello, {name}!</h1>;
+}
+
+// Export the component
+export default Greeting;`;
+
+            const sampleB = `import React, { useState } from 'react';
+
+function Greeting({ initialName }) {
+  // Enhanced greeting component with state
+  const [name, setName] = useState(initialName);
+
+  const handleChange = (event) => {
+    setName(event.target.value || 'Guest'); // Use 'Guest' if empty
+  };
+
+  return (
+    <div>
+      <h1>Hello, {name}!</h1>
+      <input type="text" value={name === 'Guest' ? '' : name} onChange={handleChange} placeholder="Enter your name" />
+    </div>
+  );
+}
+
+export default Greeting;`;
+
+            document.getElementById('source-a').value = sampleA;
+            document.getElementById('source-b').value = sampleB;
+            // Don't call updateAll here, let DOMContentLoaded handler do it.
+        }
+
+    </script>
+</body>
+
+</html>

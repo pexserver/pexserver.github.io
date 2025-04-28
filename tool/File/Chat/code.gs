@@ -1,10 +1,10 @@
 
 const LOG_SHEET_NAME = "ログ";
 const ADMIN_SHEET_NAME = "スレッド管理";
-const MAX_PRIVATE_THREADS = 10;
+const MAX_PRIVATE_THREADS = 50;
 const FILTER_SHEET_NAME = "フィルタリングルール";
 
-const PRIVATE_THREAD_LIFETIME_HOURS = 6;
+const PRIVATE_THREAD_LIFETIME_HOURS = 48;
 
 const defaultThreads = [
     { id: "public_main", name: "総合メイン", type: "Public", status: "Active" },
@@ -15,6 +15,7 @@ const defaultThreads = [
         status: "Active",
     },
     { id: "public_main3", name: "野獣の部屋", type: "Public", status: "Active" },
+    { id: "public_Dev", name: "実験スレッド", type: "Public", status: "Active" },
 ];
 
 
