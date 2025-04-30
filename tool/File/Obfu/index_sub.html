@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>難読化ツール</title>
+    <script src="
+    https://cdn.jsdelivr.net/npm/javascript-obfuscator@4.1.1/dist/index.browser.min.js
+    "></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --md-primary-color: #1976D2;
+            --md-primary-light: #64B5F6;
+            --md-primary-dark: #0D47A1;
+            --md-accent-color: #FFC107;
+            --md-background-color: #f5f5f5;
+            --md-surface-color: #ffffff;
+            --md-text-primary: #212121;
+            --md-text-secondary: #757575;
+            --md-divider-color: #e0e0e0;
+            --md-error-color: #D32F2F;
+            --md-success-color: #388E3C;
+            --md-button-text: #ffffff;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Roboto', 'Noto Sans JP', sans-serif;
+            background-color: var(--md-background-color);
+            color: var(--md-text-primary);
+            line-height: 1.6;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            margin: 1rem auto;
+            flex-grow: 1;
+        }
+
+        .card {
+            background-color: var(--md-surface-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            overflow: hidden;
+        }
+
+        .card-header {
+            font-size: 1.4em;
+            font-weight: 500;
+            color: var(--md-primary-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--md-divider-color);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-header i {
+            color: var(--md-primary-light);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--md-primary-dark);
+            margin-bottom: 2rem;
+            font-weight: 700;
+            font-size: 2em;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--md-text-secondary);
+            font-size: 0.9em;
+        }
+
+        textarea,
+        input[type="file"],
+        select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--md-divider-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            font-family: 'Roboto Mono', monospace;
+            margin-bottom: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus,
+        input[type="file"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--md-primary-color);
+            box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+        }
+
+        textarea {
+            min-height: 180px;
+            resize: vertical;
+        }
+
+        input[type="file"] {
+            padding: 0;
+            border: none;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        input[type="file"]::file-selector-button {
+            border: none;
+            padding: 0.6rem 1rem;
+            border-radius: 4px;
+            background-color: var(--md-primary-color);
+            color: var(--md-button-text);
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-right: 1rem;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background-color: var(--md-primary-dark);
+        }
+
+        #outputCode {
+            background-color: #eeeeee;
+            color: var(--md-text-primary);
+            min-height: 220px;
+            border-color: #bdbdbd;
+        }
+
+        .options-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .level-selector fieldset {
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .level-selector legend {
+            font-weight: 500;
+            color: var(--md-text-secondary);
+            font-size: 0.9em;
+            margin-bottom: 0.5rem;
+            padding: 0;
+        }
+
+        .level-selector label {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 1.5rem;
+            font-weight: 400;
+            cursor: pointer;
+            color: var(--md-text-primary);
+            font-size: 1rem;
+        }
+
+        .level-selector input[type="radio"] {
+            margin-right: 0.5rem;
+            accent-color: var(--md-primary-color);
+            width: 1.1em;
+            height: 1.1em;
+        }
+
+        .main-action {
+            margin-left: auto;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        button {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--md-primary-color);
+            color: var(--md-button-text);
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        }
+
+        button:hover:not(:disabled) {
+            background-color: var(--md-primary-dark);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+        }
+
+        button:disabled {
+            background-color: #bdbdbd;
+            color: #9e9e9e;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        button i {
+            font-size: 1.1em;
+            line-height: 1;
+        }
+
+        .status {
+            margin-top: 1rem;
+            padding: 0.8rem 1rem;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+            transition: opacity 0.3s;
+        }
+
+        .status.show {
+            display: block;
+            opacity: 1;
+        }
+
+        .status.error {
+            background-color: #ffebee;
+            color: var(--md-error-color);
+            border: 1px solid #ffcdd2;
+        }
+
+        .status.success {
+            background-color: #e8f5e9;
+            color: var(--md-success-color);
+            border: 1px solid #c8e6c9;
+        }
+
+        .status.info {
+            background-color: #e3f2fd;
+            color: var(--md-primary-color);
+            border: 1px solid #bbdefb;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid var(--md-button-text);
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        button:disabled .spinner {
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--md-divider-color);
+            font-size: 0.85em;
+            color: var(--md-text-secondary);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .card {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 1.6em;
+                margin-bottom: 1.5rem;
+            }
+
+            .card-header {
+                font-size: 1.2em;
+                margin-bottom: 1rem;
+            }
+
+            .options-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .main-action {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .main-action button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .button-group {
+                justify-content: center;
+            }
+
+            .button-group button {
+                flex-grow: 1;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1><i class="fas fa-shield-alt"></i> 難読化ツール</h1>
+
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-code"></i> 入力コード
+            </div>
+            <div>
+                <label for="inputFile">ファイルを選択 (HTML or JS)</label>
+                <input type="file" id="inputFile" accept=".html,.htm,.js">
+            </div>
+            <div>
+                <label for="inputCode">または、コードを貼り付け</label>
+                <textarea id="inputCode" placeholder="ここにHTMLまたはJavaScriptコードを入力..."></textarea>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-sliders-h"></i> オプション
+            </div>
+            <div class="options-container">
+                <div class="level-selector">
+                    <fieldset>
+                        <legend>難読化レベル</legend>
+                        <label><input type="radio" name="obfuscationLevel" value="low" checked> 低</label>
+                        <label><input type="radio" name="obfuscationLevel" value="medium"> 中</label>
+                        <label><input type="radio" name="obfuscationLevel" value="high"> 高</label>
+                    </fieldset>
+                </div>
+                <div class="level-selector">
+                    <fieldset>
+                        <legend>出力形式</legend>
+                        <label><input type="radio" name="outputMode" value="normal" checked> 通常出力</label>
+                        <label><input type="radio" name="outputMode" value="loader" id="outputModeLoader">
+                            動的ロードHTML</label>
+                    </fieldset>
+                </div>
+                <div class="main-action">
+                    <button id="obfuscateBtn" disabled>
+                        <i class="fas fa-magic"></i> 難読化開始
+                        <div class="spinner"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-paste"></i> 難読化結果
+            </div>
+            <textarea id="outputCode" readonly placeholder="難読化されたコードがここに表示されます..."></textarea>
+            <div class="button-group">
+                <button id="copyBtn" disabled><i class="fas fa-copy"></i> コピー</button>
+                <button id="downloadBtn" disabled><i class="fas fa-download"></i> ダウンロード</button>
+            </div>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+    <footer>
+        注意: 難読化はリバースエンジニアリングを完全に防ぐものではありません。機密情報の保護には適しません。
+    </footer>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputFile = document.getElementById('inputFile');
+            const inputCode = document.getElementById('inputCode');
+            const obfuscateBtn = document.getElementById('obfuscateBtn');
+            const outputCode = document.getElementById('outputCode');
+            const copyBtn = document.getElementById('copyBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const statusDiv = document.getElementById('status');
+            const levelRadios = document.querySelectorAll('input[name="obfuscationLevel"]');
+            const outputModeRadios = document.querySelectorAll('input[name="outputMode"]');
+            const dynamicLoaderOption = document.getElementById('outputModeLoader');
+
+            let originalFileName = '';
+            let isHtml = false;
+            let currentOutputMode = 'normal';
+
+            const MSG_READ_COMPLETE = 'ファイル読み込み完了';
+            const MSG_READ_ERROR = 'ファイル読み込みエラー';
+            const MSG_NO_CODE = 'コードが入力されていません';
+            const MSG_OBFUSCATING = '難読化処理中...';
+            const MSG_OBFUSCATE_COMPLETE = '難読化完了！';
+            const MSG_OBFUSCATE_ERROR = '難読化エラー: ';
+            const MSG_HTML_SCRIPT_ERROR = 'エラー: HTML内のスクリプト難読化中にエラーが発生しました。';
+            const MSG_LOADER_ONLY_FOR_HTML = '動的ロード形式はHTML入力時のみ有効です。';
+            const MSG_LIB_LOAD_ERROR = 'エラー: 必須ライブラリが読み込めていません。ページを再読み込みしてください。';
+            const MSG_COPIED = 'クリップボードにコピーしました';
+            const MSG_COPY_FAILED = 'コピーに失敗しました';
+            const MSG_DOWNLOAD_START = 'ファイルのダウンロードを開始しました';
+            const MSG_DOWNLOAD_ERROR = 'ダウンロードエラー: ';
+
+            function escapeJapaneseChars(str) {
+                return str.replace(
+                    /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\u3005\u3006\u309D\u309E\u30FD\u30FE\uFF66-\uFF9F]+/g,
+                    (match) => {
+                        let result = '';
+                        for (let i = 0; i < match.length; i++) {
+                            const charCode = match.charCodeAt(i);
+                            result += '\\u' + ('0000' + charCode.toString(16).toUpperCase()).slice(-4);
+                        }
+                        return result;
+                    }
+                );
+            }
+
+            function getSelectedLevel() {
+                return document.querySelector('input[name="obfuscationLevel"]:checked').value;
+            }
+
+            function getSelectedOutputMode() {
+                return document.querySelector('input[name="outputMode"]:checked').value;
+            }
+
+            function getObfuscationOptions(level) {
+                const baseOptions = {
+                    compact: true,
+                    simplify: true,
+                    renameGlobals: false,
+                    log: false,
+                    seed: 0
+                };
+
+                switch (level) {
+                    case 'low':
+                        return {
+                            ...baseOptions,
+                            controlFlowFlattening: false,
+                            deadCodeInjection: false,
+                            numbersToExpressions: false,
+                            stringArray: false,
+                            selfDefending: false,
+                            transformObjectKeys: false,
+                            unicodeEscapeSequence: false,
+                        };
+                    case 'medium':
+                        return {
+                            ...baseOptions,
+                            controlFlowFlattening: true,
+                            controlFlowFlatteningThreshold: 0.5,
+                            deadCodeInjection: true,
+                            deadCodeInjectionThreshold: 0.1,
+                            numbersToExpressions: true,
+                            stringArray: true,
+                            stringArrayEncoding: ['base64'],
+                            stringArrayIndexShift: true,
+                            stringArrayRotate: true,
+                            stringArrayShuffle: true,
+                            stringArrayThreshold: 0.75,
+                            selfDefending: false,
+                            transformObjectKeys: true,
+                            unicodeEscapeSequence: false,
+                            splitStrings: true,
+                            splitStringsChunkLength: 5,
+                            stringArrayWrappersCount: 2,
+                            stringArrayWrappersType: 'function',
+                            stringArrayWrappersChainedCalls: true,
+                            identifierNamesGenerator: 'hexadecimal',
+                        };
+                    case 'high':
+                        return {
+                            ...baseOptions,
+                            controlFlowFlattening: true,
+                            controlFlowFlatteningThreshold: 1,
+                            deadCodeInjection: true,
+                            deadCodeInjectionThreshold: 1,
+                            numbersToExpressions: true,
+                            selfDefending: true,
+                            stringArray: true,
+                            stringArrayEncoding: ['rc4'],
+                            stringArrayIndexShift: true,
+                            stringArrayRotate: true,
+                            stringArrayShuffle: true,
+                            stringArrayThreshold: 1,
+                            stringArrayWrappersCount: 5,
+                            stringArrayWrappersType: 'function',
+                            stringArrayWrappersChainedCalls: true,
+                            stringArrayWrappersParametersMaxCount: 5,
+                            splitStrings: true,
+                            splitStringsChunkLength: 3,
+                            transformObjectKeys: true,
+                            unicodeEscapeSequence: true,
+                            identifierNamesGenerator: 'mangled-shuffled',
+                            identifiersPrefix: '_0x',
+                            debugProtection: true,
+                            debugProtectionInterval: 4000,
+                            disableConsoleOutput: true,
+                            domainLock: [],
+                            domainLockRedirectUrl: 'about:blank',
+                        };
+                    default:
+                        return getObfuscationOptions('low');
+                }
+            }
+
+
+            function updateButtonStates() {
+                const hasInput = inputCode.value.trim().length > 0;
+                obfuscateBtn.disabled = !hasInput;
+                const hasOutput = outputCode.value.trim().length > 0;
+                copyBtn.disabled = !hasOutput;
+                downloadBtn.disabled = !hasOutput;
+
+                const currentModeIsLoader = getSelectedOutputMode() === 'loader';
+                if (dynamicLoaderOption) {
+                    dynamicLoaderOption.disabled = !isHtml;
+                    if (!isHtml && currentModeIsLoader) {
+                        document.querySelector('input[name="outputMode"][value="normal"]').checked = true;
+                        currentOutputMode = 'normal';
+                    }
+                    const loaderLabel = dynamicLoaderOption.parentElement;
+                    if (loaderLabel) loaderLabel.style.opacity = dynamicLoaderOption.disabled ? '0.5' : '1';
+                }
+            }
+
+            function setStatus(message, type = 'info') {
+                if (message) {
+                    statusDiv.textContent = message;
+                    statusDiv.className = `status ${type} show`;
+                } else {
+                    statusDiv.textContent = '';
+                    statusDiv.className = 'status';
+                }
+            }
+
+            function generateLoaderHtml(encryptedData) {
+                const decryptionKey = "SecretPassphrase";
+
+                const loaderScriptRaw = `
+                 (function() {
+                     const load = () => {
+                         try {
+                             const el = document.getElementById('encodedData');
+                             const encrypted = el.textContent.trim();
+                             const key = "${decryptionKey}";
+                             if (!encrypted || !key) throw new Error('Data or key missing.');
+                             if (typeof CryptoJS === 'undefined') throw new Error('CryptoJS not loaded.');
+                             const bytes = CryptoJS.AES.decrypt(encrypted, key);
+                             const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+                             if (!decrypted) throw new Error('Decryption failed.');
+                             document.open();
+                             document.write(decrypted);
+                             document.close();
+                         } catch (e) {
+                             console.error('Loader failed:', e);
+                             const loaderEl = document.querySelector('.loader');
+                             if(loaderEl) loaderEl.remove();
+                             document.body.innerHTML = '<div style="padding: 2rem; text-align: center; color: red;">App Load Error: ' + e.message + '</div>';
+                             document.body.style.opacity = 1;
+                         }
+                     };
+                     if (document.readyState === 'complete') {
+                         requestAnimationFrame(load);
+                     } else {
+                         window.addEventListener('load', () => requestAnimationFrame(load));
+                     }
+                 })();
+             `;
+
+                let obfuscatedLoaderScript = loaderScriptRaw;
+                try {
+                    if (typeof JavaScriptObfuscator !== 'undefined') {
+                        const loaderOptions = getObfuscationOptions('low');
+                        obfuscatedLoaderScript = JavaScriptObfuscator.obfuscate(loaderScriptRaw, loaderOptions).getObfuscatedCode();
+                    }
+                } catch (e) {
+                    console.warn("Failed to obfuscate loader script, using raw script.", e);
+                }
+
+
+                return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loading...</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"><\/script>
+<style>
+body{margin:0;background-color:#f0f0f0;display:flex;justify-content:center;align-items:center;min-height:100vh;opacity:1;transition:opacity .5s}
+body.loaded{opacity:1}
+.loader{border:6px solid #e0e0e0;border-top:6px solid #1976D2;border-radius:50%;width:60px;height:60px;animation:spin 1s linear infinite;position:fixed;top:calc(50% - 30px);left:calc(50% - 30px); z-index: 100;}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+#encodedData{display:none}
+</style>
+</head>
+<body>
+<div class="loader"></div>
+<script id="encodedData" type="text/encrypted-data">
+${encryptedData}
+<\/script>
+<script>
+${obfuscatedLoaderScript}
+<\/script>
+</body></html>`;
+            }
+
+            function initEventListeners() {
+                inputFile.addEventListener('change', (event) => {
+                    const file = event.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        originalFileName = file.name;
+                        isHtml = file.type === 'text/html' || originalFileName.toLowerCase().endsWith('.html') || originalFileName.toLowerCase().endsWith('.htm');
+                        reader.onload = (e) => { inputCode.value = e.target.result; updateButtonStates(); setStatus(MSG_READ_COMPLETE, 'success'); };
+                        reader.onerror = () => { setStatus(MSG_READ_ERROR, 'error'); updateButtonStates(); };
+                        reader.readAsText(file);
+                    }
+                });
+
+                inputCode.addEventListener('input', () => {
+                    originalFileName = '';
+                    isHtml = inputCode.value.trim().startsWith('<') && inputCode.value.includes('>');
+                    updateButtonStates();
+                    if (inputCode.value.trim().length === 0) setStatus('');
+                });
+
+                outputModeRadios.forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        currentOutputMode = e.target.value;
+                        updateButtonStates();
+                    });
+                });
+
+                obfuscateBtn.addEventListener('click', async () => {
+                    if (typeof JavaScriptObfuscator === 'undefined' || (getSelectedOutputMode() === 'loader' && typeof CryptoJS === 'undefined')) {
+                        setStatus(MSG_LIB_LOAD_ERROR, 'error');
+                        return;
+                    }
+
+                    const code = inputCode.value;
+                    if (!code) { setStatus(MSG_NO_CODE, 'error'); return; }
+
+                    currentOutputMode = getSelectedOutputMode();
+
+                    if (currentOutputMode === 'loader' && !isHtml) {
+                        setStatus(MSG_LOADER_ONLY_FOR_HTML, 'error');
+                        return;
+                    }
+
+                    setStatus(MSG_OBFUSCATING, 'info');
+                    obfuscateBtn.disabled = true;
+                    outputCode.value = '';
+                    updateButtonStates();
+
+                    await new Promise(resolve => setTimeout(resolve, 50));
+
+                    try {
+                        const level = getSelectedLevel();
+                        const options = getObfuscationOptions(level);
+                        let finalOutput = '';
+                        let scriptErrorOccurred = false;
+
+                        if (isHtml) {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(code, 'text/html');
+                            const scripts = doc.querySelectorAll('script');
+
+                            scripts.forEach((script, index) => {
+                                if (script.src || !script.textContent.trim()) return;
+                                try {
+                                    const escapedScriptCode = escapeJapaneseChars(script.textContent);
+                                    const obfuscatedScript = JavaScriptObfuscator.obfuscate(escapedScriptCode, options).getObfuscatedCode();
+                                    script.textContent = obfuscatedScript;
+                                } catch (scriptErr) {
+                                    console.error(`Script ${index + 1} obfuscation failed: `, scriptErr);
+                                    scriptErrorOccurred = true;
+                                }
+                            });
+
+                            if (scriptErrorOccurred) {
+                                throw new Error(MSG_HTML_SCRIPT_ERROR);
+                            }
+
+                            const doctypeMatch = code.match(/^<!DOCTYPE[^>]+>\s*/i);
+                            const headHTML = doc.head ? doc.head.outerHTML : '';
+                            const bodyHTML = doc.body ? doc.body.outerHTML : '';
+                            const reconstructedHtml = (doctypeMatch ? doctypeMatch[0] : '') + '<html>' + headHTML + bodyHTML + '</html>';
+
+                            if (currentOutputMode === 'loader') {
+                                const decryptionKey = "SecretPassphrase";
+                                const encryptedHtml = CryptoJS.AES.encrypt(reconstructedHtml, decryptionKey).toString();
+                                finalOutput = generateLoaderHtml(encryptedHtml);
+                            } else {
+                                finalOutput = reconstructedHtml;
+                            }
+
+                        } else {
+                            const escapedCode = escapeJapaneseChars(code);
+                            finalOutput = JavaScriptObfuscator.obfuscate(escapedCode, options).getObfuscatedCode();
+                        }
+
+                        outputCode.value = finalOutput;
+                        setStatus(MSG_OBFUSCATE_COMPLETE, 'success');
+
+                    } catch (error) {
+                        console.error('Obfuscation Error:', error);
+                        setStatus(MSG_OBFUSCATE_ERROR + error.message, 'error');
+                        outputCode.value = '';
+                    } finally {
+                        updateButtonStates();
+                    }
+                });
+
+                copyBtn.addEventListener('click', () => {
+                    if (!outputCode.value) return;
+                    navigator.clipboard.writeText(outputCode.value)
+                        .then(() => setStatus(MSG_COPIED, 'success'))
+                        .catch(err => { console.error('Copy failed:', err); setStatus(MSG_COPY_FAILED, 'error'); });
+                });
+
+                downloadBtn.addEventListener('click', () => {
+                    if (!outputCode.value) return;
+                    try {
+                        const outputMode = getSelectedOutputMode();
+                        const isLoaderOutput = outputMode === 'loader' && isHtml;
+                        const fileExtension = isLoaderOutput ? 'html' : (isHtml ? 'html' : 'js');
+                        const suffix = isLoaderOutput ? '_loader_obfuscated' : '_obfuscated';
+                        const defaultFileName = isLoaderOutput ? 'loader_obfuscated.html' : `obfuscated.${fileExtension}`;
+
+                        const fileName = originalFileName
+                            ? `${originalFileName.replace(/\.[^/.]+$/, "")}${suffix}.${fileExtension}`
+                            : defaultFileName;
+
+                        const mimeType = fileExtension === 'html' ? 'text/html' : 'application/javascript';
+                        const blob = new Blob([outputCode.value], { type: mimeType });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url; a.download = fileName;
+                        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        setStatus(MSG_DOWNLOAD_START, 'success');
+                    } catch (error) {
+                        console.error('Download Error:', error);
+                        setStatus(MSG_DOWNLOAD_ERROR + error.message, 'error');
+                    }
+                });
+            }
+
+            initEventListeners();
+            updateButtonStates();
+
+        });
+    </script>
+</body>
+
+</html>
