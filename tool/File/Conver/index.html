@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>モダンファイル圧縮ツール</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+    <script src='https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js'></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --background-color: #f0f4f8;
+            --text-color: #2c3e50;
+            --error-color: #e74c3c;
+            --success-color: #2ecc71;
+            --info-color: #3498db;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Arial", sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 2rem auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-drop-zone {
+            border: 2px dashed var(--primary-color);
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            transition: background-color 0.3s, border-color 0.3s;
+            position: relative;
+            overflow: hidden;
+            background-color: white;
+        }
+
+        .file-drop-zone.dragover {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-color: var(--secondary-color);
+        }
+
+        .file-drop-zone .file-preview {
+            max-width: 200px;
+            max-height: 200px;
+            margin: 1rem auto 0;
+            display: block;
+            object-fit: contain;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 1rem;
+            min-height: 100px;
+        }
+
+        .file-label i {
+            margin-bottom: 10px;
+            font-size: 2rem;
+            color: var(--primary-color);
+            transition: color 0.3s;
+        }
+
+        .file-label:hover i {
+            color: #2980b9;
+        }
+
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            margin: 1.5rem 0;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .mode-selector label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+            background-color: #fff;
+        }
+
+        .mode-selector input[type="radio"] {
+            display: none;
+        }
+
+        .mode-selector input[type="radio"]:checked+i+span {
+            font-weight: bold;
+        }
+
+        .mode-selector label:has(input[type="radio"]:checked) {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .mode-selector label:has(input[type="radio"]:checked) i {
+            color: white;
+        }
+
+        .mode-selector i {
+            margin-right: 8px;
+            width: 1.2em;
+            text-align: center;
+            color: var(--primary-color);
+            transition: color 0.3s;
+        }
+
+        .options-container {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 1.2rem;
+            margin-top: 1.5rem;
+            display: grid;
+            gap: 18px;
+        }
+
+        .option-row {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .option-row label {
+            text-align: left;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+
+        .option-row .controls {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .option-row input[type="number"],
+        .option-row input[type="range"] {
+            width: 100%;
+        }
+
+        .option-row span {
+            text-align: right;
+            min-width: 45px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        #videoOptions .option-row input[type="number"] {
+            width: 90px;
+        }
+
+        .option-row-range {
+            display: contents;
+        }
+
+        .submit-btn {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 1.15em;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .submit-btn:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .submit-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .status-message {
+            margin-top: 1.5rem;
+            padding: 14px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1em;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.5;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        .status-success {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .status-error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--error-color);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .status-info {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: var(--info-color);
+            border: 1px solid rgba(52, 152, 219, 0.3);
+        }
+
+        .download-link {
+            display: inline-block;
+            margin-top: 1.5rem;
+            padding: 14px 25px;
+            background-color: var(--success-color);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.2s ease;
+        }
+
+        .download-link:hover {
+            background-color: #27ae60;
+            transform: translateY(-1px);
+        }
+
+        #downloadLinkContainer {
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: width 0.4s ease;
+            border-radius: 0 3px 3px 0;
+            box-shadow: 0 2px 5px rgba(52, 152, 219, 0.3);
+        }
+
+        .progress-bar.error {
+            background: var(--error-color);
+            box-shadow: 0 2px 5px rgba(231, 76, 60, 0.3);
+        }
+
+        small {
+            display: block;
+            text-align: center;
+            margin-top: 8px;
+            font-size: 0.85em;
+            color: #7f8c8d;
+        }
+
+        small i {
+            margin-right: 4px;
+        }
+
+        #videoOptions small {
+            margin-top: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+
+            .file-drop-zone {
+                padding: 1.5rem;
+            }
+
+            .mode-selector {
+                gap: 10px;
+            }
+
+            .option-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .option-row label {
+                margin-bottom: 2px;
+                white-space: normal;
+            }
+
+            .option-row .controls {
+                grid-template-columns: 1fr auto;
+            }
+
+            #videoOptions .option-row input[type="number"] {
+                width: 100%;
+            }
+
+            .submit-btn {
+                padding: 12px 24px;
+                font-size: 1.1em;
+            }
+
+            .status-message {
+                padding: 12px;
+                font-size: 0.95em;
+            }
+
+            .download-link {
+                padding: 12px 20px;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="file-drop-zone" id="fileDropZone">
+            <input type="file" id="fileInput" class="file-input"
+                accept=".jpg,.jpeg,.png,.gif,.webp,.zip,.mp4,.mov,.webm,.avi" />
+            <div>
+                <img id="filePreview" class="file-preview" style="display: none" alt="画像プレビュー" />
+                <video id="videoPreview" class="file-preview" controls style="display: none"></video>
+            </div>
+            <label for="fileInput" class="file-label">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span id="fileLabelText">ファイルをドラッグ&ドロップ<br>またはクリックして選択</span>
+            </label>
+        </div>
+        <div class="mode-selector">
+            <label>
+                <input type="radio" name="mode" value="image" checked />
+                <i class="fas fa-image"></i>
+                <span>画像</span>
+            </label>
+            <label>
+                <input type="radio" name="mode" value="zip" />
+                <i class="fas fa-file-archive"></i>
+                <span>ZIP</span>
+            </label>
+            <label>
+                <input type="radio" name="mode" value="video" />
+                <i class="fas fa-video"></i>
+                <span>動画</span>
+            </label>
+        </div>
+        <div id="imageOptions" class="options-container">
+            <div class="option-row">
+                <label for="maxSizeMB">目標サイズ(MB)</label>
+                <div class="controls">
+                    <input type="number" id="maxSizeMB" value="1" min="0.1" step="0.1" />
+                    <span>MB</span>
+                </div>
+            </div>
+            <div class="option-row">
+                <label for="quality">画質</label>
+                <div class="controls option-row-range">
+                    <input type="range" id="quality" min="0.1" max="1" step="0.05" value="0.7" />
+                    <span id="qualityValue">0.7</span>
+                </div>
+            </div>
+            <div class="option-row">
+                <label for="maxWidthOrHeight">最大 幅/高さ</label>
+                <div class="controls">
+                    <input type="number" id="maxWidthOrHeight" value="1920" min="100" step="10" />
+                    <span>px</span>
+                </div>
+            </div>
+            <small><i class="fas fa-info-circle"></i> 画質とサイズはトレードオフです。</small>
+        </div>
+        <div id="zipOptions" class="options-container" style="display: none">
+            <div class="option-row">
+                <label for="zipLevel">圧縮レベル</label>
+                <div class="controls option-row-range">
+                    <input type="range" id="zipLevel" min="1" max="9" value="6" />
+                    <span id="zipLevelValue">6</span>
+                </div>
+            </div>
+            <small><i class="fas fa-info-circle"></i> レベル9が最も高圧縮ですが、時間がかかります。</small>
+        </div>
+        <div id="videoOptions" class="options-container" style="display: none">
+            <div class="option-row">
+                <label for="videoWidth">幅 (空欄で自動)</label>
+                <div class="controls">
+                    <input type="number" id="videoWidth" placeholder="自動" min="100" step="10" />
+                    <span>px</span>
+                </div>
+            </div>
+            <div class="option-row">
+                <label for="videoHeight">高さ (空欄で自動)</label>
+                <div class="controls">
+                    <input type="number" id="videoHeight" placeholder="自動" min="100" step="10" />
+                    <span>px</span>
+                </div>
+            </div>
+            <div class="option-row">
+                <label for="videoBitrate">目標ビットレート</label>
+                <div class="controls">
+                    <input type="number" id="videoBitrate" value="1000" min="100" step="100" />
+                    <span>kbps</span>
+                </div>
+            </div>
+            <small><i class="fas fa-cog"></i> H.264コーデック(fastプリセット)を使用します。</small>
+            <small style="color: var(--error-color);"><i class="fas fa-mobile-alt"></i>
+                スマホでの動画圧縮は非常に時間がかかる場合があります。</small>
+            <small id="ffmpegNote" style="color: var(--error-color); font-weight: bold;"></small>
+        </div>
+        <button id="submitButton" class="submit-btn" disabled>
+            <i class="fas fa-cog"></i>
+            <span>ファイルを選択</span>
+            <div class="spinner" id="spinner"></div>
+        </button>
+        <div id="statusMessage" class="status-message" style="display: none;"></div>
+        <div id="downloadLinkContainer"></div>
+    </div>
+
+    <script>
+        const fileDropZone = document.getElementById("fileDropZone");
+        const fileInput = document.getElementById("fileInput");
+        const fileLabelSpan = document.getElementById("fileLabelText");
+        const filePreview = document.getElementById("filePreview");
+        const videoPreview = document.getElementById("videoPreview");
+        const modeRadios = document.querySelectorAll('input[name="mode"]');
+        const imageOptions = document.getElementById("imageOptions");
+        const zipOptions = document.getElementById("zipOptions");
+        const videoOptions = document.getElementById("videoOptions");
+        const ffmpegNote = document.getElementById("ffmpegNote");
+        const submitButton = document.getElementById("submitButton");
+        const submitButtonIcon = submitButton.querySelector("i");
+        const submitButtonText = submitButton.querySelector("span");
+        const statusMessage = document.getElementById("statusMessage");
+        const downloadLinkContainer = document.getElementById("downloadLinkContainer");
+        const spinner = document.getElementById("spinner");
+        const progressBar = document.getElementById("progressBar");
+        const maxSizeMBInput = document.getElementById("maxSizeMB");
+        const qualityInput = document.getElementById("quality");
+        const qualityValueSpan = document.getElementById("qualityValue");
+        const maxWidthOrHeightInput = document.getElementById("maxWidthOrHeight");
+        const zipLevelInput = document.getElementById("zipLevel");
+        const zipLevelValueSpan = document.getElementById("zipLevelValue");
+        const videoWidthInput = document.getElementById("videoWidth");
+        const videoHeightInput = document.getElementById("videoHeight");
+        const videoBitrateInput = document.getElementById("videoBitrate");
+
+        let selectedFile = null;
+        let ffmpeg = null;
+        let ffmpegLoading = false;
+        const { createFFmpeg, fetchFile } = FFmpeg;
+
+        let compressionStartTime = 0;
+        let progressTimerId = null;
+        let currentProgressPercent = 0;
+        let baseStatusMessage = "";
+
+        async function loadFFmpeg() {
+            if (ffmpeg || ffmpegLoading) return;
+            ffmpegLoading = true;
+            updateStatusMessage("動画圧縮エンジン準備中...(初回長め)", "info");
+            spinner.style.display = 'inline-block';
+            submitButton.disabled = true;
+            updateSubmitButtonText();
+            ffmpegNote.textContent = '';
+
+            try {
+                ffmpeg = createFFmpeg({ log: true });
+                await ffmpeg.load();
+                updateStatusMessage("動画エンジン準備完了", "success", true);
+                submitButton.disabled = !selectedFile || (document.querySelector('input[name="mode"]:checked').value === 'video' && !ffmpeg);
+
+            } catch (error) {
+                console.error("FFmpeg load error:", error);
+                let userErrorMessage = "動画圧縮エンジンの準備に失敗しました。";
+
+                if (error instanceof ReferenceError && error.message.includes("SharedArrayBuffer is not defined")) {
+                    userErrorMessage += "\n\n【重要】このツールをWebサーバーで実行する場合、特定のHTTPヘッダーが必要です。\n";
+                    userErrorMessage += "・Cross-Origin-Opener-Policy: same-origin\n";
+                    userErrorMessage += "・Cross-Origin-Embedder-Policy: require-corp\n";
+                    userErrorMessage += "ローカルファイル(file://)では動作しません。サーバー管理者に確認してください。";
+                    ffmpegNote.textContent = "動画圧縮にはサーバー設定が必要です";
+                } else if (error.message.includes("secure context")) {
+                    userErrorMessage += "\n\n【重要】HTTPS接続が必要です。\n";
+                    userErrorMessage += "動画圧縮機能は安全な接続 (HTTPS) 上でのみ動作する場合があります。";
+                    ffmpegNote.textContent = "HTTPS接続が必要です";
+                } else {
+                    userErrorMessage += "\nページ再読み込みか、別のブラウザでお試しください。";
+                }
+
+                updateStatusMessage(userErrorMessage, "error");
+                ffmpeg = null;
+                submitButton.disabled = true;
+
+            } finally {
+                ffmpegLoading = false;
+                spinner.style.display = 'none';
+                updateSubmitButtonText();
+            }
+        }
+
+        function initEventListeners() {
+            fileInput.addEventListener("change", handleFileSelect);
+            fileDropZone.addEventListener("dragover", handleDragOver);
+            fileDropZone.addEventListener("dragleave", handleDragLeave);
+            fileDropZone.addEventListener("drop", handleFileDrop);
+            modeRadios.forEach(radio => radio.addEventListener("change", handleModeChange));
+            qualityInput.addEventListener("input", () => qualityValueSpan.textContent = qualityInput.value);
+            zipLevelInput.addEventListener("input", () => zipLevelValueSpan.textContent = zipLevelInput.value);
+            submitButton.addEventListener("click", handleCompression);
+        }
+
+        function handleFileSelect(event) {
+            processSelectedFile(event.target.files[0]);
+        }
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            fileDropZone.classList.add("dragover");
+        }
+        function handleDragLeave(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            fileDropZone.classList.remove("dragover");
+        }
+        function handleFileDrop(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            fileDropZone.classList.remove("dragover");
+            const file = event.dataTransfer.files[0];
+            fileInput.files = event.dataTransfer.files;
+            processSelectedFile(file);
+        }
+
+        function processSelectedFile(file) {
+            if (!file) return;
+            selectedFile = file;
+            downloadLinkContainer.innerHTML = "";
+            statusMessage.style.display = 'none';
+            filePreview.style.display = "none";
+            videoPreview.style.display = "none";
+            videoPreview.src = '';
+
+            let fileTypeHandled = false;
+            if (file.type.startsWith("image/")) {
+                const reader = new FileReader();
+                reader.onload = (e) => { filePreview.src = e.target.result; filePreview.style.display = "block"; };
+                reader.readAsDataURL(file);
+                document.querySelector('input[name="mode"][value="image"]').checked = true;
+                fileTypeHandled = true;
+            } else if (file.type.startsWith("video/")) {
+                if (file.size > 100 * 1024 * 1024) {
+                    updateStatusMessage("動画ファイルが大きいためプレビューは省略します。", "info", true);
+                } else {
+                    videoPreview.src = URL.createObjectURL(file);
+                    videoPreview.style.display = "block";
+                }
+                document.querySelector('input[name="mode"][value="video"]').checked = true;
+                fileTypeHandled = true;
+            } else if (file.type === 'application/zip' || file.name.toLowerCase().endsWith('.zip')) {
+                document.querySelector('input[name="mode"][value="zip"]').checked = true;
+                fileTypeHandled = true;
+            }
+
+            if (fileTypeHandled) {
+                fileLabelSpan.innerHTML = `選択中: ${file.name}<br>(${formatBytes(file.size)})`;
+            } else {
+                updateStatusMessage(`非対応ファイル形式: ${file.type || '不明'}`, "error");
+                selectedFile = null;
+                fileLabelSpan.innerHTML = `ファイルをドラッグ&ドロップ<br>またはクリックして選択`;
+            }
+
+            handleModeChange();
+            updateSubmitButtonText();
+        }
+
+        function handleModeChange() {
+            const selectedMode = document.querySelector('input[name="mode"]:checked').value;
+
+            imageOptions.style.display = selectedMode === "image" ? "grid" : "none";
+            zipOptions.style.display = selectedMode === "zip" ? "grid" : "none";
+            videoOptions.style.display = selectedMode === "video" ? "grid" : "none";
+
+            if (selectedMode === 'video' && !ffmpeg && !ffmpegLoading) {
+                loadFFmpeg();
+            }
+
+            updateSubmitButtonText();
+            submitButton.disabled = !selectedFile || (selectedMode === 'video' && !ffmpeg && !ffmpegLoading);
+        }
+
+        async function handleCompression() {
+            if (!selectedFile) {
+                updateStatusMessage("ファイルが選択されていません", "error"); return;
+            }
+            const selectedMode = document.querySelector('input[name="mode"]:checked').value;
+
+            if (selectedMode === 'image' && !selectedFile.type.startsWith('image/')) { updateStatusMessage("画像ファイルを選択してください", "error"); return; }
+            if (selectedMode === 'zip' && selectedFile.type.startsWith('application/zip')) { updateStatusMessage("ZIPファイルをさらにZIP圧縮することはできません", "error"); return; }
+            if (selectedMode === 'video' && !selectedFile.type.startsWith('video/')) { updateStatusMessage("動画ファイルを選択してください", "error"); return; }
+            if (selectedMode === 'video' && !ffmpeg) { updateStatusMessage("動画圧縮エンジンが利用できません (サーバー設定を確認)", "error"); return; }
+
+            prepareUIForCompression();
+            compressionStartTime = Date.now();
+            baseStatusMessage = "処理を開始しています...";
+            currentProgressPercent = 0;
+            updateStatusMessageContent();
+
+            if (progressTimerId) clearInterval(progressTimerId);
+            progressTimerId = setInterval(updateProgressTimes, 1000);
+
+            if (selectedMode === 'video' && window.innerWidth <= 768) {
+                updateStatusMessage("動画圧縮を開始します。\nスマホでは非常に時間がかかる場合があります...", "info");
+                await new Promise(resolve => setTimeout(resolve, 1800));
+            }
+
+            try {
+                let compressedBlob;
+                let outputFilename;
+                const originalFilename = selectedFile.name;
+
+                if (selectedMode === "image") {
+                    baseStatusMessage = "画像圧縮中...";
+                    updateStatusMessageContent();
+                    compressedBlob = await compressImage();
+                    outputFilename = generateFileName(originalFilename, 'compressed');
+                } else if (selectedMode === "zip") {
+                    baseStatusMessage = "ZIP圧縮中...";
+                    updateStatusMessageContent();
+                    compressedBlob = await compressToZip();
+                    outputFilename = generateFileName(originalFilename, '', 'zip');
+                } else if (selectedMode === "video") {
+                    baseStatusMessage = "動画圧縮中...";
+                    updateStatusMessageContent();
+                    compressedBlob = await compressVideo();
+                    outputFilename = generateFileName(originalFilename, 'compressed');
+                } else {
+                    throw new Error("無効なモードです");
+                }
+
+                if (progressTimerId) clearInterval(progressTimerId);
+                progressTimerId = null;
+                progressBar.style.width = "100%";
+                currentProgressPercent = 100;
+
+                if (!(compressedBlob instanceof Blob)) {
+                    throw new Error("圧縮結果が不正です");
+                }
+
+                createDownloadLink(compressedBlob, outputFilename);
+
+                const elapsedTime = (Date.now() - compressionStartTime) / 1000;
+                updateStatusMessage(
+                    `圧縮成功: ${formatBytes(selectedFile.size)} → ${formatBytes(compressedBlob.size)} (処理時間: ${formatTime(elapsedTime)})`,
+                    "success"
+                );
+
+            } catch (error) {
+                handleCompressionError(error);
+            } finally {
+                resetUI();
+            }
+        }
+
+        async function compressImage() {
+            const options = {
+                maxSizeMB: parseFloat(maxSizeMBInput.value) || 1,
+                maxWidthOrHeight: parseInt(maxWidthOrHeightInput.value) || undefined,
+                useWebWorker: true,
+                initialQuality: parseFloat(qualityInput.value) || 0.7,
+                onProgress: (progress) => { updateProgressBarUI(progress); },
+            };
+            return imageCompression(selectedFile, options);
+        }
+
+        async function compressToZip() {
+            const zip = new JSZip();
+            const compressionLevel = parseInt(zipLevelInput.value);
+            zip.file(selectedFile.name, selectedFile, {
+                compression: "DEFLATE",
+                compressionOptions: { level: compressionLevel }
+            });
+            updateProgressBarUI(50);
+            const blob = await zip.generateAsync({
+                type: "blob",
+                compression: "DEFLATE",
+                compressionOptions: { level: compressionLevel }
+            });
+            updateProgressBarUI(100);
+            return blob;
+        }
+
+        async function compressVideo() {
+            if (!ffmpeg || !selectedFile) throw new Error("FFmpeg or file not ready");
+            const inputFilename = `input_${Date.now()}_${selectedFile.name}`;
+            const outputFilename = `output_${inputFilename}`;
+
+            ffmpeg.setProgress(updateFFmpegProgressUI);
+
+            try {
+                ffmpeg.FS('writeFile', inputFilename, await fetchFile(selectedFile));
+                const args = ['-i', inputFilename];
+                const width = videoWidthInput.value ? parseInt(videoWidthInput.value) : -2;
+                const height = videoHeightInput.value ? parseInt(videoHeightInput.value) : -2;
+                if (width !== -2 || height !== -2) {
+                    args.push('-vf', `scale=${width}:${height}:force_original_aspect_ratio=decrease`);
+                    args.push('-metadata:s:v', 'rotate=0');
+                }
+                const bitrate = videoBitrateInput.value ? parseInt(videoBitrateInput.value) : 1000;
+                args.push('-b:v', `${bitrate}k`);
+                args.push('-maxrate', `${Math.floor(bitrate * 1.5)}k`);
+                args.push('-bufsize', `${Math.floor(bitrate * 2)}k`);
+                args.push('-c:v', 'libx264');
+                args.push('-preset', 'fast');
+                args.push('-c:a', 'aac');
+                args.push('-b:a', '128k');
+                args.push('-movflags', '+faststart');
+                args.push('-metadata', 'comment=Compressed with WebTool');
+                args.push(outputFilename);
+
+                await ffmpeg.run(...args);
+                const data = ffmpeg.FS('readFile', outputFilename);
+                const outputMimeType = 'video/mp4';
+                return new Blob([data.buffer], { type: outputMimeType });
+            } finally {
+                try { ffmpeg.FS('unlink', inputFilename); } catch (e) { console.warn("unlink input failed", e) }
+                try { ffmpeg.FS('unlink', outputFilename); } catch (e) { console.warn("unlink output failed", e) }
+            }
+        }
+
+        function createDownloadLink(compressedBlob, downloadFileName) {
+            const downloadLink = document.createElement("a");
+            downloadLink.href = URL.createObjectURL(compressedBlob);
+            downloadLink.download = downloadFileName;
+            downloadLink.textContent = `📥 ${downloadFileName} をダウンロード (${formatBytes(compressedBlob.size)})`;
+            downloadLink.classList.add("download-link");
+
+            downloadLinkContainer.innerHTML = "";
+            downloadLinkContainer.appendChild(downloadLink);
+
+            // Consider revoking the object URL later if memory becomes an issue
+            // setTimeout(() => URL.revokeObjectURL(downloadLink.href), 60 * 1000);
+        }
+
+        function generateFileName(originalName, suffix = 'compressed', forceExtension = null) {
+            const nameParts = originalName.split('.');
+            const originalExt = nameParts.length > 1 ? nameParts.pop() : '';
+            const nameWithoutExt = nameParts.join('.');
+            const finalExt = forceExtension ? forceExtension : originalExt;
+            const suffixString = suffix ? `_${suffix}` : '';
+            return `${nameWithoutExt}${suffixString}.${finalExt}`;
+        }
+
+        function handleCompressionError(error) {
+            if (progressTimerId) clearInterval(progressTimerId);
+            progressTimerId = null;
+
+            console.error("Compression error:", error);
+            let errorMessage = `圧縮中にエラーが発生しました。`;
+            if (error instanceof Error) {
+                errorMessage += `\n詳細: ${error.message}`;
+                if (error.message.toLowerCase().includes('memory') || error.message.toLowerCase().includes('allocation failed')) {
+                    errorMessage += '\nメモリ不足の可能性があります。';
+                } else if (error.message.includes("SharedArrayBuffer")) {
+                    errorMessage += '\n【重要】サーバー設定が必要です (上記参照)。';
+                }
+            } else {
+                errorMessage += `\n詳細: ${JSON.stringify(error)}`;
+            }
+            updateStatusMessage(errorMessage, "error");
+            progressBar.style.width = '100%';
+            progressBar.classList.add('error');
+        }
+
+        function prepareUIForCompression() {
+            submitButton.disabled = true;
+            spinner.style.display = "inline-block";
+            progressBar.style.width = "0%";
+            progressBar.classList.remove('error');
+            currentProgressPercent = 0;
+            statusMessage.textContent = "";
+            statusMessage.style.display = 'block';
+            downloadLinkContainer.innerHTML = "";
+            updateSubmitButtonText(true);
+        }
+
+        function resetUI() {
+            if (progressTimerId) clearInterval(progressTimerId);
+            progressTimerId = null;
+            compressionStartTime = 0;
+
+            const selectedMode = document.querySelector('input[name="mode"]:checked').value;
+            submitButton.disabled = !selectedFile || (selectedMode === 'video' && !ffmpeg);
+            spinner.style.display = "none";
+            progressBar.classList.remove('error');
+            updateSubmitButtonText();
+        }
+
+        function formatTime(totalSeconds) {
+            if (isNaN(totalSeconds) || totalSeconds < 0) return "--:--";
+            totalSeconds = Math.floor(totalSeconds);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            const hh = String(hours).padStart(2, '0');
+            const mm = String(minutes).padStart(2, '0');
+            const ss = String(seconds).padStart(2, '0');
+            return hours > 0 ? `${hh}:${mm}:${ss}` : `${mm}:${ss}`;
+        }
+
+        function updateProgressTimes() {
+            if (!compressionStartTime || currentProgressPercent >= 100) return;
+            const now = Date.now();
+            const elapsedTimeInSeconds = (now - compressionStartTime) / 1000;
+            const progress = currentProgressPercent / 100;
+            let estimatedRemainingTimeInSeconds = Infinity;
+            if (progress > 0.01 && progress < 1 && elapsedTimeInSeconds > 1) {
+                const estimatedTotalTimeInSeconds = elapsedTimeInSeconds / progress;
+                estimatedRemainingTimeInSeconds = estimatedTotalTimeInSeconds - elapsedTimeInSeconds;
+            }
+            updateStatusMessageContent(elapsedTimeInSeconds, estimatedRemainingTimeInSeconds);
+        }
+
+        function updateStatusMessageContent(elapsedSeconds, remainingSeconds) {
+            let message = `${baseStatusMessage} (${currentProgressPercent}%)`;
+            if (elapsedSeconds !== undefined && elapsedSeconds >= 0) {
+                message += ` - 経過: ${formatTime(elapsedSeconds)}`;
+            }
+            if (isFinite(remainingSeconds) && remainingSeconds >= 0) {
+                if (remainingSeconds < 2 && currentProgressPercent > 95) {
+                    message += ` / まもなく完了`;
+                } else if (remainingSeconds < 1 && currentProgressPercent <= 95) {
+                    message += ` / 推定残り: 計算中...`;
+                } else {
+                    message += ` / 推定残り: ${formatTime(remainingSeconds)}`;
+                }
+            } else if (currentProgressPercent > 0 && currentProgressPercent < 100) {
+                message += ` / 推定残り: 計算中...`;
+            }
+            statusMessage.textContent = message;
+        }
+
+        function updateStatusMessage(message, type = "info", temporary = false) {
+            baseStatusMessage = message;
+            statusMessage.className = `status-message status-${type}`;
+            statusMessage.style.display = 'block';
+
+            if (!progressTimerId) {
+                statusMessage.textContent = message;
+            } else {
+                updateProgressTimes();
+            }
+
+            if (temporary) {
+                setTimeout(() => {
+                    if (statusMessage.textContent === message) { // 他のメッセージで上書きされてなければクリア
+                        statusMessage.style.display = 'none';
+                        statusMessage.className = 'status-message';
+                    }
+                }, 4000);
+            }
+        }
+
+        function updateProgressBarUI(progressPercent) {
+            const percent = Math.max(0, Math.min(100, Math.round(progressPercent)));
+            currentProgressPercent = percent;
+            progressBar.style.width = `${percent}%`;
+            progressBar.classList.remove('error');
+        }
+
+        function updateFFmpegProgressUI({ ratio }) {
+            const percent = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+            currentProgressPercent = percent;
+            progressBar.style.width = `${percent}%`;
+            progressBar.classList.remove('error');
+        }
+
+        function updateSubmitButtonText(isCompressing = false) {
+            const selectedMode = document.querySelector('input[name="mode"]:checked').value;
+            let iconClass = "fa-cog";
+            let text = "ファイルを選択";
+            let disabled = true;
+
+            if (isCompressing) {
+                iconClass = "fa-cog";
+                text = "処理中...";
+                disabled = true;
+                spinner.style.display = 'inline-block';
+            } else if (selectedFile) {
+                disabled = false;
+                if (selectedMode === "image") { iconClass = "fa-image"; text = "画像を圧縮"; }
+                else if (selectedMode === "zip") { iconClass = "fa-file-archive"; text = "ZIPに圧縮"; }
+                else if (selectedMode === "video") {
+                    iconClass = "fa-video";
+                    text = "動画を圧縮";
+                    if (ffmpegLoading) {
+                        text = "エンジン準備中...";
+                        disabled = true;
+                    } else if (!ffmpeg) {
+                        text = "エンジン未準備";
+                        disabled = true;
+                    }
+                }
+                spinner.style.display = 'none';
+            } else {
+                iconClass = "fa-file-upload";
+                text = "ファイルを選択";
+                disabled = true;
+                spinner.style.display = 'none';
+            }
+
+            submitButtonIcon.className = `fas ${iconClass}`;
+            submitButtonText.textContent = text;
+            submitButton.disabled = disabled;
+        }
+
+        function formatBytes(bytes, decimals = 2) {
+            if (!+bytes) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+        }
+
+        initEventListeners();
+        handleModeChange();
+        updateSubmitButtonText();
+    </script>
+</body>
+
+</html>
