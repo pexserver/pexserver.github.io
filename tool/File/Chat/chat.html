@@ -4,46 +4,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>マルチスレッドチャット v2.4</title>
-    <meta name="description"
-        content="ブラウザ上で動作する多機能マルチスレッドチャットサービスです。匿名IDと名前で手軽に参加でき、Markdown記法によるリッチな投稿や、スレッドごとの会話が楽しめます。">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="マルチスレッドチャット v2.4">
-    <link rel="apple-touch-icon" href="../../../lib/Assets/images/Chat/image3.jpg">
-    <meta name="apple-touch-fullscreen" content="yes">
-
-    <meta property="og:image" href="../../../lib/Assets/images/Chat/image3.jpg">
-    <link rel="icon" href="../../../lib/Assets/images/Chat/image3.jpg" type="image/x-icon">
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="canonical" href="https://pexserver.github.io/" />
+    <title>Loading...</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        html,
         body {
             margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
             background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            opacity: 1;
+            transition: opacity .5s
         }
 
-        iframe {
-            display: block;
-            width: 100%;
-            height: 100%;
-            border: none;
+        body.loaded {
+            opacity: 1
+        }
+
+        .loader {
+            border: 6px solid #e0e0e0;
+            border-top: 6px solid #1976D2;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            position: fixed;
+            top: calc(50% - 30px);
+            left: calc(50% - 30px);
+            z-index: 100;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg)
+            }
+
+            100% {
+                transform: rotate(360deg)
+            }
+        }
+
+        #encodedData {
+            display: none
         }
     </style>
 </head>
 
 <body>
-    <iframe src="https://script.google.com/macros/s/AKfycbz4IfCCvthP8iEurPNmk3JOUGvGX0MSb-mUGNijxQTa_parpN9QQH0w9HBcR0555QH1/exec">
-        お使いのブラウザは iframe をサポートしていません。
-    </iframe>
+    <div class="loader"></div>
+    <script id="encodedData" type="text/encrypted-data">
+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
+</script>
+    <script>
+        (function () { const _0x350455 = () => { try { const _0xc2aacc = document['getElementById']('encodedData'), _0x29f8f0 = _0xc2aacc['textContent']['trim'](), _0x15a24f = 'SecretPassphrase'; if (!_0x29f8f0 || !_0x15a24f) throw new Error('Data\x20or\x20key\x20missing.'); if (typeof CryptoJS === 'undefined') throw new Error('CryptoJS\x20not\x20loaded.'); const _0x612272 = CryptoJS['AES']['decrypt'](_0x29f8f0, _0x15a24f), _0x1ce40f = _0x612272['toString'](CryptoJS['enc']['Utf8']); if (!_0x1ce40f) throw new Error('Decryption\x20failed.'); document['open'](), document['write'](_0x1ce40f), document['close'](); } catch (_0x79a9f6) { console['error']('Loader\x20failed:', _0x79a9f6); const _0x55c828 = document['querySelector']('.loader'); if (_0x55c828) _0x55c828['remove'](); document['body']['innerHTML'] = '<div\x20style=\x22padding:\x202rem;\x20text-align:\x20center;\x20color:\x20red;\x22>App\x20Load\x20Error:\x20' + _0x79a9f6['message'] + '</div>', document['body']['style']['opacity'] = 0x1; } }; document['readyState'] === 'complete' ? requestAnimationFrame(_0x350455) : window['addEventListener']('load', () => requestAnimationFrame(_0x350455)); }());
+    </script>
 </body>
 
 </html>
