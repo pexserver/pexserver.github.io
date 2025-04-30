@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top" />
+    <title>マルチスレッドチャット v2.4</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta property="og:image" href="./lib/Assets/images/home.png">
+    <link rel="icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon">
+    <link rel="shortcut icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PEX Server Chat">
+    <link rel="apple-touch-icon" href="https://pexserver.github.io/lib/Assets/images/home.png"> <!-- パスが正しいか確認してください -->
+    <meta name="apple-touch-fullscreen" content="yes">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="canonical" href="https://gamelist1990.github.io/gamelist1990/pexserver/" />
+    <link href="https://pexserver.github.io/tool/File/Chat/style.css" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.5/purify.min.js"
+        integrity="sha512-/CUtA84sWWqWEBejNrrtWa7Yc4cth3Ome2ymvCKOo9YcZ4sh98tndUy4LutE2xGcAgD4fyz16y+gSyJdGCB5ww=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+
+<body>
+    <h1>マルチスレッドチャット <span style="font-size: 0.2m; color: #26c6da">v2.4</span></h1>
+    <div id="globalStatus" class="status hidden"></div>
+    <div id="appContainer" class="app-container">
+        <div id="threadSelectionView" class="section view-section">
+            <h2>スレッド一覧</h2>
+            <div class="thread-list-container">
+                <div id="threadListLoading" class="loading">読み込み中...</div>
+                <ul id="threadList" class="thread-list"></ul>
+                <p id="noThreadsMessage" class="no-threads hidden">利用可能なスレッドはありません。</p>
+            </div>
+            <button onclick="app.fetchThreads(true)" style="width: 100%; margin-top: 1em">リスト更新</button>
+            <h2 style="margin-top: 2em">プライベートスレッド作成</h2>
+            <form id="createThreadForm" autocomplete="off">
+                <div class="form-input-group"><label for="newThreadName">スレッド名</label><input type="text"
+                        id="newThreadName" required="" placeholder="例: 雑談部屋" /></div>
+                <div class="form-input-group"><label for="newThreadPassword">合言葉</label><input type="password"
+                        id="newThreadPassword" required="" placeholder="4文字以上" /></div>
+                <button type="submit" id="createThreadBtn" style="width: 100%">作成</button>
+                <div id="createThreadStatus" class="status hidden"></div>
+            </form>
+        </div>
+        <div id="chatView" class="section view-section hidden initial-state">
+            <div id="chatPlaceholder">
+                <p class="no-threads" style="text-align: center; margin-top: 0;">スレッドを選択してください。</p>
+            </div>
+            <div id="chatContent" class="hidden">
+                <div class="chat-header">
+                    <h2 id="currentThreadName"></h2><button id="backToThreadsBtn"
+                        onclick="app.showView('threadSelectionView')">← スレッド一覧</button>
+                </div>
+                <div class="chatbox" id="chatbox">
+                    <div id="chatLoading" class="loading">読み込み中...</div>
+                </div>
+                <div class="form-area">
+                    <form id="messageForm" autocomplete="off">
+                        <div class="form-input-group"><label for="messageInput" class="hidden">メッセージ
+                                (Ctrl+Enterで送信)</label><textarea id="messageInput" required=""
+                                placeholder="メッセージを入力 (Ctrl+Enterで送信)"></textarea></div>
+                        <div class="message-toolbar" style="margin-bottom: 0.7em;">
+                            <button type="button" id="imageUploadBtn" title="画像を挿入" class="toolbar-button"
+                                style="background: #e0f7fa; color: #00796b; border: 1px solid #b2ebf2; border-radius: 5px; padding: 0.3em 0.6em; font-size: 1em; cursor: pointer; line-height: 1; margin:0;">
+                                <i class="fas fa-image"></i> 画像挿入
+                            </button>
+                            <input type="file" id="imageFileInput" accept="image/*" style="display: none;">
+                            <span id="imageUploadStatus" class="small-text"
+                                style="margin-left: 0.5em; color: #00796b;"></span>
+                        </div>
+
+                        <div id="mobileSettingsArea">
+                            <div class="form-input-group"><label for="nameInput">名前</label>
+                                <div id="mobileNameInputContainer"><span class="id-prefix">ID:<span
+                                            id="mobileUserIdPrefix">----</span></span><input type="text"
+                                        id="mobileNameInput" placeholder="名無し" /><span class="name-suffix">さん</span>
+                                </div>
+                            </div>
+                            <span class="user-id-label" id="mobileUserIdLabel"></span>
+                            <div class="message-toolbar" style="margin-bottom: 0.7em;">
+                                <button type="button" id="mobileImageUploadBtn" title="画像を挿入" class="toolbar-button"
+                                    style="background: #e0f7fa; color: #00796b; border: 1px solid #b2ebf2; border-radius: 5px; padding: 0.3em 0.6em; font-size: 1em; cursor: pointer; line-height: 1; margin:0;">
+                                    <i class="fas fa-image"></i> 画像挿入
+                                </button>
+                                <input type="file" id="mobileImageFileInput" accept="image/*" style="display: none;">
+                                <span id="mobileImageUploadStatus" class="small-text"
+                                    style="margin-left: 0.5em; color: #00796b;"></span>
+                            </div>
+                            <details id="mobileMessagePreviewDetails">
+                                <summary>プレビュー表示/非表示</summary>
+                                <div id="mobileMessagePreview" class="message-preview"></div>
+                            </details>
+                        </div>
+                        <button type="submit" id="submitBtn" style="width: 100%;margin-top:.8em;">書き込む</button>
+                        <div id="messageStatus" class="status hidden"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div id="settingsSidebar">
+            <div class="settings-section">
+                <h3>投稿設定 <span id="msgFormNumber" class="small-text"></span></h3>
+                <div class="form-input-group"><label for="nameInput">名前</label>
+                    <div id="nameInputContainer"><span class="id-prefix">ID:<span
+                                id="userIdPrefix">----</span></span><input type="text" id="nameInput"
+                            placeholder="名無し" /><span class="name-suffix">さん</span></div>
+                </div>
+                <span class="user-id-label" id="userIdLabel"></span>
+            </div>
+            <div class="settings-section">
+                <h3>プレビュー (Markdown)</h3>
+                <details open>
+                    <summary>表示/非表示</summary>
+                    <div id="messagePreview" class="message-preview"></div>
+                </details>
+            </div>
+        </div>
+        <div id="passwordModal" class="modal-overlay hidden">
+            <div class="modal-content"><button id="closeModalBtn" class="modal-close-btn" aria-label="閉じる">×</button>
+                <h3 id="passwordModalTitle">プライベートスレッドに参加</h3>
+                <p class="small-text">合言葉を入力してください。</p>
+                <form id="passwordForm" autocomplete="off"><label for="threadPasswordInput">合言葉</label><input
+                        type="password" id="threadPasswordInput" required="" placeholder="合言葉" />
+                    <div id="passwordModalStatus" class="status hidden"></div>
+                    <div class="modal-buttons"><button type="button" id="cancelModalBtn">キャンセル</button><button
+                            type="submit" id="joinThreadBtn">参加</button></div>
+                </form>
+            </div>
+        </div>
+        <script>
+            const escapeHtml = (str) => {
+                if (typeof str !== 'string') return str;
+                const div = document.createElement('div');
+                div.appendChild(document.createTextNode(str));
+                return div.innerHTML;
+            };
+
+            function getOrCreateUserId() {
+                const key = 'chatUserId';
+                let id = localStorage.getItem(key);
+                if (!id) {
+                    id = Math.random().toString(36).slice(2, 12);
+                    localStorage.setItem(key, id);
+                }
+                return id;
+            }
+            const userId = getOrCreateUserId();
+
+            function getSavedUserName() {
+                return localStorage.getItem('chatUserName') || '';
+            }
+
+            function saveUserName(name) {
+                localStorage.setItem('chatUserName', name);
+            }
+
+            const app = {
+                state: {
+                    currentThreadId: null,
+                    currentThreadName: null,
+                    currentThreadType: null,
+                    currentPassword: '',
+                    messageCount: 0,
+                    messageUpdateIntervalId: null,
+                    messageUpdateInterval: 15000,
+                    isFetchingMessages: false,
+                    isGasCallInProgress: false,
+                    targetPrivateThread: null,
+                    currentView: 'threadSelectionView',
+                    isPcLayout: false,
+                    imagePlaceholders: new Map(),
+                    placeholderCounter: 0
+                },
+                elements: {},
+
+                init() {
+                    console.log('App initializing...');
+                    this.elements = {
+                        globalStatus: document.getElementById('globalStatus'),
+                        appContainer: document.getElementById('appContainer'),
+                        threadSelectionView: document.getElementById('threadSelectionView'),
+                        chatView: document.getElementById('chatView'),
+                        chatPlaceholder: document.getElementById('chatPlaceholder'),
+                        chatContent: document.getElementById('chatContent'),
+                        settingsSidebar: document.getElementById('settingsSidebar'),
+                        threadList: document.getElementById('threadList'),
+                        threadListLoading: document.getElementById('threadListLoading'),
+                        noThreadsMessage: document.getElementById('noThreadsMessage'),
+                        createThreadForm: document.getElementById('createThreadForm'),
+                        createThreadBtn: document.getElementById('createThreadBtn'),
+                        createThreadStatus: document.getElementById('createThreadStatus'),
+                        currentThreadName: document.getElementById('currentThreadName'),
+                        backToThreadsBtn: document.getElementById('backToThreadsBtn'),
+                        userIdLabel: document.getElementById('userIdLabel'),
+                        userIdPrefix: document.getElementById('userIdPrefix'),
+                        mobileUserIdLabel: document.getElementById('mobileUserIdLabel'),
+                        mobileUserIdPrefix: document.getElementById('mobileUserIdPrefix'),
+                        chatbox: document.getElementById('chatbox'),
+                        chatLoading: document.getElementById('chatLoading'),
+                        messageForm: document.getElementById('messageForm'),
+                        nameInput: document.getElementById('nameInput'),
+                        messageInput: document.getElementById('messageInput'),
+                        messagePreview: document.getElementById('messagePreview'),
+                        mobileNameInput: document.getElementById('mobileNameInput'),
+                        mobileMessagePreview: document.getElementById('mobileMessagePreview'),
+                        submitBtn: document.getElementById('submitBtn'),
+                        messageStatus: document.getElementById('messageStatus'),
+                        msgFormNumber: document.getElementById('msgFormNumber'),
+                        passwordModal: document.getElementById('passwordModal'),
+                        passwordModalTitle: document.getElementById('passwordModalTitle'),
+                        passwordForm: document.getElementById('passwordForm'),
+                        threadPasswordInput: document.getElementById('threadPasswordInput'),
+                        passwordModalStatus: document.getElementById('passwordModalStatus'),
+                        closeModalBtn: document.getElementById('closeModalBtn'),
+                        cancelModalBtn: document.getElementById('cancelModalBtn'),
+                        joinThreadBtn: document.getElementById('joinThreadBtn'),
+                        imageUploadBtn: document.getElementById('imageUploadBtn'),
+                        imageFileInput: document.getElementById('imageFileInput'),
+                        imageUploadStatus: document.getElementById('imageUploadStatus'),
+                        mobileImageUploadBtn: document.getElementById('mobileImageUploadBtn'),
+                        mobileImageFileInput: document.getElementById('mobileImageFileInput'),
+                        mobileImageUploadStatus: document.getElementById('mobileImageUploadStatus'),
+                    };
+                    this.addEventListeners();
+                    this.updateLayoutState();
+                    this.setupInitialView();
+                    const shortUserId = userId;
+                    const savedName = getSavedUserName();
+                    this.elements.userIdLabel.textContent = `あなたのID: ${userId}`;
+                    this.elements.userIdPrefix.textContent = shortUserId;
+                    this.elements.nameInput.value = savedName;
+                    // Make sure mobile elements exist before setting them
+                    if (this.elements.mobileUserIdLabel) this.elements.mobileUserIdLabel.textContent = `あなたのID: ${userId}`;
+                    if (this.elements.mobileUserIdPrefix) this.elements.mobileUserIdPrefix.textContent = shortUserId;
+                    if (this.elements.mobileNameInput) this.elements.mobileNameInput.value = savedName;
+
+                    console.log('App initialized. PC Layout:', this.state.isPcLayout);
+                },
+
+                updateLayoutState() {
+                    this.state.isPcLayout = window.innerWidth >= 992;
+                    console.log('Layout state updated. isPcLayout:', this.state.isPcLayout);
+                },
+
+                setupInitialView() {
+                    console.log('Setting up initial view...');
+                    const params = new URLSearchParams(window.location.search);
+                    const threadIdFromUrl = params.get('thread');
+                    if (this.state.isPcLayout) {
+                        this.elements.threadSelectionView.classList.remove('hidden');
+                        this.elements.chatView.classList.remove('hidden');
+                        this.elements.settingsSidebar.classList.remove('hidden'); // Show sidebar on PC
+                        if (threadIdFromUrl) {
+                            this.elements.chatView.classList.remove('initial-state');
+                            this.elements.chatPlaceholder.classList.add('hidden');
+                            this.elements.chatContent.classList.remove('hidden');
+                        } else {
+                            this.elements.chatView.classList.add('initial-state');
+                            this.elements.chatPlaceholder.classList.remove('hidden');
+                            this.elements.chatContent.classList.add('hidden');
+                        }
+                        this.fetchThreads().then(() => {
+                            if (threadIdFromUrl) this.trySelectThreadFromUrl(threadIdFromUrl);
+                        });
+                    } else {
+                        this.elements.threadSelectionView.classList.remove('hidden');
+                        this.elements.chatView.classList.add('hidden');
+                        this.elements.settingsSidebar.classList.add('hidden'); // Hide sidebar on Mobile
+                        this.state.currentView = 'threadSelectionView';
+                        if (threadIdFromUrl) {
+                            this.fetchThreads().then(() => {
+                                this.trySelectThreadFromUrl(threadIdFromUrl);
+                            });
+                        } else {
+                            this.fetchThreads();
+                        }
+                    }
+                },
+
+                async trySelectThreadFromUrl(threadId) {
+                    console.log(`Trying to select thread from URL: ${threadId}`);
+                    await new Promise(resolve => setTimeout(resolve, 100)); // Wait for potential rendering
+                    const listItem = this.elements.threadList.querySelector(`li[data-thread-id="${threadId}"]`);
+                    if (listItem) {
+                        console.log('Found list item for URL thread, simulating click.');
+                        listItem.click();
+                    } else {
+                        console.warn('Thread ID from URL not found in the list after fetch.');
+                        this.setStatus(this.elements.globalStatus, `指定スレッド(${escapeHtml(threadId)})が見つかりません`, 'error', 5000);
+                        this.showView('threadSelectionView');
+                    }
+                },
+
+                addEventListeners() {
+                    if (this._listenersAdded) return;
+                    // Thread creation
+                    this.elements.createThreadForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        const name = this.elements.createThreadForm.querySelector('#newThreadName').value;
+                        const password = this.elements.createThreadForm.querySelector('#newThreadPassword').value;
+                        this.createPrivateThread(name, password);
+                    });
+                    // Send message
+                    this.elements.messageForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.addMessage();
+                    });
+                    // Password modal
+                    this.elements.closeModalBtn.addEventListener('click', () => this.hidePasswordModal());
+                    this.elements.cancelModalBtn.addEventListener('click', () => this.hidePasswordModal());
+                    this.elements.passwordForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.attemptJoinPrivateThread();
+                    });
+                    // Thread list click (copy or select)
+                    this.elements.threadList.addEventListener('click', (e) => {
+                        const copyButton = e.target.closest('.copy-thread-link-btn');
+                        const listItem = e.target.closest('li[data-thread-id]');
+                        if (copyButton && copyButton.dataset.threadId) {
+                            e.stopPropagation();
+                            const threadIdToCopy = copyButton.dataset.threadId;
+                            this.copyThreadLink(threadIdToCopy, copyButton);
+                        } else if (listItem) {
+                            this.elements.threadList.querySelectorAll('li.selected').forEach(li => li.classList.remove('selected'));
+                            listItem.classList.add('selected');
+                            const thread = {
+                                id: listItem.dataset.threadId,
+                                name: listItem.dataset.threadName,
+                                type: listItem.dataset.threadType,
+                            };
+                            console.log('Thread list item clicked:', thread);
+                            this.handleThreadSelection(thread);
+                        }
+                    });
+                    // Ctrl+Enter to send
+                    this.elements.messageInput.addEventListener('keydown', (e) => {
+                        if (e.ctrlKey && e.key === 'Enter' && !this.elements.submitBtn.disabled) {
+                            e.preventDefault();
+                            console.log('Ctrl+Enter detected, submitting.');
+                            this.elements.submitBtn.click();
+                        }
+                    });
+                    // Sync name input between PC sidebar and Mobile form area
+                    const handleNameInputSync = (e) => {
+                        const newName = e.target.value;
+                        if (this.elements.nameInput) this.elements.nameInput.value = newName; // Sync PC
+                        if (this.elements.mobileNameInput) this.elements.mobileNameInput.value = newName; // Sync Mobile
+                        saveUserName(newName.trim()); // Save trimmed name
+                    };
+                    if (this.elements.nameInput) this.elements.nameInput.addEventListener('input', handleNameInputSync);
+                    if (this.elements.mobileNameInput) this.elements.mobileNameInput.addEventListener('input', handleNameInputSync);
+
+                    // Message input for preview
+                    this.elements.messageInput.addEventListener('input', () => this.updatePreview());
+                    // Resize handling
+                    let resizeTimer;
+                    window.addEventListener('resize', () => {
+                        clearTimeout(resizeTimer);
+                        resizeTimer = setTimeout(() => {
+                            const oldLayout = this.state.isPcLayout;
+                            this.updateLayoutState();
+                            if (oldLayout !== this.state.isPcLayout) {
+                                console.log('Layout changed (PC <-> Mobile), resetting view.');
+                                this.setupInitialView();
+                            }
+                        }, 250);
+                    });
+
+                    const setupImageUpload = (button, fileInput, statusElement) => {
+                        if (button && fileInput) {
+                            button.addEventListener('click', () => {
+                                fileInput.click(); // 非表示のファイル入力をトリガー
+                            });
+                            fileInput.addEventListener('change', (event) => {
+                                this.handleImageUpload(event, statusElement, button); // ステータス要素とボタンも渡す
+                            });
+                        }
+                    };
+
+
+                    setupImageUpload(this.elements.imageUploadBtn, this.elements.imageFileInput, this.elements.imageUploadStatus);
+                    setupImageUpload(this.elements.mobileImageUploadBtn, this.elements.mobileImageFileInput, this.elements.mobileImageUploadStatus);
+
+                    // Visibility change
+                    document.addEventListener('visibilitychange', () => this.handleVisibilityChange());
+                    this._listenersAdded = true;
+                    console.log('Event listeners added.');
+                },
+
+                showView(viewId) {
+                    console.log(`[showView START] Target: ${viewId}, Current: ${this.state.currentView}, isPC: ${this.state.isPcLayout}`);
+                    this.clearAllStatus();
+                    clearInterval(this.state.messageUpdateIntervalId);
+
+                    const isMobile = !this.state.isPcLayout;
+
+                    if (!isMobile) {
+                        // --- PC Layout Logic (変更なし、前回の提案通り) ---
+                        console.log(`[showView PC] Processing for ${viewId}`);
+                        if (viewId === 'chatView') {
+                            console.log(`[showView PC] Setting chat area to content view.`);
+                            this.elements.chatView?.classList.remove('initial-state');
+                            this.elements.chatPlaceholder?.classList.add('hidden');
+                            this.elements.chatContent?.classList.remove('hidden');
+                        } else if (viewId === 'threadSelectionView') {
+                            console.log(`[showView PC] Request to show 'threadSelectionView'. No change made to chat area content.`);
+                        } else {
+                            console.warn(`[showView PC] Received unknown viewId: ${viewId}`);
+                        }
+                    } else {
+                        // --- Mobile/Tablet Layout Logic with requestAnimationFrame ---
+                        console.log(`[showView Mobile RAF] Processing switch from ${this.state.currentView} to ${viewId}`);
+                        const validMobileViews = ['threadSelectionView', 'chatView'];
+                        let finalTargetViewId = viewId;
+
+                        // a. Validate target view ID
+                        if (!validMobileViews.includes(finalTargetViewId)) {
+                            console.error(`[showView Mobile RAF] Invalid target viewId: ${finalTargetViewId}. Falling back.`);
+                            finalTargetViewId = 'threadSelectionView';
+                        }
+
+                        // b. Get target element, fallback if needed
+                        let targetElement = this.elements[finalTargetViewId];
+                        if (!targetElement) {
+                            console.error(`[showView Mobile RAF CRITICAL] Target element NOT FOUND for viewId: ${finalTargetViewId}!`);
+                            finalTargetViewId = 'threadSelectionView';
+                            targetElement = this.elements[finalTargetViewId];
+                            if (!targetElement) {
+                                alert("致命的な表示エラー。");
+                                return;
+                            }
+                            console.warn("[showView Mobile RAF] Successfully fell back to threadSelectionView.");
+                        }
+
+                        // c. Hide *other* views first
+                        validMobileViews.forEach(id => {
+                            const el = this.elements[id];
+                            if (el && id !== finalTargetViewId) {
+                                console.log(`[showView Mobile RAF] Hiding view: ${id}`);
+                                el.classList.add('hidden');
+                                // Remove potential inline style just in case
+                                el.style.display = '';
+                            }
+                        });
+
+                        // d. Use requestAnimationFrame to make the target view visible
+                        requestAnimationFrame(() => {
+                            // This code will run just before the next browser repaint
+                            console.log(`[showView Mobile RAF] Inside RAF callback - Making target view '${finalTargetViewId}' visible.`);
+
+                            // i. Remove hidden class
+                            targetElement.classList.remove('hidden');
+
+                            // ii. (オプション) 強制的なスタイルの設定 - タイミング改善だけで解決する場合不要な可能性
+                            // const expectedDisplay = (finalTargetViewId === 'chatView') ? 'flex' : 'block';
+                            // targetElement.style.display = expectedDisplay;
+                            // console.log(`[showView Mobile RAF] Applied inline style: display: ${expectedDisplay}`);
+
+
+                            // iii. If target is 'chatView', ensure its children are also visible
+                            if (finalTargetViewId === 'chatView') {
+                                // Use rAF again for children might be overly cautious, but trying
+                                requestAnimationFrame(() => {
+                                    if (this.elements.chatContent) {
+                                        this.elements.chatContent.classList.remove('hidden');
+                                        this.elements.chatContent.style.display = 'flex'; // Ensure flex layout
+                                        console.log(`[showView Mobile RAF-inner] Ensured #chatContent is visible.`);
+                                    }
+                                    if (this.elements.chatPlaceholder) {
+                                        this.elements.chatPlaceholder.classList.add('hidden');
+                                        this.elements.chatPlaceholder.style.display = ''; // Clear inline style
+                                        console.log(`[showView Mobile RAF-inner] Ensured #chatPlaceholder is hidden.`);
+                                    }
+                                });
+                            }
+
+
+                            // f. Update application state *after* requesting the visibility change
+                            this.state.currentView = finalTargetViewId;
+                            console.log(`[showView Mobile RAF] State updated in RAF, currentView is now: ${this.state.currentView}`);
+
+
+                            // g. Perform post-show actions after a minimal delay (allows rendering)
+                            setTimeout(() => {
+                                if (finalTargetViewId === 'threadSelectionView') {
+                                    console.log("[showView Mobile RAF] Post-show actions for Thread List view.");
+                                    this.state.currentThreadId = null;
+                                    if (this.elements.chatbox) this.elements.chatbox.innerHTML = '';
+                                    if (this.elements.currentThreadName) this.elements.currentThreadName.innerHTML = '';
+                                    history.pushState({}, document.title, window.location.pathname);
+                                    if (!this.state.isGasCallInProgress) this.fetchThreads();
+                                    else console.warn('[showView Mobile RAF] GAS call in progress, skipping fetchThreads on back.');
+                                } else if (finalTargetViewId === 'chatView') {
+                                    console.log("[showView Mobile RAF] Post-show actions for Chat View.");
+                                    // Focus might work better here
+                                    // if (this.elements.messageInput) this.elements.messageInput.focus();
+                                }
+
+                                // h. Scroll to top (now potentially after rendering)
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }, 0); // Use timeout 0 to push to end of execution queue
+
+
+                            console.log(`[showView Mobile RAF] Finished processing inside RAF for ${finalTargetViewId}`);
+                        }); // End of outer requestAnimationFrame
+
+                        console.log(`[showView Mobile RAF] Visibility change requested via RAF for ${finalTargetViewId}`);
+
+                    } // End Mobile Logic
+
+                    // Note: Outer scrollTo moved inside the RAF's setTimeout
+                    console.log(`[showView END] Function execution finished for ${viewId}. View state: ${this.state.currentView}. RAF requested.`);
+                }, // End of showView method
+
+                callGas(functionName, ...args) {
+                    return new Promise((resolve, reject) => {
+                        if (this.state.isGasCallInProgress && !['getMessagesApi'].includes(functionName)) {
+                            console.warn('GAS call already in progress, skipping:', functionName);
+                            this.setStatus(this.elements.globalStatus, '他の処理を実行中です。しばらくお待ちください。', 'error', 3000);
+                            return reject(new Error('Previous operation in progress.'));
+                        }
+                        if (!['getMessagesApi'].includes(functionName)) {
+                            this.state.isGasCallInProgress = true;
+                        }
+                        console.log(`Calling GAS function: ${functionName}`);
+                        google.script.run
+                            .withSuccessHandler((responseJson) => {
+                                if (!['getMessagesApi'].includes(functionName)) {
+                                    this.state.isGasCallInProgress = false;
+                                }
+                                try {
+                                    const response = JSON.parse(responseJson);
+                                    if (response.status === 'success') {
+                                        console.log(`GAS Success (${functionName}):`, response.data);
+                                        resolve(response.data || {});
+                                    } else {
+                                        console.error(`GAS Error (${functionName}):`, response.message);
+                                        reject(new Error(response.message || 'サーバーエラー'));
+                                    }
+                                } catch (parseError) {
+                                    console.error(`GAS JSON Parse Error (${functionName}):`, parseError, responseJson);
+                                    reject(new Error('サーバー応答が無効です'));
+                                }
+                            })
+                            .withFailureHandler((error) => {
+                                if (!['getMessagesApi'].includes(functionName)) {
+                                    this.state.isGasCallInProgress = false;
+                                }
+                                console.error(`GAS Failure (${functionName}):`, error);
+                                reject(new Error(`通信失敗: ${error.message}`));
+                            })
+                        [functionName](...args); // Dynamically call the function
+                    });
+                },
+
+                fetchThreads(forceUpdate = false) {
+                    console.log('Fetching threads...', forceUpdate ? '(Forced)' : '');
+                    if (!forceUpdate && this.state.isGasCallInProgress) {
+                        console.warn('Skipping fetchThreads, GAS call in progress.');
+                        return Promise.resolve([]);
+                    }
+                    this.elements.threadListLoading.classList.remove('hidden');
+                    this.elements.threadList.innerHTML = '';
+                    this.elements.noThreadsMessage.classList.add('hidden');
+                    return this.callGas('getActiveThreadsApi')
+                        .then(data => {
+                            this.elements.threadListLoading.classList.add('hidden');
+                            const threads = data.threads || [];
+                            console.log(`Fetched ${threads.length} threads.`);
+                            if (threads.length > 0) {
+                                this.renderThreadList(threads);
+                            } else {
+                                this.elements.noThreadsMessage.classList.remove('hidden');
+                            }
+                            return threads; // Return threads for chaining if needed
+                        })
+                        .catch(error => {
+                            this.elements.threadListLoading.classList.add('hidden');
+                            this.setStatus(this.elements.globalStatus, `スレッドリスト取得失敗: ${error.message}`, 'error', 5000);
+                            throw error; // Rethrow error for potential higher-level handling
+                        });
+                },
+
+                renderThreadList(threads) {
+                    this.elements.threadList.innerHTML = '';
+                    const fragment = document.createDocumentFragment();
+                    threads.forEach(thread => {
+                        const li = document.createElement('li');
+                        li.dataset.threadId = thread.id;
+                        li.dataset.threadName = thread.name;
+                        li.dataset.threadType = thread.type;
+                        const nameSpan = document.createElement('span');
+                        nameSpan.className = 'thread-name';
+                        nameSpan.textContent = escapeHtml(thread.name); // Use global escapeHtml
+                        const copyBtn = document.createElement('button');
+                        copyBtn.className = 'copy-thread-link-btn';
+                        copyBtn.textContent = '🔗';
+                        copyBtn.title = 'スレッドURLをコピー';
+                        copyBtn.dataset.threadId = thread.id;
+                        const typeSpan = document.createElement('span');
+                        typeSpan.className = `thread-type ${thread.type}`;
+                        typeSpan.textContent = thread.type;
+                        li.appendChild(nameSpan);
+                        li.appendChild(copyBtn);
+                        li.appendChild(typeSpan);
+                        fragment.appendChild(li);
+                        if (thread.id === this.state.currentThreadId) {
+                            li.classList.add('selected');
+                        }
+                    });
+                    this.elements.threadList.appendChild(fragment);
+                },
+
+                copyThreadLink(threadId, buttonElement) {
+                    // Ensure you have the correct GAS Exec URL
+                    const gasExecUrl = 'https://script.google.com/macros/s/AKfycbz4IfCCvthP8iEurPNmk3JOUGvGX0MSb-mUGNijxQTa_parpN9QQH0w9HBcR0555QH1/exec';
+                    const shareUrl = new URL(gasExecUrl);
+                    shareUrl.searchParams.set('thread', threadId); // Add thread ID as parameter
+                    const urlToCopy = shareUrl.toString();
+
+                    // Use Clipboard API if available
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(urlToCopy).then(() => {
+                            console.log(`Copied to clipboard: ${urlToCopy}`);
+                            // Visual feedback
+                            const originalText = buttonElement.textContent;
+                            buttonElement.textContent = '✓'; // Change to checkmark
+                            buttonElement.classList.add('copied'); // Add class for styling
+                            buttonElement.disabled = true; // Temporarily disable
+
+                            // Revert after a delay
+                            setTimeout(() => {
+                                buttonElement.textContent = originalText;
+                                buttonElement.classList.remove('copied');
+                                buttonElement.disabled = false;
+                            }, 1500); // Revert after 1.5 seconds
+
+                        }).catch(err => {
+                            console.error('Failed to copy using clipboard API: ', err);
+                            alert('URLのコピーに失敗しました。\n' + urlToCopy); // Notify user of failure
+                        });
+                    } else {
+                        // Fallback using deprecated execCommand (for older browsers)
+                        try {
+                            const tempInput = document.createElement('textarea'); // Use textarea for reliability
+                            tempInput.value = urlToCopy;
+                            tempInput.style.position = 'absolute';
+                            tempInput.style.left = '-9999px'; // Move off-screen
+                            document.body.appendChild(tempInput);
+                            tempInput.select();
+                            tempInput.setSelectionRange(0, 99999); // For mobile Safari
+                            document.execCommand('copy');
+                            document.body.removeChild(tempInput);
+                            console.log(`Copied to clipboard (fallback): ${urlToCopy}`);
+                            // Visual feedback (same as above)
+                            const originalText = buttonElement.textContent;
+                            buttonElement.textContent = '✓';
+                            buttonElement.classList.add('copied');
+                            buttonElement.disabled = true;
+                            setTimeout(() => {
+                                buttonElement.textContent = originalText;
+                                buttonElement.classList.remove('copied');
+                                buttonElement.disabled = false;
+                            }, 1500);
+                        } catch (err) {
+                            console.error('Fallback copy method failed: ', err);
+                            alert('URLのコピーに失敗しました。\n' + urlToCopy);
+                        }
+                    }
+                },
+
+                handleThreadSelection(thread) {
+                    this.clearAllStatus();
+                    if (thread.type === 'Private') {
+                        this.state.targetPrivateThread = { id: thread.id, name: thread.name };
+                        this.showPasswordModal(thread.name);
+                    } else {
+                        this.state.currentPassword = ''; // Public threads don't need a password
+                        this.enterChatRoom(thread);
+                    }
+                },
+
+                createPrivateThread(threadName, password) {
+                    threadName = threadName.trim();
+                    password = password.trim();
+                    if (!threadName || password.length < 4) {
+                        this.setStatus(this.elements.createThreadStatus, 'スレッド名を入力し、合言葉は4文字以上にしてください', 'error', 4000);
+                        return;
+                    }
+                    this.setStatus(this.elements.createThreadStatus, '作成中...', '');
+                    this.elements.createThreadBtn.disabled = true;
+                    this.callGas('createPrivateThreadApi', threadName, password)
+                        .then(data => {
+                            this.setStatus(this.elements.createThreadStatus, `スレッド「${escapeHtml(data.thread.name)}」を作成しました`, 'success', 3000);
+                            this.elements.createThreadForm.reset(); // Reset form
+                            this.state.currentPassword = password; // Store password for the new thread
+                            this.fetchThreads().then(() => { // Refresh list then enter
+                                this.enterChatRoom(data.thread);
+                            });
+                        })
+                        .catch(error => this.setStatus(this.elements.createThreadStatus, `作成失敗: ${error.message}`, 'error'))
+                        .finally(() => { this.elements.createThreadBtn.disabled = false; });
+                },
+
+                showPasswordModal(threadName) {
+                    this.elements.passwordModalTitle.textContent = `「${escapeHtml(threadName)}」に参加`;
+                    this.elements.threadPasswordInput.value = '';
+                    this.setStatus(this.elements.passwordModalStatus, ''); // Clear status
+                    this.elements.passwordModal.classList.remove('hidden');
+                    this.elements.threadPasswordInput.focus();
+                },
+
+                hidePasswordModal() {
+                    this.elements.passwordModal.classList.add('hidden');
+                    this.state.targetPrivateThread = null; // Clear target
+                },
+
+                attemptJoinPrivateThread() {
+                    if (!this.state.targetPrivateThread) return;
+                    const { id: threadId, name: threadName } = this.state.targetPrivateThread;
+                    const password = this.elements.threadPasswordInput.value;
+                    if (!password) {
+                        this.setStatus(this.elements.passwordModalStatus, '合言葉を入力してください', 'error', 3000);
+                        return;
+                    }
+                    this.setStatus(this.elements.passwordModalStatus, '確認中...', '');
+                    this.elements.joinThreadBtn.disabled = true;
+                    this.elements.cancelModalBtn.disabled = true;
+                    this.callGas('checkPrivateThreadAccessApi', threadId, password)
+                        .then(data => {
+                            if (data.accessible) {
+                                this.state.currentPassword = password; // Store password on success
+                                this.hidePasswordModal();
+                                this.enterChatRoom(data.thread); // Assume data.thread is returned on success
+                            } else {
+                                this.setStatus(this.elements.passwordModalStatus, '合言葉が違うか、参加できませんでした', 'error', 4000);
+                            }
+                        })
+                        .catch(error => this.setStatus(this.elements.passwordModalStatus, `エラー: ${error.message}`, 'error'))
+                        .finally(() => {
+                            this.elements.joinThreadBtn.disabled = false;
+                            this.elements.cancelModalBtn.disabled = false;
+                        });
+                },
+
+                enterChatRoom(thread) {
+                    console.log(`Entering chat room: ${thread.id} (${thread.name})`);
+                    if (!thread || !thread.id || !thread.name || !thread.type) {
+                        console.error('Invalid thread data for enterChatRoom:', thread);
+                        this.setStatus(this.elements.globalStatus, 'チャット情報の読込エラー', 'error');
+                        this.showView('threadSelectionView'); // Go back to list
+                        return;
+                    }
+                    // Update state
+                    this.state.currentThreadId = thread.id;
+                    this.state.currentThreadName = thread.name;
+                    this.state.currentThreadType = thread.type;
+                    this.state.messageCount = 0;
+                    // Update UI elements
+                    this.elements.currentThreadName.innerHTML = `${escapeHtml(thread.name)} <span class="thread-type ${thread.type}">${thread.type}</span>`;
+                    history.pushState({ threadId: thread.id }, thread.name, `?thread=${thread.id}`); // Update URL
+                    // Initialize chat area
+                    this.elements.chatbox.innerHTML = '';
+                    this.elements.chatLoading.classList.remove('hidden');
+                    // Clear message input and preview
+                    this.elements.messageInput.value = '';
+                    this.updatePreview(); // Clear/update preview
+                    this.updateMsgFormNumber();
+                    // Show the correct view
+                    this.showView('chatView');
+                    // Start fetching messages
+                    this.startMessageFetching();
+                },
+
+                startMessageFetching() {
+                    clearInterval(this.state.messageUpdateIntervalId); // Clear existing interval
+                    if (!this.state.currentThreadId) {
+                        console.log('No current thread, message fetching stopped.');
+                        return;
+                    }
+                    console.log('Starting message fetching...');
+                    this.fetchMessages(); // Fetch immediately
+                    this.state.messageUpdateIntervalId = setInterval(
+                        () => this.fetchMessages(),
+                        this.state.messageUpdateInterval
+                    );
+                },
+
+                fetchMessages() {
+                    if (!this.state.currentThreadId || this.state.isFetchingMessages) return;
+                    this.state.isFetchingMessages = true;
+                    console.log('Fetching messages for thread:', this.state.currentThreadId);
+                    this.callGas('getMessagesApi', this.state.currentThreadId, this.state.currentPassword)
+                        .then(data => {
+                            console.log(`Fetched ${data.messages?.length || 0} messages.`);
+                            this.elements.chatLoading.classList.add('hidden'); // Hide loading indicator
+                            this.renderMessages(data.messages || []); // Render messages (handle null/empty)
+                            // Update message count and form number if count changed
+                            const newMessageCount = data.messages?.length || 0;
+                            if (newMessageCount !== this.state.messageCount) {
+                                this.state.messageCount = newMessageCount;
+                                this.updateMsgFormNumber();
+                            }
+                        })
+                        .catch(error => {
+                            this.setStatus(this.elements.messageStatus, `メッセージ取得エラー: ${error.message}`, 'error', 5000);
+                            // Optionally stop interval on error: clearInterval(this.state.messageUpdateIntervalId);
+                        })
+                        .finally(() => {
+                            this.state.isFetchingMessages = false;
+                        });
+                },
+
+                renderMessages(messages) {
+                    const chatbox = this.elements.chatbox;
+                    // Check if scrolled near the bottom before adding new messages
+                    const isScrolledToBottom = chatbox.scrollHeight - chatbox.clientHeight <= chatbox.scrollTop + 50; // Tolerance of 50px
+
+                    const fragment = document.createDocumentFragment();
+                    if (!messages || messages.length === 0) {
+                        chatbox.innerHTML = '<p class="no-threads" style="text-align: center;">まだ書き込みがありません。</p>';
+                        return;
+                    }
+
+                    messages.forEach(msg => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'message-item';
+                        let sanitizedHtml = '';
+                        try {
+                            const dirtyHtml = marked.parse(msg.message || '', { breaks: true, gfm: true });
+                            sanitizedHtml = DOMPurify.sanitize(dirtyHtml, { USE_PROFILES: { html: true } });
+                        } catch (error) {
+                            console.error('Message rendering error:', error, msg.message);
+                            sanitizedHtml = `<p style="color:red">[表示エラー]</p><pre>${escapeHtml(msg.message || '')}</pre>`;
+                        }
+                        const safeName = escapeHtml(msg.name || '名無し');
+                        const safeNumber = escapeHtml(msg.number || '?');
+                        const safeTimestamp = escapeHtml(msg.timestamp || '不明');
+                        let finalNameDisplay = safeName;
+                        // Style the ID part if present
+                        if (safeName.startsWith('ID:')) {
+                            const parts = safeName.split(' ');
+                            finalNameDisplay = `<span class="name-id">${parts[0]}</span> ${parts.slice(1).join(' ')}`;
+                        }
+                        itemDiv.innerHTML = `
+        <div class="message-meta">
+          ${safeNumber} <span class="name">${finalNameDisplay}</span> <span class="timestamp">：${safeTimestamp}</span>
+        </div>
+        <div class="message-body">${sanitizedHtml}</div>`;
+                        fragment.appendChild(itemDiv);
+                    });
+                    chatbox.innerHTML = ''; // Clear previous content efficiently
+                    chatbox.appendChild(fragment);
+                    // Scroll to bottom only if it was already near the bottom
+                    if (isScrolledToBottom) {
+                        chatbox.scrollTop = chatbox.scrollHeight;
+                    }
+                },
+
+
+                addMessage() {
+                    const currentName = (this.state.isPcLayout ? this.elements.nameInput.value : this.elements.mobileNameInput.value)?.trim() || '';
+                    const messageTextWithPlaceholders = this.elements.messageInput.value.trim();
+
+                    if (!this.state.currentThreadId) {
+                        this.setStatus(this.elements.messageStatus, 'エラー: スレッド未選択', 'error', 4000);
+                        return;
+                    }
+                    if (!messageTextWithPlaceholders && this.state.imagePlaceholders.size === 0) {
+                        this.setStatus(this.elements.messageStatus, 'メッセージを入力または画像を追加してください', 'error', 3000);
+                        return;
+                    }
+
+                    const finalName = `ID:${userId} ${currentName || '名無し'}`;
+
+                    this.setStatus(this.elements.messageStatus, '送信準備中...', '');
+                    this.elements.submitBtn.disabled = true;
+
+                    let finalMessageToSend = messageTextWithPlaceholders;
+                    try {
+                        finalMessageToSend = messageTextWithPlaceholders.replace(/\|画像:(image_placeholder_\d+)\|/g, (match, placeholderId) => {
+                            if (this.state.imagePlaceholders.has(placeholderId)) {
+                                const base64Data = this.state.imagePlaceholders.get(placeholderId);
+                                return `![画像](${base64Data})`;
+                            } else {
+                                console.warn(`Placeholder ID ${placeholderId} not found in map during send.`);
+                                return `[不明な画像:${placeholderId}]`;
+                            }
+                        });
+                    } catch (replaceError) {
+                        console.error("Error during placeholder replacement:", replaceError);
+                        this.setStatus(this.elements.messageStatus, 'メッセージ送信準備中にエラーが発生しました', 'error');
+                        this.elements.submitBtn.disabled = false;
+                        return;
+                    }
+
+                    this.setStatus(this.elements.messageStatus, '送信中...', '');
+
+                    this.callGas(
+                        'addMessageApi',
+                        this.state.currentThreadId,
+                        finalName,
+                        finalMessageToSend,
+                        this.state.currentPassword
+                    )
+                        .then(() => {
+                            this.setStatus(this.elements.messageStatus, '書き込みました', 'success', 2000);
+                            this.elements.messageInput.value = '';
+                            this.state.imagePlaceholders.clear();
+                            this.state.placeholderCounter = 0;
+                            this.updatePreview();
+                            this.fetchMessages();
+                            setTimeout(() => {
+                                this.elements.chatbox.scrollTop = this.elements.chatbox.scrollHeight;
+                            }, 300);
+                        })
+                        .catch(error => this.setStatus(this.elements.messageStatus, `書込エラー: ${error.message}`, 'error'))
+                        .finally(() => {
+                            this.elements.submitBtn.disabled = false;
+                        });
+                },
+
+
+                updatePreview() {
+                    const markdownText = this.elements.messageInput.value;
+                    const previewTarget = this.state.isPcLayout ? this.elements.messagePreview : this.elements.mobileMessagePreview;
+                    if (!previewTarget) return;
+
+                    try {
+                        let previewHtmlContent = markdownText.replace(/\|画像:(image_placeholder_\d+)\|/g, (match, placeholderId) => {
+                            const base64Data = this.state.imagePlaceholders.get(placeholderId);
+                            if (base64Data) {
+                                return `<img src="${base64Data}" alt="プレビュー画像:${placeholderId}" style="max-width: 90%; height: auto; display: block; margin: 0.5em auto;">`;
+                            } else {
+                                return `[画像が見つかりません: ${placeholderId}]`;
+                            }
+                        });
+
+                        const dirtyHtml = marked.parse(previewHtmlContent, { breaks: true, gfm: true });
+                        const cleanHtml = DOMPurify.sanitize(dirtyHtml, { USE_PROFILES: { html: true } });
+
+                        previewTarget.innerHTML = cleanHtml || '<span style="color:#bbb; font-style:italic;">プレビュー</span>';
+
+                    } catch (error) {
+                        console.error('Markdown preview error:', error);
+                        previewTarget.textContent = '[プレビュー表示エラー]';
+                    }
+                },
+
+
+                updateMsgFormNumber() {
+                    // Ensure the target element exists before updating
+                    if (this.elements.msgFormNumber) {
+                        this.elements.msgFormNumber.textContent = `(${this.state.messageCount + 1})`;
+                    }
+                },
+
+                setStatus(element, message, type = '', timeout = 0) {
+                    if (!element) return;
+                    element.textContent = message;
+                    element.className = `status ${type}`; // Reset classes then add type
+                    element.classList.toggle('hidden', !message); // Hide if no message
+                    // Clear existing timeout if any
+                    if (element._statusTimeoutId) {
+                        clearTimeout(element._statusTimeoutId);
+                    }
+                    // Set new timeout if needed
+                    if (timeout > 0 && message) {
+                        element._statusTimeoutId = setTimeout(() => {
+                            // Only hide if the message hasn't changed in the meantime
+                            if (element.textContent === message) {
+                                element.classList.add('hidden');
+                            }
+                        }, timeout);
+                    } else if (!message) { // Ensure it's hidden if message is empty
+                        element.classList.add('hidden');
+                    }
+                },
+
+                async handleImageUpload(event, statusElement, buttonElement) {
+                    const fileInput = event.target;
+                    const file = fileInput.files?.[0];
+
+                    const clearStatus = (delay = 3000) => {
+                        setTimeout(() => { if (statusElement) statusElement.textContent = ''; }, delay);
+                    };
+
+                    const setStatus = (text, isError = false) => {
+                        if (statusElement) {
+                            statusElement.textContent = text;
+                            statusElement.style.color = isError ? '#c62828' : '#00796b';
+                        }
+                    };
+
+                    if (!file) return;
+
+                    if (!file.type.startsWith('image/')) {
+                        setStatus('画像ファイルを選択してください。', true);
+                        clearStatus();
+                        fileInput.value = null;
+                        return;
+                    }
+
+                    const maxSize = 5 * 1024 * 1024;
+                    if (file.size > maxSize) {
+                        setStatus(`サイズが大きすぎます (最大${maxSize / 1024 / 1024}MB)`, true);
+                        clearStatus(4000);
+                        fileInput.value = null;
+                        return;
+                    }
+
+                    setStatus('画像を読込中...');
+                    if (buttonElement) buttonElement.disabled = true;
+
+                    try {
+                        const base64Data = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = (error) => reject(error);
+                            reader.readAsDataURL(file);
+                        });
+
+                        if (typeof base64Data !== 'string') {
+                            throw new Error('ファイル読み込み結果が無効です');
+                        }
+
+                        let finalBase64 = base64Data;
+
+                        if (!this.state.isPcLayout) {
+                            setStatus('画像を縮小中...');
+                            try {
+                                finalBase64 = await this.resizeImage(base64Data, 800, 800, 'image/jpeg', 0.8);
+                                setStatus('縮小完了');
+                            } catch (resizeError) {
+                                console.error('Image resize failed:', resizeError);
+                                setStatus('画像の縮小に失敗', true);
+                            }
+                        } else {
+                            console.log('PC environment detected, using original image size.');
+                        }
+
+                        this.state.placeholderCounter++;
+                        const placeholderId = `image_placeholder_${this.state.placeholderCounter}`;
+                        const placeholderText = `|画像:${placeholderId}|`;
+
+                        this.state.imagePlaceholders.set(placeholderId, finalBase64);
+                        console.log(`Placeholder created: ${placeholderId}`, `Map size: ${this.state.imagePlaceholders.size}`);
+
+                        this.insertPlaceholderText(placeholderText);
+
+                        setStatus('画像を追加しました');
+                        clearStatus(1500);
+
+                    } catch (error) {
+                        console.error('Image processing error:', error);
+                        setStatus(`エラー: ${error.message || '画像処理中にエラーが発生しました'}`, true);
+                        clearStatus();
+                    } finally {
+                        if (buttonElement) buttonElement.disabled = false;
+                        fileInput.value = null;
+                    }
+                },
+
+
+                insertPlaceholderText(placeholderText) {
+                    const textArea = this.elements.messageInput;
+                    if (!textArea) return;
+
+                    const textToInsert = `\n${placeholderText}\n`;
+
+                    const start = textArea.selectionStart;
+                    const end = textArea.selectionEnd;
+                    const currentText = textArea.value;
+
+                    const newText = currentText.substring(0, start) + textToInsert + currentText.substring(end);
+                    textArea.value = newText;
+
+                    const newCursorPos = start + textToInsert.length - 1;
+                    textArea.selectionStart = newCursorPos;
+                    textArea.selectionEnd = newCursorPos;
+                    textArea.focus();
+                    this.updatePreview();
+                },
+
+
+
+                /**
+         * 画像をリサイズして新しいBase64データURLを返すPromiseを生成する
+         * @param {string} base64Str - 元の画像のBase64データURL
+         * @param {number} maxWidth - 最大幅
+         * @param {number} maxHeight - 最大高さ
+         * @param {string} mimeType - 出力するMIMEタイプ (例: 'image/jpeg')
+         * @param {number} quality - JPEGの場合の品質 (0.0 - 1.0)
+         * @returns {Promise<string>} 縮小後の画像のBase64データURLを解決するPromise
+         */
+                resizeImage(base64Str, maxWidth = 800, maxHeight = 800, mimeType = 'image/jpeg', quality = 0.8) {
+                    return new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.src = base64Str;
+
+                        img.onload = () => {
+                            let width = img.width;
+                            let height = img.height;
+
+                            // 元のサイズが指定最大サイズより小さい場合は縮小しない
+                            if (width <= maxWidth && height <= maxHeight) {
+                                console.log('Image is already smaller than max dimensions, skipping resize.');
+                                resolve(base64Str); // 元のデータを返す
+                                return;
+                            }
+
+                            // アスペクト比を維持してリサイズ
+                            let newWidth, newHeight;
+                            if (width > height) {
+                                if (width > maxWidth) {
+                                    newHeight = Math.round(height * (maxWidth / width));
+                                    newWidth = maxWidth;
+                                } else {
+                                    newWidth = width;
+                                    newHeight = height;
+                                }
+                            } else {
+                                if (height > maxHeight) {
+                                    newWidth = Math.round(width * (maxHeight / height));
+                                    newHeight = maxHeight;
+                                } else {
+                                    newWidth = width;
+                                    newHeight = height;
+                                }
+                            }
+                            // さらに、高さ/幅の制約もチェック
+                            if (newWidth > maxWidth) {
+                                newHeight = Math.round(newHeight * (maxWidth / newWidth));
+                                newWidth = maxWidth;
+                            }
+                            if (newHeight > maxHeight) {
+                                newWidth = Math.round(newWidth * (maxHeight / newHeight));
+                                newHeight = maxHeight;
+                            }
+
+
+                            const canvas = document.createElement('canvas');
+                            canvas.width = newWidth;
+                            canvas.height = newHeight;
+                            const ctx = canvas.getContext('2d');
+
+                            // 高画質で描画するための設定（オプション）
+                            // ctx.imageSmoothingQuality = "high"; // ブラウザによっては効果がない場合あり
+
+                            ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+                            // 新しいBase64データを取得
+                            let resizedBase64 = canvas.toDataURL(mimeType, quality);
+                            console.log(`Image resized to ${newWidth}x${newHeight}. Original size: ${width}x${height}`);
+                            console.log(`Original base64 length: ${base64Str.length}, Resized base64 length: ${resizedBase64.length}`);
+                            resolve(resizedBase64);
+                        };
+
+                        img.onerror = (error) => {
+                            console.error('Image loading error for resizing:', error);
+                            reject(new Error('画像の読み込みに失敗しました'));
+                        };
+                    });
+                },
+
+                /**
+                 * 画像のMarkdownをメッセージ入力欄に挿入する
+                 * @param {string} imageUrl - Base64エンコードされた画像のData URL
+                 */
+                insertImageMarkdown(imageUrl) {
+                    const textArea = this.elements.messageInput;
+                    if (!textArea) return;
+
+                    const altText = "画像"; // 代替テキスト（必要ならファイル名などから生成）
+                    // Markdown文字列を生成（改行を前後に入れると見やすい場合がある）
+                    const markdown = `\n![${altText}](${imageUrl})\n`;
+
+                    const start = textArea.selectionStart; // 現在のカーソル開始位置
+                    const end = textArea.selectionEnd; // 現在のカーソル終了位置
+                    const currentText = textArea.value;
+
+                    // カーソル位置にMarkdownを挿入
+                    const newText = currentText.substring(0, start) + markdown + currentText.substring(end);
+                    textArea.value = newText;
+
+                    // カーソルを挿入したMarkdownの後ろに移動
+                    // +1 は前に入れた改行分を考慮 (後ろの改行はカーソル移動には影響しない)
+                    const newCursorPos = start + markdown.length - 1; // 末尾の改行を除いた位置
+                    textArea.selectionStart = newCursorPos;
+                    textArea.selectionEnd = newCursorPos;
+
+                    // テキストエリアにフォーカスを戻す
+                    textArea.focus();
+
+                    // プレビューを更新（リアルタイムプレビューがあれば）
+                    this.updatePreview();
+                },
+
+                clearAllStatus() {
+                    this.setStatus(this.elements.globalStatus, '');
+                    this.setStatus(this.elements.createThreadStatus, '');
+                    this.setStatus(this.elements.messageStatus, '');
+                    this.setStatus(this.elements.passwordModalStatus, '');
+                },
+
+                handleVisibilityChange() {
+                    if (!this.state.currentThreadId) return; // Only act if in a chat room
+                    if (document.hidden) {
+                        // Pause message fetching when tab is hidden
+                        clearInterval(this.state.messageUpdateIntervalId);
+                        this.state.messageUpdateIntervalId = null; // Reset interval ID
+                        console.log('Tab hidden, message fetching paused.');
+                    } else {
+                        // Resume fetching if tab becomes visible and interval wasn't running
+                        if (!this.state.messageUpdateIntervalId) {
+                            console.log('Tab active again, restarting message fetching.');
+                            this.startMessageFetching();
+                        }
+                    }
+                },
+            }; // End of app object
+
+            // Initialize the app once the DOM is fully loaded
+            document.addEventListener('DOMContentLoaded', () => {
+                app.init();
+            });
+        </script>
+</body>
+
+</html>
