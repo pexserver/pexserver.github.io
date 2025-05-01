@@ -139,5 +139,33 @@
         "docsUrl": "./File/tool/merge/index.html",
         "platform": "web",
         "categoryType": "development"
+    },
+    "tool11": {
+        "title": "難読化ツール",
+        "image": "../lib/Assets/images/Obfu/image0.png",
+        "imageLarge": "../lib/Assets/images/Obfu/image.png",
+        "category": "開発ツール",
+        "version": "0.0.1",
+        "updated": "2025-05-01",
+        "description": "HTML又はJSを 難読化するツールです",
+        "detailedDescription": "<h1>難読化ツール</h1>\n    <p>このツールはHTMLやJavaScriptコードを難読化し、コードの可読性を低下させるためのものです。</p>\n    <ul>\n        <li>入力方法: ファイル選択またはコード貼り付け</li>\n        <li>オプション: 難読化レベルと出力形式の設定が可能</li>\n        <li>出力結果: 難読化されたコードを表示し、コピーやダウンロードが可能</li>\n    </ul>\n    <footer>\n        <small>注意: 難読化はリバースエンジニアリングを完全に防ぐものではありません。</small>\n    </footer>",
+        "downloadUrl": "./File/tool/Obfu/index.html",
+        "docsUrl": "./File/tool/Obfu/index.html",
+        "platform": "web",
+        "categoryType": "development"
+    },
+    "tool12": {
+        "title": "シンプル圧縮ツール",
+        "image": "../lib/Assets/images/Conver/image.png",
+        "imageLarge": "../lib/Assets/images/Conver/image.png",
+        "category": "開発ツール",
+        "version": "0.0.1",
+        "updated": "2025-05-01",
+        "description": "このツールは、ファイルを効率的に圧縮するための便利なツールです。",
+        "detailedDescription": "<header>\n        <h1>シンプル圧縮ツール</h1>\n        <p>このツールは、ファイルを効率的に圧縮するための便利なツールです。</p>\n    </header>\n    \n    <section>\n        <h2>使い方</h2>\n        <ol>\n            <li><strong>ファイルを選択</strong>: 「ファイルを選択」ボタンをクリックして、圧縮したいファイルを選択してください。</li>\n            <li><strong>圧縮タイプを選択</strong>: 「画像圧縮」または「ZIP圧縮」から選択してください。</li>\n            <li><strong>目標サイズを設定</strong>: MB単位で希望の目標サイズを指定してください。</li>\n            <li><strong>画質を調整</strong>: スライダーを使って画質を調整してください（0が最低画質、1が最高画質）。</li>\n            <li><strong>最大の幅/高さを指定</strong>: 必要に応じて、画像の最大幅や高さをピクセルで設定してください。</li>\n            <li><strong>圧縮を開始</strong>: 「圧縮」ボタンをクリックすると、圧縮が始まります。</li>\n        </ol>\n    </section>\n    \n    <section>\n        <h2>注意事項</h2>\n        <ul>\n            <li>圧縮するファイルのサイズや画質はトレードオフの関係にあります。適切なバランスを探してください。</li>\n            <li>入力可能なサイズや画質の範囲を超えた場合、エラーメッセージが表示されます。</li>\n        </ul>\n    </section>\n    \n    <footer>\n        <p>ご不明な点がある場合は、お問い合わせください。</p>\n    </footer>",
+        "downloadUrl": "./File/tool/Conver/index.html",
+        "docsUrl": "./File/tool/Conver/index.html",
+        "platform": "web",
+        "categoryType": "development"
     }
 }
