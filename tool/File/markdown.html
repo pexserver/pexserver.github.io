@@ -895,8 +895,11 @@
               );
               return true;
 
+
             case "Enter":
             case "Tab":
+              event.preventDefault();
+              highlightSuggestion((activeSuggestionIndex + 1) % items.length);
               if (activeSuggestionIndex !== -1) {
                 event.preventDefault();
                 insertSuggestion(items[activeSuggestionIndex].textContent);
