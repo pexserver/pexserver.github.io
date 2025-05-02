@@ -4,7 +4,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-touch-fullscreen" content="yes" />
@@ -12,7 +11,6 @@
   <link rel="icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon" />
   <link rel="shortcut icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon" />
   <title>toolsData Editor Enhanced</title>
-
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     :root {
@@ -46,8 +44,7 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-        "Helvetica Neue", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       line-height: 1.6;
       padding: 1rem;
       background-color: var(--body-bg);
@@ -93,7 +90,8 @@
     textarea,
     input[type="text"],
     input[type="date"],
-    input[type="url"] {
+    input[type="url"],
+    input[type="text"][readonly] {
       display: block;
       width: 100%;
       padding: 0.65rem 0.9rem;
@@ -105,9 +103,13 @@
       background-clip: padding-box;
       border: 1px solid var(--input-border);
       border-radius: var(--border-radius);
-      transition:
-        border-color 0.15s ease-in-out,
-        box-shadow 0.15s ease-in-out;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    input[type="text"][readonly] {
+      background-color: var(--light-color);
+      opacity: 0.8;
+      cursor: not-allowed;
     }
 
     textarea:focus,
@@ -169,12 +171,7 @@
       font-size: 1rem;
       line-height: 1.5;
       border-radius: var(--border-radius);
-      transition:
-        color 0.15s ease-in-out,
-        background-color 0.15s ease-in-out,
-        border-color 0.15s ease-in-out,
-        box-shadow 0.15s ease-in-out,
-        transform 0.1s ease-out;
+      transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, transform 0.1s ease-out;
       margin: 0.3rem;
     }
 
@@ -316,6 +313,29 @@
       font-weight: bold;
     }
 
+    .image-input-container {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 0.9rem;
+    }
+
+    .image-input-container input[type="url"] {
+      flex-grow: 1;
+      margin-bottom: 0;
+    }
+
+    .image-preview {
+      flex-shrink: 0;
+      width: 80px;
+      height: 80px;
+      border: 1px solid var(--border-color);
+      background-color: var(--light-color);
+      object-fit: contain;
+      display: none;
+      border-radius: var(--border-radius);
+    }
+
     input.pasting {
       opacity: 0.7;
       cursor: progress;
@@ -442,181 +462,146 @@
         width: 100%;
         margin-bottom: 0.5rem;
       }
+
+      .image-input-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .image-input-container input[type="url"] {
+        margin-bottom: 0.5rem;
+      }
+
+      .image-preview {
+        width: 100%;
+        max-width: 150px;
+        height: auto;
+        max-height: 150px;
+        align-self: flex-start;
+      }
+
+      .paste-error {
+        margin-top: 0.2rem;
+      }
     }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <h1>
-      toolsData Editor
-      <small style="font-size: 0.6em; color: var(--secondary-color)">(Enhanced)</small>
-    </h1>
-
+    <h1>toolsData Editor <small style="font-size: 0.6em; color: var(--secondary-color)">(Enhanced)</small></h1>
     <section id="inputArea">
       <h2>1. Load toolsData</h2>
-      <p>
-        既存の <code>toolsData</code> オブジェクトの内容全体 (<code>const toolsData = { ... };</code>
-        の <code>{...}</code> の部分、またはJSON形式) を以下に貼り付けて「Load
-        Data」ボタンを押してください。
-      </p>
-      <textarea id="dataInput" placeholder="{
-    'tool1': {
-        title: 'Example Tool',
-        // ... other properties ...
-    },
-    // ... other tools ...
-}"></textarea>
+      <p>既存の <code>toolsData</code> オブジェクトの内容全体 (<code>const toolsData = { ... };</code> の <code>{...}</code>
+        の部分、またはJSON形式) を以下に貼り付けて「Load Data」ボタンを押してください。</p>
+      <textarea id="dataInput"
+        placeholder="{ 'tool1': { appID: 'uuid-goes-here', title: 'Example Tool', }, }"></textarea>
       <button id="loadDataBtn">Load Data</button>
       <div id="loadError" class="error hidden"></div>
     </section>
-
     <section id="manageArea" class="hidden">
       <h2>2. Manage Tools</h2>
-      <div style="margin-bottom: 1rem">
-        <button id="addToolBtn">Add New Tool</button>
-      </div>
+      <div style="margin-bottom: 1rem"><button id="addToolBtn">Add New Tool</button></div>
       <div id="toolList">
-        <p style="padding: 1rem 1.2rem; color: var(--secondary-color)">
-          Load data to see tools.
-        </p>
+        <p style="padding: 1rem 1.2rem; color: var(--secondary-color);">Load data to see tools.</p>
       </div>
-
       <div id="editFormContainer" class="hidden">
         <h3 id="formTitle">Edit Tool</h3>
         <form id="editForm" novalidate="">
           <input type="hidden" id="editToolId" />
-
           <div>
-            <label for="editToolKey">Tool Key<span class="required">*</span> (例: 'myTool',
-              'utility-abc'):</label>
+            <label for="editAppID">App ID (UUID v4 - Auto-generated):</label>
+            <input type="text" id="editAppID" readonly />
+          </div>
+          <div>
+            <label for="editToolKey">Tool Key<span class="required">*</span> (例: 'myTool', 'utility-abc'):</label>
             <input type="text" id="editToolKey" required="" />
           </div>
-
           <div>
             <label for="editTitle">Title:</label>
             <input type="text" id="editTitle" />
           </div>
-
           <div>
             <label for="editImage">Image URL (クリップボードから画像ペースト可):</label>
-            <input type="url" id="editImage" placeholder="例: ../Assets/images/tool.png またはペースト" />
+            <div class="image-input-container">
+              <input type="url" id="editImage" placeholder="例: ../Assets/images/tool.png またはペースト" />
+              <img id="editImagePreview" src="#" alt="Image Preview" class="image-preview" />
+            </div>
             <small id="editImagePasteError" class="paste-error hidden"></small>
           </div>
-
           <div>
             <label for="editImageLarge">Large Image URL (クリップボードから画像ペースト可):</label>
-            <input type="url" id="editImageLarge" placeholder="例: ../Assets/images/tool-large.png またはペースト" />
+            <div class="image-input-container">
+              <input type="url" id="editImageLarge" placeholder="例: ../Assets/images/tool-large.png またはペースト" />
+              <img id="editImageLargePreview" src="#" alt="Large Image Preview" class="image-preview" />
+            </div>
             <small id="editImageLargePasteError" class="paste-error hidden"></small>
           </div>
-
-          <div>
-            <label for="editCategory">Category:</label>
-            <input type="text" id="editCategory" list="categorySuggestions" placeholder="例: 開発ツール, Minecraft" />
-            <datalist id="categorySuggestions"></datalist>
-          </div>
-
           <div>
             <label for="editVersion">Version:</label>
             <input type="text" id="editVersion" placeholder="例: 1.2.0" />
           </div>
-
           <div>
             <label for="editUpdated">Updated:</label>
             <input type="date" id="editUpdated" />
           </div>
-
           <div>
-            <label for="editDescription">Description (Short)
-              <small style="color: var(--info-color); font-weight: normal">(Markdown supported)</small>:</label>
-            <textarea id="editDescription" placeholder="短い説明をMarkdownで入力...
-例: **重要な** ツールです。"></textarea>
+            <label for="editDescription">Description (Short) <small
+                style="color: var(--info-color); font-weight: normal">(Markdown supported)</small>:</label>
+            <textarea id="editDescription" placeholder="短い説明をMarkdownで入力... 例: **重要な** ツールです。"></textarea>
           </div>
-
           <div>
-            <label for="editDetailedDescription">Detailed Description
-              <small style="color: var(--info-color); font-weight: normal">(Markdown supported)</small>:</label>
-            <textarea id="editDetailedDescription" placeholder="詳細な説明をMarkdownで入力...
-例:
-## 機能
-* 機能1
-* 機能2
-
-```js
-console.log('Hello');
-```"></textarea>
+            <label for="editDetailedDescription">Detailed Description <small
+                style="color: var(--info-color); font-weight: normal">(Markdown supported)</small>:</label>
+            <textarea id="editDetailedDescription"
+              placeholder="詳細な説明をMarkdownで入力... 例: ## 機能\n* 機能1\n* 機能2\n\n```js\nconsole.log('Hello');\n```"></textarea>
           </div>
-
           <fieldset>
             <legend>Download URLs</legend>
-            <div>
-              <label for="editDownloadUrl">Download URL (Default/Single):</label>
-              <input type="text" id="editDownloadUrl" placeholder="例: ./File/tool.zip (If no platform-specific URLs)" />
-            </div>
-            <div>
-              <label for="editDownloadUrlWindows">Download URL (Windows):</label>
-              <input type="text" id="editDownloadUrlWindows" placeholder="例: ./File/tool_win.exe" />
-            </div>
-            <div>
-              <label for="editDownloadUrlLinux">Download URL (Linux):</label>
-              <input type="text" id="editDownloadUrlLinux" placeholder="例: ./File/tool_linux.tar.gz" />
-            </div>
+            <div><label for="editDownloadUrl">Download URL (Default/Single):</label><input type="text"
+                id="editDownloadUrl" placeholder="例: ./File/tool.zip (If no platform-specific URLs)" /></div>
+            <div><label for="editDownloadUrlWindows">Download URL (Windows):</label><input type="text"
+                id="editDownloadUrlWindows" placeholder="例: ./File/tool_win.exe" /></div>
+            <div><label for="editDownloadUrlLinux">Download URL (Linux):</label><input type="text"
+                id="editDownloadUrlLinux" placeholder="例: ./File/tool_linux.tar.gz" /></div>
           </fieldset>
-
           <div>
             <label for="editDocsUrl">Docs URL:</label>
             <input type="url" id="editDocsUrl" placeholder="例: ./docs/tool_readme.html" />
           </div>
-
           <div>
             <label for="editPlatform">Platform:</label>
             <input type="text" id="editPlatform" list="platformSuggestions"
               placeholder="例: web, windows, linux (カンマ区切り)" />
             <datalist id="platformSuggestions"></datalist>
           </div>
-
           <div>
             <label for="editCategoryType">Category Type:</label>
             <input type="text" id="editCategoryType" list="categoryTypeSuggestions"
               placeholder="例: development, utility, minecraft" />
             <datalist id="categoryTypeSuggestions"></datalist>
           </div>
-
           <div class="form-buttons">
             <button type="submit" id="saveToolBtn">Save Tool</button>
-            <button type="button" id="deleteToolBtn" class="hidden">
-              Delete Tool
-            </button>
+            <button type="button" id="deleteToolBtn" class="hidden">Delete Tool</button>
             <button type="button" id="cancelEditBtn">Cancel</button>
           </div>
           <div id="saveError" class="error hidden"></div>
         </form>
       </div>
     </section>
-
     <section id="outputArea" class="hidden">
       <h2>3. Get Updated Data</h2>
-      <p>
-        編集後の
-        <code>toolsData</code>
-        オブジェクトです。コピーしてコードに貼り付けてください (JSON形式)。<br />
-        <small>DescriptionフィールドはMarkdownから変換されたHTMLが格納されます。</small>
-      </p>
+      <p>編集後の <code>toolsData</code> オブジェクトです。コピーしてコードに貼り付けてください
+        (JSON形式)。<br /><small>DescriptionフィールドはMarkdownから変換されたHTMLが格納されます。</small></p>
       <textarea id="dataOutput" readonly=""></textarea>
       <button id="copyOutputBtn">Copy to Clipboard</button>
       <span id="copyStatus"></span>
     </section>
   </div>
-
   <script>
     let currentToolsData = {};
-    const suggestions = {
-      categories: new Set(),
-      platforms: new Set(),
-      categoryTypes: new Set(),
-    };
-
-
+    const suggestions = { platforms: new Set(), categoryTypes: new Set(), };
     const dataInput = document.getElementById("dataInput");
     const loadDataBtn = document.getElementById("loadDataBtn");
     const loadError = document.getElementById("loadError");
@@ -634,21 +619,17 @@ console.log('Hello');
     const dataOutput = document.getElementById("dataOutput");
     const copyOutputBtn = document.getElementById("copyOutputBtn");
     const copyStatus = document.getElementById("copyStatus");
-
-    const categorySuggestionsEl = document.getElementById("categorySuggestions");
     const platformSuggestionsEl = document.getElementById("platformSuggestions");
     const categoryTypeSuggestionsEl = document.getElementById("categoryTypeSuggestions");
-
     const editImageInput = document.getElementById("editImage");
     const editImageLargeInput = document.getElementById("editImageLarge");
     const editImagePasteError = document.getElementById("editImagePasteError");
     const editImageLargePasteError = document.getElementById("editImageLargePasteError");
-
-
+    const editImagePreview = document.getElementById("editImagePreview");
+    const editImageLargePreview = document.getElementById("editImageLargePreview");
     const editDescriptionInput = document.getElementById("editDescription");
     const editDetailedDescriptionInput = document.getElementById("editDetailedDescription");
-
-
+    const editAppIDInput = document.getElementById("editAppID");
 
     loadDataBtn.addEventListener("click", handleLoadData);
     addToolBtn.addEventListener("click", () => showEditForm(null));
@@ -658,18 +639,29 @@ console.log('Hello');
     copyOutputBtn.addEventListener("click", copyOutputToClipboard);
     editImageInput.addEventListener("paste", handleImagePaste);
     editImageLargeInput.addEventListener("paste", handleImagePaste);
+    editImageInput.addEventListener('input', () => updateImagePreview('editImage', 'editImagePreview'));
+    editImageLargeInput.addEventListener('input', () => updateImagePreview('editImageLarge', 'editImageLargePreview'));
 
+    function generateUUIDv4() {
+      if (crypto && crypto.randomUUID) {
+        return crypto.randomUUID();
+      } else {
+        console.warn("crypto.randomUUID not available, using basic fallback.");
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+          var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      }
+    }
 
     function displayError(element, message) {
       element.textContent = message;
       element.classList.remove("hidden");
     }
-
     function clearError(element) {
       element.textContent = "";
       element.classList.add("hidden");
     }
-
     function displayPasteError(inputId, message) {
       const errorElement = document.getElementById(inputId + "PasteError");
       if (errorElement) {
@@ -677,7 +669,6 @@ console.log('Hello');
         errorElement.classList.remove("hidden");
       }
     }
-
     function clearPasteError(inputId) {
       const errorElement = document.getElementById(inputId + "PasteError");
       if (errorElement) {
@@ -685,112 +676,91 @@ console.log('Hello');
         errorElement.classList.add("hidden");
       }
     }
-
     function disableButtons(disabled = true, buttonText = null) {
       const buttons = [loadDataBtn, addToolBtn, saveToolBtn, deleteToolBtn, cancelEditBtn, copyOutputBtn];
       buttons.forEach(btn => {
         if (btn) {
           btn.disabled = disabled;
-          if (disabled && btn === saveToolBtn && buttonText) {
-            btn.textContent = buttonText;
-          } else if (!disabled && btn === saveToolBtn) {
-
-            btn.textContent = "Save Tool";
-          } else if (disabled && btn === loadDataBtn && buttonText) {
-            btn.textContent = buttonText;
-          } else if (!disabled && btn === loadDataBtn) {
-            btn.textContent = "Load Data";
-          }
+          if (disabled && btn === saveToolBtn && buttonText) { btn.textContent = buttonText; }
+          else if (!disabled && btn === saveToolBtn) { btn.textContent = "Save Tool"; }
+          else if (disabled && btn === loadDataBtn && buttonText) { btn.textContent = buttonText; }
+          else if (!disabled && btn === loadDataBtn) { btn.textContent = "Load Data"; }
         }
       });
-
       document.querySelectorAll('#toolList button').forEach(btn => btn.disabled = disabled);
     }
 
-
+    function updateImagePreview(inputId, previewId) {
+      const input = document.getElementById(inputId);
+      const preview = document.getElementById(previewId);
+      const value = input.value.trim();
+      if (value && value.startsWith('data:image') && value.includes(';base64,')) {
+        preview.src = value;
+        preview.style.display = 'block';
+      } else {
+        preview.src = '#';
+        preview.style.display = 'none';
+      }
+    }
 
     function handleImagePaste(event) {
       const inputElement = event.target;
       const errorElementId = inputElement.id;
+      const previewElementId = inputElement.id + 'Preview';
       clearPasteError(errorElementId);
-
       const items = (event.clipboardData || window.clipboardData)?.items;
-      if (!items) {
-        displayPasteError(errorElementId, "クリップボードデータにアクセスできません。");
-        return;
-      }
-
+      if (!items) { displayPasteError(errorElementId, "クリップボードデータにアクセスできません。"); return; }
       let imageFound = false;
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf("image") !== -1) {
           const blob = items[i].getAsFile();
-          if (!blob) {
-            displayPasteError(errorElementId, "画像ファイルの取得に失敗しました。");
-            continue;
-          }
+          if (!blob) { displayPasteError(errorElementId, "画像ファイルの取得に失敗しました。"); continue; }
           imageFound = true;
           event.preventDefault();
-
           const reader = new FileReader();
           const originalPlaceholder = inputElement.placeholder;
-
           reader.onloadstart = () => {
             inputElement.classList.add('pasting');
             inputElement.readOnly = true;
             inputElement.placeholder = 'Pasting image...';
           };
-
           reader.onload = (e) => {
             if (e.target && typeof e.target.result === 'string') {
               inputElement.value = e.target.result;
               console.log(`Image pasted and converted to Base64 for ${inputElement.id}`);
-            } else {
-              displayPasteError(errorElementId, "画像の読み込み結果が無効です。");
-            }
+              updateImagePreview(inputElement.id, previewElementId);
+            } else { displayPasteError(errorElementId, "画像の読み込み結果が無効です。"); }
           };
-
           reader.onerror = (error) => {
             console.error("FileReader error:", error);
             displayPasteError(errorElementId, `画像の読み込みに失敗しました: ${error.message || error}`);
           };
-
           reader.onloadend = () => {
             inputElement.classList.remove('pasting');
             inputElement.readOnly = false;
             inputElement.placeholder = originalPlaceholder;
+            updateImagePreview(inputElement.id, previewElementId);
           };
-
           reader.readAsDataURL(blob);
           break;
         }
       }
-
       if (!imageFound) {
         console.log("Pasted content is not an image. Default paste behavior allowed.");
+        setTimeout(() => updateImagePreview(inputElement.id, previewElementId), 0);
       }
     }
 
-
     function updateSuggestions() {
-      suggestions.categories.clear();
       suggestions.platforms.clear();
       suggestions.categoryTypes.clear();
-
       for (const key in currentToolsData) {
         const tool = currentToolsData[key];
-        if (tool.category) suggestions.categories.add(tool.category.trim());
         if (tool.platform) {
-          tool.platform
-            .split(",")
-            .map((p) => p.trim())
-            .filter((p) => p)
-            .forEach((p) => suggestions.platforms.add(p));
+          tool.platform.split(",").map((p) => p.trim()).filter((p) => p).forEach((p) => suggestions.platforms.add(p));
         }
-        if (tool.categoryType)
-          suggestions.categoryTypes.add(tool.categoryType.trim());
+        if (tool.categoryType) suggestions.categoryTypes.add(tool.categoryType.trim());
       }
-
-      populateDatalist(categorySuggestionsEl, suggestions.categories);
       populateDatalist(platformSuggestionsEl, suggestions.platforms);
       populateDatalist(categoryTypeSuggestionsEl, suggestions.categoryTypes);
     }
@@ -804,17 +774,12 @@ console.log('Hello');
       });
     }
 
-
-
     async function handleLoadData() {
       disableButtons(true, "Loading...");
       clearError(loadError);
       hideEditForm();
       const inputString = dataInput.value.trim();
-
-
-
-
+      let dataNeedsUpdate = false;
       if (!inputString) {
         currentToolsData = {};
         console.log("Input data is empty, initializing with empty data.");
@@ -827,14 +792,11 @@ console.log('Hello');
           if (parsableString.endsWith(";")) {
             parsableString = parsableString.slice(0, -1);
           }
-
           currentToolsData = new Function(`return ${parsableString}`)();
-
           if (typeof currentToolsData !== "object" || currentToolsData === null || Array.isArray(currentToolsData)) {
             throw new Error("Parsed data is not a valid object map.");
           }
-          console.log("Data loaded via Function constructor:", currentToolsData);
-
+          console.log("Data loaded via Function constructor:", Object.keys(currentToolsData).length);
         } catch (error) {
           console.warn("Parsing as JS object literal failed, trying JSON:", error);
           try {
@@ -842,7 +804,7 @@ console.log('Hello');
             if (typeof currentToolsData !== "object" || currentToolsData === null || Array.isArray(currentToolsData)) {
               throw new Error("Parsed JSON is not a valid object map.");
             }
-            console.log("Data loaded via JSON.parse:", currentToolsData);
+            console.log("Data loaded via JSON.parse:", Object.keys(currentToolsData).length);
           } catch (jsonError) {
             console.error("JSON parsing also failed:", jsonError);
             displayError(loadError, `Failed to parse data. Ensure it's a valid JavaScript object literal or JSON. Error: ${error.message || 'Syntax Error'} / ${jsonError.message}`);
@@ -854,48 +816,63 @@ console.log('Hello');
           }
         }
       }
+      // Process loaded data: remove category, ensure appID
+      for (const key in currentToolsData) {
+        if (currentToolsData.hasOwnProperty(key)) {
+          const tool = currentToolsData[key];
+          if (tool && typeof tool === 'object') {
+            if (tool.hasOwnProperty('category')) {
+              console.log(`Removing 'category' from tool: ${key}`);
+              delete tool.category;
+              dataNeedsUpdate = true;
+            }
+            if (!tool.appID || typeof tool.appID !== 'string' || tool.appID.length < 10) { // Basic check for existing valid-ish ID
+              console.log(`Generating new appID for tool: ${key}`);
+              tool.appID = generateUUIDv4();
+              dataNeedsUpdate = true;
+            }
+          }
+        }
+      }
+
+      if (dataNeedsUpdate) {
+        console.log("Data was modified (category removed or appID added), updating output and input fields.");
+        updateOutput();
+        dataInput.value = dataOutput.value;
+      }
 
       updateSuggestions();
       renderToolList();
       manageArea.classList.remove("hidden");
       outputArea.classList.remove("hidden");
-      updateOutput();
+      if (!dataNeedsUpdate) { // Update output only if it wasn't updated already
+        updateOutput();
+      }
       disableButtons(false);
     }
 
-
     function renderToolList() {
       toolList.innerHTML = "";
-      const keys = Object.keys(currentToolsData);
-
+      const keys = Object.keys(currentToolsData).sort();
       if (keys.length === 0) {
         toolList.innerHTML = `<p style="padding: 1rem 1.2rem; color: var(--secondary-color);">No tools loaded or defined yet. Click "Add New Tool" to start.</p>`;
         return;
       }
-
-      keys.sort().forEach((key) => {
+      keys.forEach((key) => {
         const tool = currentToolsData[key] || {};
         const item = document.createElement("div");
         item.classList.add("tool-item");
-
         const infoSpan = document.createElement("span");
         const keySpan = document.createElement("span");
         keySpan.classList.add("tool-key");
         keySpan.textContent = key;
         infoSpan.appendChild(keySpan);
-        infoSpan.appendChild(
-          document.createTextNode(` ${tool.title || "(No Title)"}`)
-        );
+        infoSpan.appendChild(document.createTextNode(` ${tool.title || "(No Title)"}`));
         item.appendChild(infoSpan);
-
         const editButton = document.createElement("button");
         editButton.textContent = "Edit";
-        editButton.onclick = (e) => {
-          e.stopPropagation();
-          showEditForm(key);
-        };
+        editButton.onclick = (e) => { e.stopPropagation(); showEditForm(key); };
         item.appendChild(editButton);
-
         toolList.appendChild(item);
       });
     }
@@ -914,31 +891,27 @@ console.log('Hello');
       clearPasteError('editImageLarge');
       editForm.reset();
       document.getElementById("editToolId").value = toolKey || "";
+      updateImagePreview('editImage', 'editImagePreview'); // Reset previews
+      updateImagePreview('editImageLarge', 'editImageLargePreview'); // Reset previews
 
       if (toolKey && currentToolsData[toolKey]) {
         const toolData = currentToolsData[toolKey];
         formTitle.textContent = `Edit Tool: ${toolKey}`;
         deleteToolBtn.classList.remove("hidden");
+        editAppIDInput.value = toolData.appID || "Error: Missing ID"; // Should always exist now
         document.getElementById("editToolKey").value = toolKey;
         document.getElementById("editToolKey").readOnly = true;
-
-
         document.getElementById("editTitle").value = toolData.title || "";
         document.getElementById("editImage").value = toolData.image || "";
         document.getElementById("editImageLarge").value = toolData.imageLarge || "";
-        document.getElementById("editCategory").value = toolData.category || "";
+        // document.getElementById("editCategory").value = toolData.category || ""; // Removed
         document.getElementById("editVersion").value = toolData.version || "";
         document.getElementById("editUpdated").value = toolData.updated || "";
         document.getElementById("editDocsUrl").value = toolData.docsUrl || "";
         document.getElementById("editPlatform").value = toolData.platform || "";
         document.getElementById("editCategoryType").value = toolData.categoryType || "";
-
-
         editDescriptionInput.value = toolData.descriptionMarkdown !== undefined ? toolData.descriptionMarkdown : (toolData.description || "");
         editDetailedDescriptionInput.value = toolData.detailedDescriptionMarkdown !== undefined ? toolData.detailedDescriptionMarkdown : (toolData.detailedDescription || "");
-
-
-
         if (typeof toolData.downloadUrl === 'object' && toolData.downloadUrl !== null) {
           document.getElementById("editDownloadUrl").value = toolData.downloadUrl.default || "";
           document.getElementById("editDownloadUrlWindows").value = toolData.downloadUrl.windows || "";
@@ -948,37 +921,29 @@ console.log('Hello');
           document.getElementById("editDownloadUrlWindows").value = toolData.downloadUrl_windows || "";
           document.getElementById("editDownloadUrlLinux").value = toolData.downloadUrl_linux || "";
         }
-
+        updateImagePreview('editImage', 'editImagePreview');
+        updateImagePreview('editImageLarge', 'editImageLargePreview');
       } else {
         formTitle.textContent = "Add New Tool";
         deleteToolBtn.classList.add("hidden");
+        editAppIDInput.value = generateUUIDv4(); // Generate ID for new tool
         document.getElementById("editToolKey").readOnly = false;
-
-
         let i = 1;
         let suggestedKey = `newTool${i}`;
-        while (currentToolsData.hasOwnProperty(suggestedKey)) {
-          i++;
-          suggestedKey = `newTool${i}`;
-        }
+        while (currentToolsData.hasOwnProperty(suggestedKey)) { i++; suggestedKey = `newTool${i}`; }
         document.getElementById("editToolKey").value = suggestedKey;
         document.getElementById("editUpdated").value = getTodayDateString();
-
-
         editDescriptionInput.value = "";
         editDetailedDescriptionInput.value = "";
-
         document.getElementById("editDownloadUrl").value = "";
         document.getElementById("editDownloadUrlWindows").value = "";
         document.getElementById("editDownloadUrlLinux").value = "";
       }
-
       editFormContainer.classList.remove("hidden");
       editFormContainer.scrollIntoView({ behavior: "smooth", block: "nearest" });
-
       setTimeout(() => {
         const firstFocusable = toolKey ? document.getElementById("editTitle") : document.getElementById("editToolKey");
-        firstFocusable.focus();
+        if (firstFocusable) firstFocusable.focus();
       }, 150);
     }
 
@@ -989,58 +954,35 @@ console.log('Hello');
       clearPasteError('editImage');
       clearPasteError('editImageLarge');
       document.getElementById("editToolKey").readOnly = false;
+      updateImagePreview('editImage', 'editImagePreview'); // Hide previews on cancel
+      updateImagePreview('editImageLarge', 'editImageLargePreview');
     }
 
     async function handleSaveTool(event) {
       event.preventDefault();
       disableButtons(true, "Saving...");
       clearError(saveError);
-
       const originalKey = document.getElementById("editToolId").value;
       const newKey = document.getElementById("editToolKey").value.trim();
+      const appID = editAppIDInput.value.trim(); // Get App ID from readonly field
 
-      if (!newKey) {
-        displayError(saveError, "Tool Key is required.");
-        document.getElementById("editToolKey").focus();
-        disableButtons(false);
-        return;
-      }
-
-      if (!/^[a-zA-Z0-9-_]+$/.test(newKey)) {
-        displayError(saveError, "Tool Key can only contain letters, numbers, hyphens (-), and underscores (_).");
-        document.getElementById("editToolKey").focus();
-        disableButtons(false);
-        return;
-      }
-
-      if ((!originalKey || originalKey !== newKey) && currentToolsData.hasOwnProperty(newKey)) {
-        displayError(saveError, `Tool Key "${newKey}" already exists. Choose a unique key.`);
-        document.getElementById("editToolKey").focus();
-        disableButtons(false);
-        return;
-      }
-
-
-
-
+      if (!newKey) { displayError(saveError, "Tool Key is required."); document.getElementById("editToolKey").focus(); disableButtons(false); return; }
+      if (!/^[a-zA-Z0-9-_]+$/.test(newKey)) { displayError(saveError, "Tool Key can only contain letters, numbers, hyphens (-), and underscores (_)."); document.getElementById("editToolKey").focus(); disableButtons(false); return; }
+      if ((!originalKey || originalKey !== newKey) && currentToolsData.hasOwnProperty(newKey)) { displayError(saveError, `Tool Key "${newKey}" already exists. Choose a unique key.`); document.getElementById("editToolKey").focus(); disableButtons(false); return; }
+      if (!appID) { displayError(saveError, "App ID is missing. Please reload or add the tool again."); disableButtons(false); return; } // Should not happen
 
       const descriptionMarkdown = editDescriptionInput.value.trim();
       const detailedDescriptionMarkdown = editDetailedDescriptionInput.value.trim();
-
-
-
       const descriptionHtml = marked.parse(descriptionMarkdown);
       const detailedDescriptionHtml = marked.parse(detailedDescriptionMarkdown);
-
-
       const toolData = {
+        appID: appID, // Save appID
         title: document.getElementById("editTitle").value.trim(),
         image: document.getElementById("editImage").value.trim(),
         imageLarge: document.getElementById("editImageLarge").value.trim(),
-        category: document.getElementById("editCategory").value.trim(),
+        // category: document.getElementById("editCategory").value.trim(), // Removed
         version: document.getElementById("editVersion").value.trim(),
         updated: document.getElementById("editUpdated").value.trim(),
-
         descriptionMarkdown: descriptionMarkdown,
         description: descriptionHtml,
         detailedDescriptionMarkdown: detailedDescriptionMarkdown,
@@ -1049,89 +991,56 @@ console.log('Hello');
         platform: document.getElementById("editPlatform").value.trim(),
         categoryType: document.getElementById("editCategoryType").value.trim(),
       };
-
-
       const dlDefault = document.getElementById("editDownloadUrl").value.trim();
       const dlWindows = document.getElementById("editDownloadUrlWindows").value.trim();
       const dlLinux = document.getElementById("editDownloadUrlLinux").value.trim();
-
       if (dlWindows || dlLinux) {
-
         if (dlDefault) toolData.downloadUrl = dlDefault;
         if (dlWindows) toolData.downloadUrl_windows = dlWindows;
         if (dlLinux) toolData.downloadUrl_linux = dlLinux;
       } else if (dlDefault) {
-
         toolData.downloadUrl = dlDefault;
       }
-
-
       Object.keys(toolData).forEach((key) => {
-        if (key !== 'descriptionMarkdown' && key !== 'detailedDescriptionMarkdown' &&
-          (toolData[key] === "" || toolData[key] === null || toolData[key] === undefined)) {
+        if (key !== 'appID' && key !== 'descriptionMarkdown' && key !== 'detailedDescriptionMarkdown' && (toolData[key] === "" || toolData[key] === null || toolData[key] === undefined)) {
           delete toolData[key];
         }
       });
-
       if (!toolData.downloadUrl) delete toolData.downloadUrl;
       if (!toolData.downloadUrl_windows) delete toolData.downloadUrl_windows;
       if (!toolData.downloadUrl_linux) delete toolData.downloadUrl_linux;
-
-
-
-
-
       if (!descriptionMarkdown) { delete toolData.description; delete toolData.descriptionMarkdown; }
       if (!detailedDescriptionMarkdown) { delete toolData.detailedDescription; delete toolData.detailedDescriptionMarkdown; }
-
-
-
-
       if (originalKey && originalKey !== newKey && currentToolsData.hasOwnProperty(originalKey)) {
         delete currentToolsData[originalKey];
       }
-
-
       currentToolsData[newKey] = toolData;
-
       console.log("Tool saved:", newKey, toolData);
-
-
       updateOutput();
       dataInput.value = dataOutput.value;
       await handleLoadData();
-
-
     }
 
     async function handleDeleteTool() {
       const toolKey = document.getElementById("editToolId").value;
-      if (!toolKey || !currentToolsData.hasOwnProperty(toolKey)) {
-        displayError(saveError, "Cannot delete: Invalid tool key or tool not found.");
-        return;
-      }
-
+      if (!toolKey || !currentToolsData.hasOwnProperty(toolKey)) { displayError(saveError, "Cannot delete: Invalid tool key or tool not found."); return; }
       if (confirm(`Are you sure you want to delete the tool "${toolKey}"? This action cannot be undone.`)) {
         disableButtons(true, "Deleting...");
-
-
-
         delete currentToolsData[toolKey];
         console.log("Tool deleted:", toolKey);
-
-
         updateOutput();
         dataInput.value = dataOutput.value;
         await handleLoadData();
-
-
       }
     }
 
     function updateOutput() {
       try {
-
-        dataOutput.value = JSON.stringify(currentToolsData, null, 2);
+        const sortedData = {};
+        Object.keys(currentToolsData).sort().forEach(key => {
+          sortedData[key] = currentToolsData[key];
+        });
+        dataOutput.value = JSON.stringify(sortedData, null, 2);
         clearError(loadError);
       } catch (error) {
         dataOutput.value = "Error generating output JSON.";
@@ -1143,23 +1052,15 @@ console.log('Hello');
 
     async function copyOutputToClipboard() {
       const textToCopy = dataOutput.value;
-      if (!textToCopy) {
-        showCopyStatus("Nothing to copy.", false);
-        return;
-      }
-
+      if (!textToCopy) { showCopyStatus("Nothing to copy.", false); return; }
       try {
         if (navigator.clipboard && window.isSecureContext) {
           await navigator.clipboard.writeText(textToCopy);
           showCopyStatus("Copied!", true);
         } else {
-
           dataOutput.select();
-          if (document.execCommand('copy')) {
-            showCopyStatus("Copied! (fallback)", true);
-          } else {
-            throw new Error('Fallback copy command failed');
-          }
+          if (document.execCommand('copy')) { showCopyStatus("Copied! (fallback)", true); }
+          else { throw new Error('Fallback copy command failed'); }
           window.getSelection()?.removeAllRanges();
           dataOutput.blur();
         }
@@ -1178,11 +1079,7 @@ console.log('Hello');
 
     function clearCopyStatus() {
       copyStatus.style.opacity = '0';
-
-      setTimeout(() => {
-        copyStatus.textContent = "";
-        copyStatus.className = "";
-      }, 300);
+      setTimeout(() => { copyStatus.textContent = ""; copyStatus.className = ""; }, 300);
     }
   </script>
 </body>
