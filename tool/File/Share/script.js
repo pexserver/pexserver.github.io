@@ -2,7 +2,7 @@
 
 
 const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzEWWAZhg9XuM0B3Mi3Pd8XaZlxBoYcnC8nxCziLMBGiiQHBETjKuSjFvnsUJ89Z1EXwQ/exec';
-const MAX_FILE_SIZE_MB = 30;
+const MAX_FILE_SIZE_MB = 100;
 const EXPIRATION_MINUTES = 30;
 const MAX_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
