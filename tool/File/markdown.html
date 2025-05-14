@@ -1,1149 +1,1170 @@
 <!DOCTYPE html>
 <html lang="ja_JP">
-  <head>
-    <title>Markdown Editor</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<head>
+  <title>Markdown Editor</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 
-    <!-- Apple Support-->
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-touch-fullscreen" content="yes">
-    <meta name="apple-mobile-web-app-title" content="PEX Server markdown">
+  <!-- Apple Support-->
 
-    <script src="https://unpkg.com/prettier@2.8.8/standalone.js"></script>
-    <script src="https://unpkg.com/prettier@2.8.8/parser-markdown.js"></script>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-touch-fullscreen" content="yes">
+  <meta name="apple-mobile-web-app-title" content="PEX Server markdown">
 
-    <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+  <script src="https://unpkg.com/prettier@2.8.8/standalone.js"></script>
+  <script src="https://unpkg.com/prettier@2.8.8/parser-markdown.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link
-      rel="icon"
-      href="https://pexserver.github.io/lib/Assets/images/home.png"
-      type="image/x-icon"
-    />
-    <link
-      rel="shortcut icon"
-      href="https://pexserver.github.io/lib/Assets/images/home.png"
-      type="image/x-icon"
-    />
-    <style>
-      :root {
-        --border-color: #ddd;
-        --background-light: #f4f4f4;
-        --background-white: #fff;
-        --text-color: #333;
-        --link-color: #007bff;
-        --code-background: #f5f5f5;
-        --toolbar-background: #eee;
-        --button-border: #ccc;
-        --scrollbar-track: #f1f1f1;
-        --scrollbar-thumb: #888;
-        --scrollbar-thumb-hover: #555;
-        --blockquote-border: #ddd;
-        --blockquote-color: #777;
-        --table-header-background: #f8f8f8;
-        --table-row-even-background: #fdfdfd;
-        --highlight-bg: #eee;
-      }
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
 
-      body,
-      html {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        overflow: hidden;
-      }
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon" />
+  <link rel="shortcut icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon" />
+  <style>
+    :root {
+      --border-color: #ddd;
+      --background-light: #f4f4f4;
+      --background-white: #fff;
+      --text-color: #333;
+      --link-color: #007bff;
+      --code-background: #f5f5f5;
+      --toolbar-background: #eee;
+      --button-border: #ccc;
+      --scrollbar-track: #f1f1f1;
+      --scrollbar-thumb: #888;
+      --scrollbar-thumb-hover: #555;
+      --blockquote-border: #ddd;
+      --blockquote-color: #777;
+      --table-header-background: #f8f8f8;
+      --table-row-even-background: #fdfdfd;
+      --highlight-bg: #eee;
+    }
 
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--background-light);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .toolbar {
+      background-color: var(--toolbar-background);
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .toolbar span {
+      font-weight: bold;
+      margin-right: 15px;
+    }
+
+    .toolbar div {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .toolbar button {
+      background-color: var(--background-white);
+      color: var(--text-color);
+      border: 1px solid var(--button-border);
+      padding: 6px 10px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    .toolbar button:hover {
+      background-color: #f8f8f8;
+    }
+
+    .container {
+      display: flex;
+      flex-grow: 1;
+
+      overflow: hidden;
+    }
+
+    .editor-pane,
+    .preview-pane {
+      width: 50%;
+      height: 100%;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+
+    .editor-pane {
+      border-right: 1px solid var(--border-color);
+      background-color: var(--background-white);
+    }
+
+    #markdown-editor {
+      width: 100%;
+      height: 100%;
+      padding: 20px;
+      color: var(--text-color);
+      border: none;
+      resize: none;
+      font-size: 16px;
+      line-height: 1.6;
+      box-sizing: border-box;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+      outline: none;
+      caret-color: var(--text-color);
+    }
+
+    #markdown-editor:empty::before {
+      content: attr(placeholder);
+      color: #aaa;
+      pointer-events: none;
+    }
+
+    .preview-pane {
+      padding: 20px;
+      background-color: var(--background-white);
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--scrollbar-track);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--scrollbar-thumb-hover);
+    }
+
+    .context-menu,
+    #autocomplete-list {
+      position: absolute;
+      background-color: var(--background-white);
+      border: 1px solid var(--button-border);
+      padding: 5px 0;
+      z-index: 1000;
+      display: none;
+      min-width: 150px;
+      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
+      border-radius: 4px;
+      list-style: none;
+
+      margin: 0;
+    }
+
+    .context-menu li,
+    #autocomplete-list li {
+      padding: 8px 15px;
+      cursor: pointer;
+      font-size: 0.95em;
+      white-space: nowrap;
+    }
+
+    .context-menu li:hover,
+    #autocomplete-list li:hover,
+    #autocomplete-list li.highlighted {
+      background-color: var(--highlight-bg);
+    }
+
+    #autocomplete-list {
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1001;
+    }
+
+    #autocomplete-list li {
+      padding: 6px 12px;
+
+      font-size: 0.9em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #preview {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica,
+        Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      line-height: 1.6;
+      word-wrap: break-word;
+    }
+
+    #preview>*:first-child {
+      margin-top: 0;
+    }
+
+    #preview h1,
+    #preview h2,
+    #preview h3,
+    #preview h4,
+    #preview h5,
+    #preview h6 {
+      margin-top: 1.5em;
+      margin-bottom: 0.8em;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    #preview h1 {
+      font-size: 2em;
+      padding-bottom: 0.3em;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    #preview h2 {
+      font-size: 1.5em;
+      padding-bottom: 0.3em;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    #preview h3 {
+      font-size: 1.25em;
+    }
+
+    #preview h4 {
+      font-size: 1em;
+    }
+
+    #preview h5 {
+      font-size: 0.875em;
+    }
+
+    #preview h6 {
+      font-size: 0.85em;
+      color: #6a737d;
+    }
+
+    #preview p {
+      margin-bottom: 1em;
+    }
+
+    #preview a {
+      color: var(--link-color);
+      text-decoration: none;
+    }
+
+    #preview a:hover {
+      text-decoration: underline;
+    }
+
+    #preview code {
+      background-color: var(--code-background);
+      padding: 0.2em 0.4em;
+      margin: 0;
+      font-size: 85%;
+      border-radius: 3px;
+      font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier,
+        monospace;
+    }
+
+    #preview pre {
+      background-color: var(--code-background);
+      padding: 1em;
+      margin-bottom: 1em;
+      border-radius: 3px;
+      overflow: auto;
+      font-size: 85%;
+      line-height: 1.45;
+      font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier,
+        monospace;
+    }
+
+    #preview pre code {
+      background-color: transparent;
+      padding: 0;
+      border-radius: 0;
+      font-size: 100%;
+      line-height: inherit;
+    }
+
+    #preview blockquote {
+      margin: 0 0 1em 0;
+      padding: 0 1em;
+      color: var(--blockquote-color);
+      border-left: 0.25em solid var(--blockquote-border);
+    }
+
+    #preview blockquote> :first-child {
+      margin-top: 0;
+    }
+
+    #preview blockquote> :last-child {
+      margin-bottom: 0;
+    }
+
+    #preview ul,
+    #preview ol {
+      padding-left: 2em;
+      margin-bottom: 1em;
+    }
+
+    #preview ul ul,
+    #preview ul ol,
+    #preview ol ol,
+    #preview ol ul {
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+
+    #preview li {
+      word-wrap: break-all;
+    }
+
+    #preview li>p {
+      margin-top: 0.25em;
+    }
+
+    #preview .task-list-item {
+      list-style-type: none;
+    }
+
+    #preview .task-list-item input[type="checkbox"] {
+      margin: 0 0.3em 0.25em -1.6em;
+      vertical-align: middle;
+    }
+
+    #preview table {
+      width: auto;
+      max-width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1em;
+      display: block;
+      overflow-x: auto;
+      border-spacing: 0;
+    }
+
+    #preview th,
+    #preview td {
+      border: 1px solid var(--border-color);
+      padding: 0.5em 0.75em;
+      text-align: left;
+    }
+
+    #preview th {
+      background-color: var(--table-header-background);
+      font-weight: 600;
+    }
+
+    #preview tr:nth-child(even) {
+      background-color: var(--table-row-even-background);
+    }
+
+    #preview img {
+      max-width: 100%;
+      height: auto;
+      box-sizing: border-box;
+      background-color: var(--background-white);
+    }
+
+    #preview hr {
+      height: 0.25em;
+      padding: 0;
+      margin: 24px 0;
+      background-color: var(--background-light);
+      border: 0;
+    }
+
+    #preview kbd {
+      display: inline-block;
+      padding: 0.3em 0.6em;
+      font-size: 0.8em;
+      line-height: 1;
+      color: #24292f;
+      vertical-align: middle;
+      background-color: #f6f8fa;
+      border: solid 1px rgba(175, 184, 193, 0.2);
+      border-bottom-color: rgba(175, 184, 193, 0.4);
+      border-radius: 3px;
+      box-shadow: inset 0 -1px 0 rgba(175, 184, 193, 0.2);
+    }
+
+    @media (max-width: 768px) {
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background-color: var(--background-light);
-        color: var(--text-color);
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-      }
-
-      .toolbar {
-        background-color: var(--toolbar-background);
-        padding: 10px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid var(--border-color);
-        flex-wrap: wrap;
-        flex-shrink: 0;
-      }
-
-      .toolbar span {
-        font-weight: bold;
-        margin-right: 15px;
-      }
-
-      .toolbar div {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
-      }
-
-      .toolbar button {
-        background-color: var(--background-white);
-        color: var(--text-color);
-        border: 1px solid var(--button-border);
-        padding: 6px 10px;
-        cursor: pointer;
-        border-radius: 4px;
-        font-size: 0.9em;
-      }
-
-      .toolbar button:hover {
-        background-color: #f8f8f8;
+        height: auto;
+        overflow: auto;
       }
 
       .container {
-        display: flex;
-        flex-grow: 1;
-
-        overflow: hidden;
+        flex-direction: column;
+        height: auto;
       }
 
       .editor-pane,
       .preview-pane {
-        width: 50%;
-        height: 100%;
-        overflow-y: auto;
-        box-sizing: border-box;
-      }
-
-      .editor-pane {
-        border-right: 1px solid var(--border-color);
-        background-color: var(--background-white);
-      }
-
-      #markdown-editor {
         width: 100%;
-        height: 100%;
-        padding: 20px;
-        color: var(--text-color);
-        border: none;
-        resize: none;
-        font-size: 16px;
-        line-height: 1.6;
-        box-sizing: border-box;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
-        outline: none;
-        caret-color: var(--text-color);
-      }
-
-      #markdown-editor:empty::before {
-        content: attr(placeholder);
-        color: #aaa;
-        pointer-events: none;
+        height: 50vh;
+        min-height: 300px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
       }
 
       .preview-pane {
-        padding: 20px;
-        background-color: var(--background-white);
+        border-bottom: none;
       }
 
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+      .toolbar {
+        padding: 8px;
       }
 
-      ::-webkit-scrollbar-track {
-        background: var(--scrollbar-track);
+      .toolbar div {
+        justify-content: flex-start;
+        margin-top: 5px;
       }
 
-      ::-webkit-scrollbar-thumb {
-        background: var(--scrollbar-thumb);
-        border-radius: 4px;
+      .toolbar button {
+        padding: 8px 10px;
       }
 
-      ::-webkit-scrollbar-thumb:hover {
-        background: var(--scrollbar-thumb-hover);
+      #markdown-editor,
+      .preview-pane {
+        font-size: 15px;
+        padding: 15px;
       }
+    }
+  </style>
+</head>
 
-      .context-menu,
-      #autocomplete-list {
-        position: absolute;
-        background-color: var(--background-white);
-        border: 1px solid var(--button-border);
-        padding: 5px 0;
-        z-index: 1000;
-        display: none;
-        min-width: 150px;
-        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
-        border-radius: 4px;
-        list-style: none;
-
-        margin: 0;
-      }
-
-      .context-menu li,
-      #autocomplete-list li {
-        padding: 8px 15px;
-        cursor: pointer;
-        font-size: 0.95em;
-        white-space: nowrap;
-      }
-
-      .context-menu li:hover,
-      #autocomplete-list li:hover,
-      #autocomplete-list li.highlighted {
-        background-color: var(--highlight-bg);
-      }
-
-      #autocomplete-list {
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 1001;
-      }
-
-      #autocomplete-list li {
-        padding: 6px 12px;
-
-        font-size: 0.9em;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      #preview {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica,
-          Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-        line-height: 1.6;
-        word-wrap: break-word;
-      }
-
-      #preview > *:first-child {
-        margin-top: 0;
-      }
-
-      #preview h1,
-      #preview h2,
-      #preview h3,
-      #preview h4,
-      #preview h5,
-      #preview h6 {
-        margin-top: 1.5em;
-        margin-bottom: 0.8em;
-        font-weight: 600;
-        line-height: 1.25;
-      }
-
-      #preview h1 {
-        font-size: 2em;
-        padding-bottom: 0.3em;
-        border-bottom: 1px solid var(--border-color);
-      }
-
-      #preview h2 {
-        font-size: 1.5em;
-        padding-bottom: 0.3em;
-        border-bottom: 1px solid var(--border-color);
-      }
-
-      #preview h3 {
-        font-size: 1.25em;
-      }
-
-      #preview h4 {
-        font-size: 1em;
-      }
-
-      #preview h5 {
-        font-size: 0.875em;
-      }
-
-      #preview h6 {
-        font-size: 0.85em;
-        color: #6a737d;
-      }
-
-      #preview p {
-        margin-bottom: 1em;
-      }
-
-      #preview a {
-        color: var(--link-color);
-        text-decoration: none;
-      }
-
-      #preview a:hover {
-        text-decoration: underline;
-      }
-
-      #preview code {
-        background-color: var(--code-background);
-        padding: 0.2em 0.4em;
-        margin: 0;
-        font-size: 85%;
-        border-radius: 3px;
-        font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier,
-          monospace;
-      }
-
-      #preview pre {
-        background-color: var(--code-background);
-        padding: 1em;
-        margin-bottom: 1em;
-        border-radius: 3px;
-        overflow: auto;
-        font-size: 85%;
-        line-height: 1.45;
-        font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier,
-          monospace;
-      }
-
-      #preview pre code {
-        background-color: transparent;
-        padding: 0;
-        border-radius: 0;
-        font-size: 100%;
-        line-height: inherit;
-      }
-
-      #preview blockquote {
-        margin: 0 0 1em 0;
-        padding: 0 1em;
-        color: var(--blockquote-color);
-        border-left: 0.25em solid var(--blockquote-border);
-      }
-
-      #preview blockquote > :first-child {
-        margin-top: 0;
-      }
-
-      #preview blockquote > :last-child {
-        margin-bottom: 0;
-      }
-
-      #preview ul,
-      #preview ol {
-        padding-left: 2em;
-        margin-bottom: 1em;
-      }
-
-      #preview ul ul,
-      #preview ul ol,
-      #preview ol ol,
-      #preview ol ul {
-        margin-top: 0;
-        margin-bottom: 0;
-      }
-
-      #preview li {
-        word-wrap: break-all;
-      }
-
-      #preview li > p {
-        margin-top: 0.25em;
-      }
-
-      #preview .task-list-item {
-        list-style-type: none;
-      }
-
-      #preview .task-list-item input[type="checkbox"] {
-        margin: 0 0.3em 0.25em -1.6em;
-        vertical-align: middle;
-      }
-
-      #preview table {
-        width: auto;
-        max-width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 1em;
-        display: block;
-        overflow-x: auto;
-        border-spacing: 0;
-      }
-
-      #preview th,
-      #preview td {
-        border: 1px solid var(--border-color);
-        padding: 0.5em 0.75em;
-        text-align: left;
-      }
-
-      #preview th {
-        background-color: var(--table-header-background);
-        font-weight: 600;
-      }
-
-      #preview tr:nth-child(even) {
-        background-color: var(--table-row-even-background);
-      }
-
-      #preview img {
-        max-width: 100%;
-        height: auto;
-        box-sizing: border-box;
-        background-color: var(--background-white);
-      }
-
-      #preview hr {
-        height: 0.25em;
-        padding: 0;
-        margin: 24px 0;
-        background-color: var(--background-light);
-        border: 0;
-      }
-
-      #preview kbd {
-        display: inline-block;
-        padding: 0.3em 0.6em;
-        font-size: 0.8em;
-        line-height: 1;
-        color: #24292f;
-        vertical-align: middle;
-        background-color: #f6f8fa;
-        border: solid 1px rgba(175, 184, 193, 0.2);
-        border-bottom-color: rgba(175, 184, 193, 0.4);
-        border-radius: 3px;
-        box-shadow: inset 0 -1px 0 rgba(175, 184, 193, 0.2);
-      }
-
-      @media (max-width: 768px) {
-        body {
-          height: auto;
-          overflow: auto;
-        }
-
-        .container {
-          flex-direction: column;
-          height: auto;
-        }
-
-        .editor-pane,
-        .preview-pane {
-          width: 100%;
-          height: 50vh;
-          min-height: 300px;
-          border-right: none;
-          border-bottom: 1px solid var(--border-color);
-          overflow-y: scroll;
-          -webkit-overflow-scrolling: touch;
-        }
-
-        .preview-pane {
-          border-bottom: none;
-        }
-
-        .toolbar {
-          padding: 8px;
-        }
-
-        .toolbar div {
-          justify-content: flex-start;
-          margin-top: 5px;
-        }
-
-        .toolbar button {
-          padding: 8px 10px;
-        }
-
-        #markdown-editor,
-        .preview-pane {
-          font-size: 15px;
-          padding: 15px;
-        }
-      }
-    </style>
-  </head>
-
-  <body>
-    <div class="toolbar">
-      <span>編集メニュー</span>
-      <div>
-        <button id="saveBtn" title="Markdownファイルとして保存">保存</button>
-        <button id="loadBtn" title="Markdownファイルを読み込む">
-          読み込み
-        </button>
-        <button id="exportBtn" title="HTMLファイルとしてエクスポート">
-          エクスポート
-        </button>
-        <button id="shareBtn" title="共有用URLをコピー">共有</button>
-      </div>
+<body>
+  <div class="toolbar">
+    <span>編集メニュー</span>
+    <div>
+      <button id="saveBtn" title="Markdownファイルとして保存">保存</button>
+      <button id="loadBtn" title="Markdownファイルを読み込む">
+        読み込み
+      </button>
+      <button id="exportBtn" title="HTMLファイルとしてエクスポート">
+        エクスポート
+      </button>
+      <button id="shareBtn" title="共有用URLをコピー">共有</button>
     </div>
+  </div>
 
-    <div class="container">
-      <div class="editor-pane">
-        <div
-          id="markdown-editor"
-          contenteditable="true"
-          spellcheck="false"
-          placeholder="Markdown を入力してください..."
-        ></div>
-      </div>
-      <div class="preview-pane">
-        <div id="preview"></div>
-      </div>
+  <div class="container">
+    <div class="editor-pane">
+      <div id="markdown-editor" contenteditable="true" spellcheck="false" placeholder="Markdown を入力してください..."></div>
     </div>
+    <div class="preview-pane">
+      <div id="preview"></div>
+    </div>
+  </div>
 
-    <ul class="context-menu" id="contextMenu">
-      <li id="insertSampleBtn">サンプル挿入</li>
-      <li id="formatBtn">ドキュメントのフォーマット</li>
-      <li id="showBlankBtn">別ウィンドウでプレビュー</li>
-    </ul>
+  <ul class="context-menu" id="contextMenu">
+    <li id="insertSampleBtn">サンプル挿入</li>
+    <li id="formatBtn">ドキュメントのフォーマット</li>
+    <li id="showBlankBtn">別ウィンドウでプレビュー</li>
+  </ul>
 
-    <ul id="autocomplete-list"></ul>
+  <ul id="autocomplete-list"></ul>
 
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const saveBtn = document.getElementById("saveBtn");
-        const loadBtn = document.getElementById("loadBtn");
-        const exportBtn = document.getElementById("exportBtn");
-        const shareBtn = document.getElementById("shareBtn");
-        const markdownEditor = document.getElementById("markdown-editor");
-        const preview = document.getElementById("preview");
-        const contextMenu = document.getElementById("contextMenu");
-        const insertSampleBtn = document.getElementById("insertSampleBtn");
-        const formatBtn = document.getElementById("formatBtn");
-        const showBlankBtn = document.getElementById("showBlankBtn");
-        const autocompleteList = document.getElementById("autocomplete-list");
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const saveBtn = document.getElementById("saveBtn");
+      const loadBtn = document.getElementById("loadBtn");
+      const exportBtn = document.getElementById("exportBtn");
+      const shareBtn = document.getElementById("shareBtn");
+      const markdownEditor = document.getElementById("markdown-editor");
+      const preview = document.getElementById("preview");
+      const contextMenu = document.getElementById("contextMenu");
+      const insertSampleBtn = document.getElementById("insertSampleBtn");
+      const formatBtn = document.getElementById("formatBtn");
+      const showBlankBtn = document.getElementById("showBlankBtn");
+      const autocompleteList = document.getElementById("autocomplete-list");
 
-        marked.setOptions({
-          gfm: true,
-          breaks: true,
-          pedantic: false,
-          smartLists: true,
-          smartypants: false,
-          langPrefix: "language-",
-          xhtml: false,
-        });
+      marked.setOptions({
+        gfm: true,
+        breaks: true,
+        pedantic: false,
+        smartLists: true,
+        smartypants: false,
+        langPrefix: "language-",
+        xhtml: false,
+      });
 
-        const suggestions = [
-          "# 1",
-          "## 2",
-          "### 3",
-          "#### 4",
-          "##### 5",
-          "###### 6",
-          "* *",
-          "_ _",
-          "** **",
-          "__ __",
-          "~~ ~~",
-          "` `",
-          "```javascript\n\n```",
-          "```python\n\n```",
-          "```html\n\n```",
-          "```css\n\n```",
-          "```\n\n```",
-          "- List Item",
-          "* List Item",
-          "+ List Item",
-          "1. List Item",
-          "[link text](url)",
-          "![alt text](image_url)",
-          "> blockquote",
-          "---",
-          "***",
-          "<table>",
-          "<thead>",
-          "<tbody>",
-          "<tr>",
-          "<th>",
-          "<td>",
-          "- [ ] Task",
-          "- [x] Done",
-          "<br>",
-          "<img>",
-          "<a>",
-          "<p>",
-          "<div>",
-          "<span>",
-          "<ul>",
-          "<ol>",
-          "<li>",
-          "<details>",
-          "<summary>",
-          "TODO:",
-          "FIXME:",
-          "NOTE:",
-          "IMPORTANT:",
-          "WARNING:",
-          "Markdown",
-          "Preview",
-          "Editor",
-          "JavaScript",
-          "Python",
-          "HTML",
-          "CSS",
-          "function",
-          "const",
-          "let",
-          "var",
-          "class",
-          "import",
-          "export",
-        ].sort();
+      const suggestions = [
+        "# 1",
+        "## 2",
+        "### 3",
+        "#### 4",
+        "##### 5",
+        "###### 6",
+        "* *",
+        "_ _",
+        "** **",
+        "__ __",
+        "~~ ~~",
+        "` `",
+        "```javascript\n\n```",
+        "```python\n\n```",
+        "```html\n\n```",
+        "```css\n\n```",
+        "```\n\n```",
+        "- List Item",
+        "* List Item",
+        "+ List Item",
+        "1. List Item",
+        "[link text](url)",
+        "![alt text](image_url)",
+        "> blockquote",
+        "---",
+        "***",
+        "<table>",
+        "<thead>",
+        "<tbody>",
+        "<tr>",
+        "<th>",
+        "<td>",
+        "- [ ] Task",
+        "- [x] Done",
+        "<br>",
+        "<img>",
+        "<a>",
+        "<p>",
+        "<div>",
+        "<span>",
+        "<ul>",
+        "<ol>",
+        "<li>",
+        "<details>",
+        "<summary>",
+        "TODO:",
+        "FIXME:",
+        "NOTE:",
+        "IMPORTANT:",
+        "WARNING:",
+        "Markdown",
+        "Preview",
+        "Editor",
+        "JavaScript",
+        "Python",
+        "HTML",
+        "CSS",
+        "function",
+        "const",
+        "let",
+        "var",
+        "class",
+        "import",
+        "export",
+      ].sort();
 
-        let currentWordInfo = { word: "", range: null };
-        let activeSuggestionIndex = -1;
-        let debounceTimer = null;
-        let hideAutocompleteTimeout = null;
+      let currentWordInfo = { word: "", range: null };
+      let activeSuggestionIndex = -1;
+      let debounceTimer = null;
+      let hideAutocompleteTimeout = null;
 
-        const escapeHtml = (unsafe) =>
-          unsafe.replace(
-            /[&<"'>]/g,
-            (c) =>
-              ({
-                "&": "&amp;",
-                "<": "&lt;",
-                '"': "&quot;",
-                "'": "&#39;",
-                ">": "&gt;",
-              }[c])
-          );
-
-        function debounce(func, delay) {
-          return (...args) => {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => func.apply(this, args), delay);
-          };
-        }
-
-        function updatePreview() {
-          const markdownText = markdownEditor.innerText;
-          try {
-            const rawHtml = marked.parse(markdownText);
-
-            const tempDiv = document.createElement("div");
-            tempDiv.innerHTML = rawHtml;
-
-            tempDiv.querySelectorAll("li").forEach((li) => {
-              const firstChild = li.firstChild;
-              let checkbox = null;
-
-              if (
-                firstChild &&
-                firstChild.nodeName === "INPUT" &&
-                firstChild.type === "checkbox"
-              ) {
-                checkbox = firstChild;
-              } else if (
-                li.childNodes.length > 1 &&
-                li.childNodes[0].nodeType === Node.TEXT_NODE &&
-                li.childNodes[0].textContent.trim() === "" &&
-                li.childNodes[1].nodeName === "INPUT" &&
-                li.childNodes[1].type === "checkbox"
-              ) {
-                checkbox = li.childNodes[1];
-              }
-              if (checkbox) {
-                li.classList.add("task-list-item");
-              }
-            });
-            preview.innerHTML = tempDiv.innerHTML;
-          } catch (error) {
-            console.error("Markdown Parsing Error:", error);
-            preview.innerHTML = `<p style="color: red;">Markdown 解析エラー:</p><pre>${escapeHtml(
-              error.message || String(error)
-            )}</pre>`;
-          }
-        }
-        const debouncedUpdatePreview = debounce(updatePreview, 200);
-
-        function getCurrentWordInfo() {
-          const selection = window.getSelection();
-          if (!selection || !selection.rangeCount || !selection.isCollapsed)
-            return { word: "", range: null };
-          const range = selection.getRangeAt(0);
-          const container = range.startContainer;
-          const offset = range.startOffset;
-
-          if (container.nodeType === Node.TEXT_NODE) {
-            const text = container.textContent;
-
-            const triggerCharsRegex = /[\s\n\(\[\<]/;
-            let start = offset - 1;
-            while (start >= 0 && !triggerCharsRegex.test(text[start])) {
-              start--;
-            }
-            start++;
-
-            const word = text.substring(start, offset);
-            const precedingChar = start > 0 ? text[start - 1] : null;
-
-            const wordRange = document.createRange();
-            wordRange.setStart(container, start);
-            wordRange.setEnd(container, offset);
-
-            return { word, range: wordRange, precedingChar };
-          }
-          return { word: "", range: null };
-        }
-
-        function getCursorCoords() {
-          const selection = window.getSelection();
-          if (!selection.rangeCount) return null;
-          const range = selection.getRangeAt(0).cloneRange();
-          range.collapse(true);
-          const rect = range.getBoundingClientRect();
-
-          if (rect.width === 0 && rect.height === 0 && range.startContainer) {
-            const containerRect =
-              range.startContainer.nodeType === Node.ELEMENT_NODE
-                ? range.startContainer.getBoundingClientRect()
-                : range.startContainer.parentElement?.getBoundingClientRect();
-            if (containerRect) {
-              return {
-                x: containerRect.left + window.scrollX,
-                y: containerRect.bottom + window.scrollY + 5,
-              };
-            }
-          }
-
-          return rect
-            ? {
-                x: rect.left + window.scrollX,
-                y: rect.bottom + window.scrollY + 5,
-              }
-            : null;
-        }
-
-        function showAutocomplete() {
-          currentWordInfo = getCurrentWordInfo();
-          const { word, range, precedingChar } = currentWordInfo;
-          const minLengthTrigger = 1;
-          const immediateTriggerChars = ["<", "[", "#", "/", ":"];
-
-          const shouldTrigger =
-            range &&
-            ((word && word.length >= minLengthTrigger) ||
-              (precedingChar &&
-                immediateTriggerChars.includes(precedingChar) &&
-                word.length === 0));
-
-          if (!shouldTrigger) {
-            hideAutocomplete();
-            return;
-          }
-
-          const lowerCaseWord = word.toLowerCase();
-          const matchedSuggestions = suggestions
-            .filter(
-              (s) =>
-                (lowerCaseWord &&
-                  s.toLowerCase().startsWith(lowerCaseWord) &&
-                  s.toLowerCase() !== lowerCaseWord) ||
-                (!lowerCaseWord && precedingChar && s.startsWith(precedingChar))
-            )
-            .slice(0, 15);
-
-          if (matchedSuggestions.length > 0) {
-            const coords = getCursorCoords();
-            if (!coords) {
-              hideAutocomplete();
-              return;
-            }
-
-            const fragment = document.createDocumentFragment();
-            activeSuggestionIndex = -1;
-            matchedSuggestions.forEach((suggestion, index) => {
-              const li = document.createElement("li");
-              li.textContent = suggestion;
-              li.dataset.index = index;
-              li.addEventListener("mouseenter", () =>
-                highlightSuggestion(index)
-              );
-              li.addEventListener("click", (e) => {
-                e.stopPropagation();
-                insertSuggestion(suggestion);
-              });
-              fragment.appendChild(li);
-            });
-
-            autocompleteList.innerHTML = "";
-            autocompleteList.appendChild(fragment);
-            positionAutocomplete(coords);
-            autocompleteList.style.display = "block";
-          } else {
-            hideAutocomplete();
-          }
-        }
-
-        function positionAutocomplete(coords) {
-          const list = autocompleteList;
-          const { innerWidth, innerHeight } = window;
-          const listRect = list.getBoundingClientRect();
-
-          let top = coords.y;
-          let left = coords.x;
-
-          if (left + list.offsetWidth > innerWidth) {
-            left = innerWidth - list.offsetWidth - 10;
-          }
-          if (top + list.offsetHeight > innerHeight) {
-            const spaceAbove = coords.y - list.offsetHeight - 25;
-            top =
-              spaceAbove > 0
-                ? spaceAbove
-                : innerHeight - list.offsetHeight - 10;
-          }
-          list.style.left = `${Math.max(5, left)}px`;
-          list.style.top = `${Math.max(5, top)}px`;
-        }
-
-        function hideAutocomplete() {
-          clearTimeout(hideAutocompleteTimeout);
-          if (autocompleteList.style.display !== "none") {
-            autocompleteList.style.display = "none";
-            autocompleteList.innerHTML = "";
-            currentWordInfo = { word: "", range: null };
-            activeSuggestionIndex = -1;
-          }
-        }
-
-        function insertSuggestion(suggestion) {
-          const { range } = currentWordInfo;
-          if (!range) {
-            hideAutocomplete();
-            return;
-          }
-
-          const selection = window.getSelection();
-          if (!selection) {
-            hideAutocomplete();
-            return;
-          }
-
-          const scrollX = window.scrollX;
-          const scrollY = window.scrollY;
-          const editorScrollTop = markdownEditor.scrollTop;
-
-          try {
-            selection.removeAllRanges();
-            selection.addRange(range);
-
-            let cursorOffset = suggestion.length;
-            if (suggestion.includes("\n\n")) {
-              cursorOffset = suggestion.indexOf("\n") + 1;
-            }
-
-            range.deleteContents();
-            const textNode = document.createTextNode(suggestion);
-            range.insertNode(textNode);
-
-            range.setStart(textNode, cursorOffset);
-            range.collapse(true);
-            selection.removeAllRanges();
-            selection.addRange(range);
-          } catch (e) {
-            console.error("Insertion failed:", e);
-          }
-
-          hideAutocomplete();
-          markdownEditor.focus();
-
-          requestAnimationFrame(() => {
-            window.scrollTo(scrollX, scrollY);
-            markdownEditor.scrollTop = editorScrollTop;
-
-            debouncedUpdatePreview();
-          });
-        }
-
-        function highlightSuggestion(index) {
-          const items = autocompleteList.querySelectorAll("li");
-          if (index < 0 || index >= items.length) {
-            index = -1;
-          }
-
-          if (activeSuggestionIndex !== -1 && items[activeSuggestionIndex]) {
-            items[activeSuggestionIndex].classList.remove("highlighted");
-          }
-
-          activeSuggestionIndex = index;
-          if (activeSuggestionIndex !== -1 && items[activeSuggestionIndex]) {
-            items[activeSuggestionIndex].classList.add("highlighted");
-
-            items[activeSuggestionIndex].scrollIntoView({
-              block: "nearest",
-              inline: "nearest",
-            });
-          }
-        }
-
-        function handleAutocompleteKeydown(event) {
-          if (
-            autocompleteList.style.display !== "block" ||
-            !autocompleteList.hasChildNodes()
-          ) {
-            return false;
-          }
-
-          const items = autocompleteList.querySelectorAll("li");
-          if (!items.length) return false;
-
-          switch (event.key) {
-            case "ArrowDown":
-              event.preventDefault();
-              highlightSuggestion((activeSuggestionIndex + 1) % items.length);
-              return true;
-
-            case "ArrowUp":
-              event.preventDefault();
-              highlightSuggestion(
-                (activeSuggestionIndex - 1 + items.length) % items.length
-              );
-              return true;
-
-
-            case "Enter":
-            case "Tab":
-              event.preventDefault();
-              highlightSuggestion((activeSuggestionIndex + 1) % items.length);
-              if (activeSuggestionIndex !== -1) {
-                event.preventDefault();
-                insertSuggestion(items[activeSuggestionIndex].textContent);
-              } else {
-                hideAutocomplete();
-                return event.key === "Enter";
-              }
-              return true;
-
-            case "Escape":
-              event.preventDefault();
-              hideAutocomplete();
-              return true;
-
-            default:
-              return false;
-          }
-        }
-
-        markdownEditor.addEventListener(
-          "input",
-          debounce(() => {
-            showAutocomplete();
-            updatePreview();
-          }, 150)
+      const escapeHtml = (unsafe) =>
+        unsafe.replace(
+          /[&<"'>]/g,
+          (c) =>
+          ({
+            "&": "&amp;",
+            "<": "&lt;",
+            '"': "&quot;",
+            "'": "&#39;",
+            ">": "&gt;",
+          }[c])
         );
 
-        markdownEditor.addEventListener("blur", () => {
-          hideAutocompleteTimeout = setTimeout(() => {
-            if (
-              document.activeElement !== autocompleteList &&
-              !autocompleteList.contains(document.activeElement)
-            ) {
-              hideAutocomplete();
-            }
-          }, 150);
-        });
+      function debounce(func, delay) {
+        return (...args) => {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => func.apply(this, args), delay);
+        };
+      }
 
-        document.addEventListener("click", (event) => {
+      function updatePreview() {
+        const markdownText = markdownEditor.innerText;
+        try {
+          const rawHtml = marked.parse(markdownText);
+
+          const tempDiv = document.createElement("div");
+          tempDiv.innerHTML = rawHtml;
+
+          tempDiv.querySelectorAll("li").forEach((li) => {
+            const firstChild = li.firstChild;
+            let checkbox = null;
+
+            if (
+              firstChild &&
+              firstChild.nodeName === "INPUT" &&
+              firstChild.type === "checkbox"
+            ) {
+              checkbox = firstChild;
+            } else if (
+              li.childNodes.length > 1 &&
+              li.childNodes[0].nodeType === Node.TEXT_NODE &&
+              li.childNodes[0].textContent.trim() === "" &&
+              li.childNodes[1].nodeName === "INPUT" &&
+              li.childNodes[1].type === "checkbox"
+            ) {
+              checkbox = li.childNodes[1];
+            }
+            if (checkbox) {
+              li.classList.add("task-list-item");
+            }
+          });
+          preview.innerHTML = tempDiv.innerHTML;
+        } catch (error) {
+          console.error("Markdown Parsing Error:", error);
+          preview.innerHTML = `<p style="color: red;">Markdown 解析エラー:</p><pre>${escapeHtml(
+            error.message || String(error)
+          )}</pre>`;
+        }
+      }
+      const debouncedUpdatePreview = debounce(updatePreview, 200);
+
+      function getCurrentWordInfo() {
+        const selection = window.getSelection();
+        if (!selection || !selection.rangeCount || !selection.isCollapsed)
+          return { word: "", range: null };
+        const range = selection.getRangeAt(0);
+        const container = range.startContainer;
+        const offset = range.startOffset;
+
+        if (container.nodeType === Node.TEXT_NODE) {
+          const text = container.textContent;
+
+          const triggerCharsRegex = /[\s\n\(\[\<]/;
+          let start = offset - 1;
+          while (start >= 0 && !triggerCharsRegex.test(text[start])) {
+            start--;
+          }
+          start++;
+
+          const word = text.substring(start, offset);
+          const precedingChar = start > 0 ? text[start - 1] : null;
+
+          const wordRange = document.createRange();
+          wordRange.setStart(container, start);
+          wordRange.setEnd(container, offset);
+
+          return { word, range: wordRange, precedingChar };
+        }
+        return { word: "", range: null };
+      }
+
+      function getCursorCoords() {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return null;
+        const range = selection.getRangeAt(0).cloneRange();
+        range.collapse(true);
+        const rect = range.getBoundingClientRect();
+
+        if (rect.width === 0 && rect.height === 0 && range.startContainer) {
+          const containerRect =
+            range.startContainer.nodeType === Node.ELEMENT_NODE
+              ? range.startContainer.getBoundingClientRect()
+              : range.startContainer.parentElement?.getBoundingClientRect();
+          if (containerRect) {
+            return {
+              x: containerRect.left + window.scrollX,
+              y: containerRect.bottom + window.scrollY + 5,
+            };
+          }
+        }
+
+        return rect
+          ? {
+            x: rect.left + window.scrollX,
+            y: rect.bottom + window.scrollY + 5,
+          }
+          : null;
+      }
+
+      function showAutocomplete() {
+        currentWordInfo = getCurrentWordInfo();
+        const { word, range, precedingChar } = currentWordInfo;
+        const minLengthTrigger = 1;
+        const immediateTriggerChars = ["<", "[", "#", "/", ":"];
+
+        const shouldTrigger =
+          range &&
+          ((word && word.length >= minLengthTrigger) ||
+            (precedingChar &&
+              immediateTriggerChars.includes(precedingChar) &&
+              word.length === 0));
+
+        if (!shouldTrigger) {
+          hideAutocomplete();
+          return;
+        }
+
+        const lowerCaseWord = word.toLowerCase();
+        const matchedSuggestions = suggestions
+          .filter(
+            (s) =>
+              (lowerCaseWord &&
+                s.toLowerCase().startsWith(lowerCaseWord) &&
+                s.toLowerCase() !== lowerCaseWord) ||
+              (!lowerCaseWord && precedingChar && s.startsWith(precedingChar))
+          )
+          .slice(0, 15);
+
+        if (matchedSuggestions.length > 0) {
+          const coords = getCursorCoords();
+          if (!coords) {
+            hideAutocomplete();
+            return;
+          }
+
+          const fragment = document.createDocumentFragment();
+          activeSuggestionIndex = -1;
+          matchedSuggestions.forEach((suggestion, index) => {
+            const li = document.createElement("li");
+            li.textContent = suggestion;
+            li.dataset.index = index;
+            li.addEventListener("mouseenter", () =>
+              highlightSuggestion(index)
+            );
+            li.addEventListener("click", (e) => {
+              e.stopPropagation();
+              insertSuggestion(suggestion);
+            });
+            fragment.appendChild(li);
+          });
+
+          autocompleteList.innerHTML = "";
+          autocompleteList.appendChild(fragment);
+          positionAutocomplete(coords);
+          autocompleteList.style.display = "block";
+        } else {
+          hideAutocomplete();
+        }
+      }
+
+      function positionAutocomplete(coords) {
+        const list = autocompleteList;
+        const { innerWidth, innerHeight } = window;
+        const listRect = list.getBoundingClientRect();
+
+        let top = coords.y;
+        let left = coords.x;
+
+        if (left + list.offsetWidth > innerWidth) {
+          left = innerWidth - list.offsetWidth - 10;
+        }
+        if (top + list.offsetHeight > innerHeight) {
+          const spaceAbove = coords.y - list.offsetHeight - 25;
+          top =
+            spaceAbove > 0
+              ? spaceAbove
+              : innerHeight - list.offsetHeight - 10;
+        }
+        list.style.left = `${Math.max(5, left)}px`;
+        list.style.top = `${Math.max(5, top)}px`;
+      }
+
+      function hideAutocomplete() {
+        clearTimeout(hideAutocompleteTimeout);
+        if (autocompleteList.style.display !== "none") {
+          autocompleteList.style.display = "none";
+          autocompleteList.innerHTML = "";
+          currentWordInfo = { word: "", range: null };
+          activeSuggestionIndex = -1;
+        }
+      }
+
+      function insertSuggestion(suggestion) {
+        const { range } = currentWordInfo;
+        if (!range) {
+          hideAutocomplete();
+          return;
+        }
+
+        const selection = window.getSelection();
+        if (!selection) {
+          hideAutocomplete();
+          return;
+        }
+
+        // 現在のスクロール位置を保存
+        const scrollX = window.scrollX;
+        const scrollY = window.scrollY;
+        const editorScrollTop = markdownEditor.scrollTop;
+
+        try {
+          selection.removeAllRanges();
+          selection.addRange(range); // 置換対象の単語/トリガーを選択
+
+          let cursorOffset;
+
+          // 特定の候補に対するカーソル位置を定義
+          // キー: 候補文字列, 値: 挿入後の文字列の先頭からのオフセット
+          const specificCursorOffsets = {
+            // ペアになる構文: コンテンツ入力のために中央にカーソルを配置
+            "* *": 1,                          // 挿入後: *| *
+            "_ _": 1,                          // 挿入後: _| _
+            "** **": 2,                        // 挿入後: **| ** (ご要望の動作)
+            "__ __": 2,                        // 挿入後: __| __
+            "~~ ~~": 2,                        // 挿入後: ~~| ~~
+            "` `": 1,                          // 挿入後: `| ` (インラインコード `code` 用)
+
+            // リンクと画像: テキスト部分にカーソルを配置
+            "[link text](url)": 1,             // 挿入後: [|link text](url)
+            "![alt text](image_url)": 2,      // 挿入後: ![|alt text](image_url)
+
+            // コードブロック: 言語定義と最初の改行の後にカーソルを配置
+            "```javascript\n\n```": "```javascript\n".length,
+            "```python\n\n```": "```python\n".length,
+            "```html\n\n```": "```html\n".length,
+            "```css\n\n```": "```css\n".length,
+            "```\n\n```": "```\n".length
+          };
+
+          if (specificCursorOffsets.hasOwnProperty(suggestion)) {
+            cursorOffset = specificCursorOffsets[suggestion];
+          } else {
+            // デフォルト: 挿入された候補の末尾にカーソル
+            cursorOffset = suggestion.length;
+          }
+
+          range.deleteContents(); // 現在入力中の単語やトリガー文字を削除
+          const textNode = document.createTextNode(suggestion);
+          range.insertNode(textNode); // 候補文字列を挿入
+
+          // カーソル位置を設定
+          range.setStart(textNode, cursorOffset);
+          range.collapse(true); // 範囲選択をカーソルに畳む
+          selection.removeAllRanges(); // 古い選択状態をクリア
+          selection.addRange(range);   // 新しいカーソル位置を適用
+
+        } catch (e) {
+          console.error("Error inserting suggestion:", e);
+          // エラー処理 (必要に応じてユーザーに通知など)
+        }
+
+        hideAutocomplete();
+        markdownEditor.focus(); // エディタにフォーカスを戻す
+
+        // スクロール位置を復元し、プレビューを更新
+        requestAnimationFrame(() => {
+          window.scrollTo(scrollX, scrollY);
+          markdownEditor.scrollTop = editorScrollTop;
+          debouncedUpdatePreview(); // プレビュー更新 (元のコードにもここにありました)
+        });
+      }
+
+
+      function highlightSuggestion(index) {
+        const items = autocompleteList.querySelectorAll("li");
+        if (index < 0 || index >= items.length) {
+          index = -1;
+        }
+
+        if (activeSuggestionIndex !== -1 && items[activeSuggestionIndex]) {
+          items[activeSuggestionIndex].classList.remove("highlighted");
+        }
+
+        activeSuggestionIndex = index;
+        if (activeSuggestionIndex !== -1 && items[activeSuggestionIndex]) {
+          items[activeSuggestionIndex].classList.add("highlighted");
+
+          items[activeSuggestionIndex].scrollIntoView({
+            block: "nearest",
+            inline: "nearest",
+          });
+        }
+      }
+
+      function handleAutocompleteKeydown(event) {
+        if (
+          autocompleteList.style.display !== "block" ||
+          !autocompleteList.hasChildNodes()
+        ) {
+          return false;
+        }
+
+        const items = autocompleteList.querySelectorAll("li");
+        if (!items.length) return false;
+
+        switch (event.key) {
+          case "ArrowDown":
+            event.preventDefault();
+            highlightSuggestion((activeSuggestionIndex + 1) % items.length);
+            return true;
+
+          case "ArrowUp":
+            event.preventDefault();
+            highlightSuggestion(
+              (activeSuggestionIndex - 1 + items.length) % items.length
+            );
+            return true;
+
+
+          case "Enter":
+          case "Tab":
+            event.preventDefault();
+            highlightSuggestion((activeSuggestionIndex + 1) % items.length);
+            if (activeSuggestionIndex !== -1) {
+              event.preventDefault();
+              insertSuggestion(items[activeSuggestionIndex].textContent);
+            } else {
+              hideAutocomplete();
+              return event.key === "Enter";
+            }
+            return true;
+
+          case "Escape":
+            event.preventDefault();
+            hideAutocomplete();
+            return true;
+
+          default:
+            return false;
+        }
+      }
+
+      markdownEditor.addEventListener(
+        "input",
+        debounce(() => {
+          showAutocomplete();
+          updatePreview();
+        }, 150)
+      );
+
+      markdownEditor.addEventListener("blur", () => {
+        hideAutocompleteTimeout = setTimeout(() => {
           if (
-            !markdownEditor.contains(event.target) &&
-            !autocompleteList.contains(event.target)
+            document.activeElement !== autocompleteList &&
+            !autocompleteList.contains(document.activeElement)
           ) {
             hideAutocomplete();
           }
+        }, 150);
+      });
 
-          if (
-            !contextMenu.contains(event.target) &&
-            event.target !== markdownEditor
-          ) {
-            contextMenu.style.display = "none";
-          }
-        });
-
-        markdownEditor.addEventListener("keydown", (event) => {
-          const autocompleteHandled = handleAutocompleteKeydown(event);
-          if (autocompleteHandled) {
-            return;
-          }
-
-          if (event.key === "Tab") {
-            event.preventDefault();
-
-            const sel = window.getSelection();
-            if (!sel || !sel.rangeCount) return;
-
-            const range = sel.getRangeAt(0);
-
-            if (!sel.isCollapsed) {
-              console.log("Tab on selection - Indent/Outdent logic needed");
-            } else {
-              document.execCommand("insertText", false, "  ");
-            }
-            debouncedUpdatePreview();
-            return;
-          }
-        });
-
-        saveBtn.addEventListener("click", () => {
-          const blob = new Blob([markdownEditor.innerText], {
-            type: "text/markdown;charset=utf-8",
-          });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "markdown.md";
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        });
-
-        loadBtn.addEventListener("click", () => {
-          const input = document.createElement("input");
-          input.type = "file";
-          input.accept = ".md,.markdown,.txt";
-          input.onchange = (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              markdownEditor.innerText = e.target.result;
-              updatePreview();
-            };
-            reader.onerror = (e) => {
-              alert("ファイルの読み込みに失敗しました。");
-              console.error("Read error:", e);
-            };
-            reader.readAsText(file);
-          };
-          input.click();
-        });
-
-        exportBtn.addEventListener("click", () => {
-          const styles = `<style>body{font-family:sans-serif;line-height:1.6;padding:20px}h1,h2{border-bottom:1px solid #eee;padding-bottom:.3em}code{background-color:#f5f5f5;padding:.2em .4em;border-radius:3px;font-family:monospace}pre{background-color:#f5f5f5;padding:1em;border-radius:3px;overflow:auto;font-family:monospace}blockquote{border-left:4px solid #ddd;padding:.5em 1em;color:#777;margin-left:0}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:.5em;text-align:left}img{max-width:100%;height:auto}.task-list-item{list-style-type:none}.task-list-item input[type=checkbox]{margin-right:.5em}</style>`;
-          const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>Exported Markdown</title>${styles}</head><body>${preview.innerHTML}</body></html>`;
-          const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "markdown.html";
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        });
-
-        shareBtn.addEventListener("click", () => {
-          const text = markdownEditor.innerText;
-          if (!text) {
-            alert("内容がありません。");
-            return;
-          }
-          try {
-            const compressed = LZString.compressToEncodedURIComponent(text);
-            const url = `${window.location.origin}${window.location.pathname}?data=${compressed}`;
-            if (url.length > 2000) {
-              alert("内容が長すぎるため、共有URLを作成できませんでした。");
-              return;
-            }
-            navigator.clipboard.writeText(url).then(
-              () => alert("共有URLをクリップボードにコピーしました。"),
-              () =>
-                prompt(
-                  "URLのコピーに失敗しました。手動でコピーしてください:",
-                  url
-                )
-            );
-          } catch (e) {
-            alert("共有URLの生成中にエラーが発生しました。");
-            console.error("Share error:", e);
-          }
-        });
-
-        markdownEditor.addEventListener("contextmenu", (event) => {
-          event.preventDefault();
+      document.addEventListener("click", (event) => {
+        if (
+          !markdownEditor.contains(event.target) &&
+          !autocompleteList.contains(event.target)
+        ) {
           hideAutocomplete();
-
-          insertSampleBtn.style.display = "block";
-
-          const { clientX: x, clientY: y } = event;
-          const { offsetWidth: menuW, offsetHeight: menuH } = contextMenu;
-          const { innerWidth: winW, innerHeight: winH } = window;
-
-          contextMenu.style.left = `${Math.min(x, winW - menuW - 5)}px`;
-          contextMenu.style.top = `${Math.min(y, winH - menuH - 5)}px`;
-          contextMenu.style.display = "block";
-        });
-
-        insertSampleBtn.addEventListener("click", () => {
-          markdownEditor.innerText = `# サンプル Markdown\n\nこれはサンプルの Markdown ドキュメントです。\n\n## 主な機能\n\n- **リアルタイムプレビュー**\n- Markdown保存/読込\n- HTMLエクスポート\n- URL共有\n- フォーマット\n- 入力補完\n\n## リスト\n\n*   項目 1\n*   項目 2\n    *   ネスト\n\n1.  番号付き 1\n2.  番号付き 2\n\n## コードブロック\n\n\`\`\`javascript\nconsole.log('Hello!');\n\`\`\`\n\n## その他\n\n**太字**, *イタリック*, ~~取消~~, [リンク](https://example.com)\n\n> 引用\n\n---\n\n| Header | Header |\n|---|---|\n| Cell | Cell |\n\n- [x] Task done\n- [ ] Task todo`;
-          updatePreview();
-          contextMenu.style.display = "none";
-          markdownEditor.focus();
-        });
-
-        formatBtn.addEventListener("click", () => {
-          const text = markdownEditor.innerText;
-          try {
-            if (
-              typeof prettier === "undefined" ||
-              typeof prettierPlugins === "undefined" ||
-              !prettierPlugins.markdown
-            ) {
-              throw new Error(
-                "Prettier or Markdown parser not loaded correctly."
-              );
-            }
-            const formatted = prettier.format(text, {
-              parser: "markdown",
-              plugins: prettierPlugins,
-              tabWidth: 2,
-            });
-            if (text !== formatted) {
-              markdownEditor.innerText = formatted;
-              updatePreview();
-            }
-          } catch (e) {
-            alert("フォーマットに失敗しました。\n" + e.message);
-            console.error("Format error:", e);
-          }
-          contextMenu.style.display = "none";
-          markdownEditor.focus();
-        });
-
-        showBlankBtn.addEventListener("click", () => {
-          const styles = `<style>/* Copy relevant styles from main #preview CSS here */ body{margin:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";line-height:1.6}h1,h2{border-bottom:1px solid #eee;padding-bottom:.3em}code{background-color:#f5f5f5;padding:.2em .4em;border-radius:3px;font-family:monospace}pre{background-color:#f5f5f5;padding:1em;border-radius:3px;overflow:auto;font-family:monospace}blockquote{border-left:.25em solid #ddd;padding:0 1em;color:#777;margin-left:0}table{border-collapse:collapse;max-width:100%;display:block;overflow-x:auto}th,td{border:1px solid #ddd;padding:.5em .75em}img{max-width:100%;height:auto}.task-list-item{list-style-type:none}.task-list-item input{margin-right:.3em}</style>`;
-          const newWindow = window.open("", "_blank");
-          if (newWindow) {
-            newWindow.document.write(
-              `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>Markdown Preview</title>${styles}</head><body>${preview.innerHTML}</body></html>`
-            );
-            newWindow.document.close();
-          } else {
-            alert("ポップアップを開けませんでした。");
-          }
-          contextMenu.style.display = "none";
-          markdownEditor.focus();
-        });
-
-        function loadInitialContent() {
-          const urlParams = new URLSearchParams(window.location.search);
-          const compressedData = urlParams.get("data");
-          let initialText = "";
-
-          if (compressedData) {
-            try {
-              initialText =
-                LZString.decompressFromEncodedURIComponent(compressedData);
-            } catch (e) {
-              console.error("URL Decompression failed:", e);
-              alert("URLデータの読み込みに失敗しました。");
-            }
-          }
-
-          if (initialText) {
-            markdownEditor.innerText = initialText;
-          }
-
-          updatePreview();
         }
 
-        loadInitialContent();
+        if (
+          !contextMenu.contains(event.target) &&
+          event.target !== markdownEditor
+        ) {
+          contextMenu.style.display = "none";
+        }
       });
-    </script>
-  </body>
+
+      markdownEditor.addEventListener("keydown", (event) => {
+        const autocompleteHandled = handleAutocompleteKeydown(event);
+        if (autocompleteHandled) {
+          return;
+        }
+
+        if (event.key === "Tab") {
+          event.preventDefault();
+
+          const sel = window.getSelection();
+          if (!sel || !sel.rangeCount) return;
+
+          const range = sel.getRangeAt(0);
+
+          if (!sel.isCollapsed) {
+            console.log("Tab on selection - Indent/Outdent logic needed");
+          } else {
+            document.execCommand("insertText", false, "  ");
+          }
+          debouncedUpdatePreview();
+          return;
+        }
+      });
+
+      saveBtn.addEventListener("click", () => {
+        const blob = new Blob([markdownEditor.innerText], {
+          type: "text/markdown;charset=utf-8",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "markdown.md";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+
+      loadBtn.addEventListener("click", () => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".md,.markdown,.txt";
+        input.onchange = (event) => {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            markdownEditor.innerText = e.target.result;
+            updatePreview();
+          };
+          reader.onerror = (e) => {
+            alert("ファイルの読み込みに失敗しました。");
+            console.error("Read error:", e);
+          };
+          reader.readAsText(file);
+        };
+        input.click();
+      });
+
+      exportBtn.addEventListener("click", () => {
+        const styles = `<style>body{font-family:sans-serif;line-height:1.6;padding:20px}h1,h2{border-bottom:1px solid #eee;padding-bottom:.3em}code{background-color:#f5f5f5;padding:.2em .4em;border-radius:3px;font-family:monospace}pre{background-color:#f5f5f5;padding:1em;border-radius:3px;overflow:auto;font-family:monospace}blockquote{border-left:4px solid #ddd;padding:.5em 1em;color:#777;margin-left:0}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:.5em;text-align:left}img{max-width:100%;height:auto}.task-list-item{list-style-type:none}.task-list-item input[type=checkbox]{margin-right:.5em}</style>`;
+        const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>Exported Markdown</title>${styles}</head><body>${preview.innerHTML}</body></html>`;
+        const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "markdown.html";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+
+      shareBtn.addEventListener("click", () => {
+        const text = markdownEditor.innerText;
+        if (!text) {
+          alert("内容がありません。");
+          return;
+        }
+        try {
+          const compressed = LZString.compressToEncodedURIComponent(text);
+          const url = `${window.location.origin}${window.location.pathname}?data=${compressed}`;
+          if (url.length > 2000) {
+            alert("内容が長すぎるため、共有URLを作成できませんでした。");
+            return;
+          }
+          navigator.clipboard.writeText(url).then(
+            () => alert("共有URLをクリップボードにコピーしました。"),
+            () =>
+              prompt(
+                "URLのコピーに失敗しました。手動でコピーしてください:",
+                url
+              )
+          );
+        } catch (e) {
+          alert("共有URLの生成中にエラーが発生しました。");
+          console.error("Share error:", e);
+        }
+      });
+
+      markdownEditor.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+        hideAutocomplete();
+
+        insertSampleBtn.style.display = "block";
+
+        const { clientX: x, clientY: y } = event;
+        const { offsetWidth: menuW, offsetHeight: menuH } = contextMenu;
+        const { innerWidth: winW, innerHeight: winH } = window;
+
+        contextMenu.style.left = `${Math.min(x, winW - menuW - 5)}px`;
+        contextMenu.style.top = `${Math.min(y, winH - menuH - 5)}px`;
+        contextMenu.style.display = "block";
+      });
+
+      insertSampleBtn.addEventListener("click", () => {
+        markdownEditor.innerText = `# サンプル Markdown\n\nこれはサンプルの Markdown ドキュメントです。\n\n## 主な機能\n\n- **リアルタイムプレビュー**\n- Markdown保存/読込\n- HTMLエクスポート\n- URL共有\n- フォーマット\n- 入力補完\n\n## リスト\n\n*   項目 1\n*   項目 2\n    *   ネスト\n\n1.  番号付き 1\n2.  番号付き 2\n\n## コードブロック\n\n\`\`\`javascript\nconsole.log('Hello!');\n\`\`\`\n\n## その他\n\n**太字**, *イタリック*, ~~取消~~, [リンク](https://example.com)\n\n> 引用\n\n---\n\n| Header | Header |\n|---|---|\n| Cell | Cell |\n\n- [x] Task done\n- [ ] Task todo`;
+        updatePreview();
+        contextMenu.style.display = "none";
+        markdownEditor.focus();
+      });
+
+      formatBtn.addEventListener("click", () => {
+        const text = markdownEditor.innerText;
+        try {
+          if (
+            typeof prettier === "undefined" ||
+            typeof prettierPlugins === "undefined" ||
+            !prettierPlugins.markdown
+          ) {
+            throw new Error(
+              "Prettier or Markdown parser not loaded correctly."
+            );
+          }
+          const formatted = prettier.format(text, {
+            parser: "markdown",
+            plugins: prettierPlugins,
+            tabWidth: 2,
+          });
+          if (text !== formatted) {
+            markdownEditor.innerText = formatted;
+            updatePreview();
+          }
+        } catch (e) {
+          alert("フォーマットに失敗しました。\n" + e.message);
+          console.error("Format error:", e);
+        }
+        contextMenu.style.display = "none";
+        markdownEditor.focus();
+      });
+
+      showBlankBtn.addEventListener("click", () => {
+        const styles = `<style>/* Copy relevant styles from main #preview CSS here */ body{margin:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";line-height:1.6}h1,h2{border-bottom:1px solid #eee;padding-bottom:.3em}code{background-color:#f5f5f5;padding:.2em .4em;border-radius:3px;font-family:monospace}pre{background-color:#f5f5f5;padding:1em;border-radius:3px;overflow:auto;font-family:monospace}blockquote{border-left:.25em solid #ddd;padding:0 1em;color:#777;margin-left:0}table{border-collapse:collapse;max-width:100%;display:block;overflow-x:auto}th,td{border:1px solid #ddd;padding:.5em .75em}img{max-width:100%;height:auto}.task-list-item{list-style-type:none}.task-list-item input{margin-right:.3em}</style>`;
+        const newWindow = window.open("", "_blank");
+        if (newWindow) {
+          newWindow.document.write(
+            `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>Markdown Preview</title>${styles}</head><body>${preview.innerHTML}</body></html>`
+          );
+          newWindow.document.close();
+        } else {
+          alert("ポップアップを開けませんでした。");
+        }
+        contextMenu.style.display = "none";
+        markdownEditor.focus();
+      });
+
+      function loadInitialContent() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const compressedData = urlParams.get("data");
+        let initialText = "";
+
+        if (compressedData) {
+          try {
+            initialText =
+              LZString.decompressFromEncodedURIComponent(compressedData);
+          } catch (e) {
+            console.error("URL Decompression failed:", e);
+            alert("URLデータの読み込みに失敗しました。");
+          }
+        }
+
+        if (initialText) {
+          markdownEditor.innerText = initialText;
+        }
+
+        updatePreview();
+      }
+
+      loadInitialContent();
+    });
+  </script>
+</body>
+
 </html>

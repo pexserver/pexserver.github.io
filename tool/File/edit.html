@@ -106,6 +106,30 @@
       transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
     }
 
+    input[type="url"].is-base64-loaded {
+      display: none !important;
+    }
+
+    .base64-loaded-message {
+      font-size: 0.85em;
+      color: var(--secondary-color);
+      padding: 0.4rem 0.6rem;
+      background-color: var(--light-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .base64-loaded-message .clear-base64-btn {
+      margin-left: 10px;
+      font-size: 0.9em;
+      color: var(--primary-color);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+
     input[type="text"][readonly] {
       background-color: var(--light-color);
       opacity: 0.8;
@@ -315,14 +339,17 @@
 
     .image-input-container {
       display: flex;
-      align-items: flex-start;
-      gap: 10px;
+      flex-direction: column;
+      /* Changed for better layout with message */
+      gap: 5px;
+      /* Adjusted gap */
       margin-bottom: 0.9rem;
     }
 
     .image-input-container input[type="url"] {
       flex-grow: 1;
       margin-bottom: 0;
+      /* Removed default margin as container handles it */
     }
 
     .image-preview {
@@ -334,6 +361,13 @@
       object-fit: contain;
       display: none;
       border-radius: var(--border-radius);
+      cursor: pointer;
+      /* To indicate it's clickable for clearing Base64 */
+    }
+
+    .image-preview.has-base64 {
+      margin-top: 5px;
+      /* Add some space when message is shown */
     }
 
     input.pasting {
@@ -374,7 +408,8 @@
 
     .paste-error {
       font-size: 0.85rem;
-      margin-top: -0.6rem;
+      margin-top: 0.2rem;
+      /* Adjusted from -0.6rem */
       margin-bottom: 0.8rem;
       display: block;
     }
@@ -463,10 +498,11 @@
         margin-bottom: 0.5rem;
       }
 
-      .image-input-container {
+      /* .image-input-container {
         flex-direction: column;
         align-items: stretch;
-      }
+      } */
+      /* Already column from base styles */
 
       .image-input-container input[type="url"] {
         margin-bottom: 0.5rem;
@@ -524,16 +560,28 @@
           <div>
             <label for="editImage">Image URL (クリップボードから画像ペースト可):</label>
             <div class="image-input-container">
+              <span id="editImageBase64Status" class="base64-loaded-message hidden">
+                Base64 Image Loaded. <span class="clear-base64-btn" data-target-input="editImage"
+                  data-target-preview="editImagePreview" data-target-status="editImageBase64Status">Clear</span>
+              </span>
               <input type="url" id="editImage" placeholder="例: ../Assets/images/tool.png またはペースト" />
-              <img id="editImagePreview" src="#" alt="Image Preview" class="image-preview" />
+              <img id="editImagePreview" src="#" alt="Image Preview" class="image-preview" data-target-input="editImage"
+                data-target-preview="editImagePreview" data-target-status="editImageBase64Status" />
             </div>
             <small id="editImagePasteError" class="paste-error hidden"></small>
           </div>
           <div>
             <label for="editImageLarge">Large Image URL (クリップボードから画像ペースト可):</label>
             <div class="image-input-container">
+              <span id="editImageLargeBase64Status" class="base64-loaded-message hidden">
+                Base64 Image Loaded. <span class="clear-base64-btn" data-target-input="editImageLarge"
+                  data-target-preview="editImageLargePreview"
+                  data-target-status="editImageLargeBase64Status">Clear</span>
+              </span>
               <input type="url" id="editImageLarge" placeholder="例: ../Assets/images/tool-large.png またはペースト" />
-              <img id="editImageLargePreview" src="#" alt="Large Image Preview" class="image-preview" />
+              <img id="editImageLargePreview" src="#" alt="Large Image Preview" class="image-preview"
+                data-target-input="editImageLarge" data-target-preview="editImageLargePreview"
+                data-target-status="editImageLargeBase64Status" />
             </div>
             <small id="editImageLargePasteError" class="paste-error hidden"></small>
           </div>
@@ -621,12 +669,11 @@
     const copyStatus = document.getElementById("copyStatus");
     const platformSuggestionsEl = document.getElementById("platformSuggestions");
     const categoryTypeSuggestionsEl = document.getElementById("categoryTypeSuggestions");
+
     const editImageInput = document.getElementById("editImage");
     const editImageLargeInput = document.getElementById("editImageLarge");
-    const editImagePasteError = document.getElementById("editImagePasteError");
-    const editImageLargePasteError = document.getElementById("editImageLargePasteError");
-    const editImagePreview = document.getElementById("editImagePreview");
-    const editImageLargePreview = document.getElementById("editImageLargePreview");
+    // Previews and status messages are now retrieved dynamically or via dataset
+
     const editDescriptionInput = document.getElementById("editDescription");
     const editDetailedDescriptionInput = document.getElementById("editDetailedDescription");
     const editAppIDInput = document.getElementById("editAppID");
@@ -637,10 +684,32 @@
     deleteToolBtn.addEventListener("click", handleDeleteTool);
     cancelEditBtn.addEventListener("click", hideEditForm);
     copyOutputBtn.addEventListener("click", copyOutputToClipboard);
-    editImageInput.addEventListener("paste", handleImagePaste);
-    editImageLargeInput.addEventListener("paste", handleImagePaste);
-    editImageInput.addEventListener('input', () => updateImagePreview('editImage', 'editImagePreview'));
-    editImageLargeInput.addEventListener('input', () => updateImagePreview('editImageLarge', 'editImageLargePreview'));
+
+    [editImageInput, editImageLargeInput].forEach(input => {
+      input.addEventListener("paste", handleImagePaste);
+      input.addEventListener('input', () => {
+        const previewId = input.id.replace('editImage', 'editImagePreview'); // e.g. editImage -> editImagePreview
+        updateImagePreview(input.id, previewId);
+      });
+    });
+
+    document.querySelectorAll('.clear-base64-btn').forEach(btn => {
+      btn.addEventListener('click', (event) => {
+        const targetInputId = event.target.dataset.targetInput;
+        const targetPreviewId = event.target.dataset.targetPreview;
+        clearBase64Image(targetInputId, targetPreviewId);
+      });
+    });
+    document.querySelectorAll('.image-preview').forEach(preview => {
+      preview.addEventListener('click', (event) => {
+        const targetInputId = event.target.dataset.targetInput;
+        const targetPreviewId = event.target.dataset.targetPreview;
+        const inputEl = document.getElementById(targetInputId);
+        if (inputEl && inputEl.classList.contains('is-base64-loaded')) {
+          clearBase64Image(targetInputId, targetPreviewId);
+        }
+      });
+    });
 
     function generateUUIDv4() {
       if (crypto && crypto.randomUUID) {
@@ -693,32 +762,71 @@
     function updateImagePreview(inputId, previewId) {
       const input = document.getElementById(inputId);
       const preview = document.getElementById(previewId);
+      const statusMessage = document.getElementById(inputId + 'Base64Status'); // e.g. editImageBase64Status
       const value = input.value.trim();
-      if (value && value.startsWith('data:image') && value.includes(';base64,')) {
+
+      if (value.startsWith('data:image') && value.includes(';base64,')) {
         preview.src = value;
         preview.style.display = 'block';
-      } else {
+        preview.classList.add('has-base64');
+        input.classList.add('is-base64-loaded');
+        if (statusMessage) statusMessage.classList.remove('hidden');
+      } else if (value) { // Non-Base64 URL
+        preview.src = value; // Attempt to load external URL for preview (might fail due to CORS etc.)
+        preview.style.display = 'block';
+        preview.classList.remove('has-base64');
+        input.classList.remove('is-base64-loaded');
+        if (statusMessage) statusMessage.classList.add('hidden');
+      } else { // Empty
         preview.src = '#';
         preview.style.display = 'none';
+        preview.classList.remove('has-base64');
+        input.classList.remove('is-base64-loaded');
+        if (statusMessage) statusMessage.classList.add('hidden');
       }
     }
 
+    function clearBase64Image(inputId, previewId) {
+      const input = document.getElementById(inputId);
+      const preview = document.getElementById(previewId);
+      const statusMessage = document.getElementById(inputId + 'Base64Status');
+
+      input.value = ''; // Clear the input value
+      input.classList.remove('is-base64-loaded');
+
+      preview.src = '#';
+      preview.style.display = 'none';
+      preview.classList.remove('has-base64');
+
+      if (statusMessage) statusMessage.classList.add('hidden');
+
+      // Manually trigger input event if needed for other listeners, though direct updateImagePreview is also fine
+      // input.dispatchEvent(new Event('input')); 
+      updateImagePreview(inputId, previewId); // Re-evaluate based on empty value
+      input.focus();
+    }
+
+
     function handleImagePaste(event) {
       const inputElement = event.target;
-      const errorElementId = inputElement.id;
-      const previewElementId = inputElement.id + 'Preview';
+      const errorElementId = inputElement.id; // e.g. editImage
+      const previewElementId = inputElement.id.replace('editImage', 'editImagePreview'); // e.g. editImagePreview
+
       clearPasteError(errorElementId);
       const items = (event.clipboardData || window.clipboardData)?.items;
       if (!items) { displayPasteError(errorElementId, "クリップボードデータにアクセスできません。"); return; }
+
       let imageFound = false;
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf("image") !== -1) {
           const blob = items[i].getAsFile();
           if (!blob) { displayPasteError(errorElementId, "画像ファイルの取得に失敗しました。"); continue; }
+
           imageFound = true;
           event.preventDefault();
           const reader = new FileReader();
           const originalPlaceholder = inputElement.placeholder;
+
           reader.onloadstart = () => {
             inputElement.classList.add('pasting');
             inputElement.readOnly = true;
@@ -728,7 +836,7 @@
             if (e.target && typeof e.target.result === 'string') {
               inputElement.value = e.target.result;
               console.log(`Image pasted and converted to Base64 for ${inputElement.id}`);
-              updateImagePreview(inputElement.id, previewElementId);
+              updateImagePreview(inputElement.id, previewElementId); // This will now handle hiding input and showing message
             } else { displayPasteError(errorElementId, "画像の読み込み結果が無効です。"); }
           };
           reader.onerror = (error) => {
@@ -739,7 +847,7 @@
             inputElement.classList.remove('pasting');
             inputElement.readOnly = false;
             inputElement.placeholder = originalPlaceholder;
-            updateImagePreview(inputElement.id, previewElementId);
+            // updateImagePreview already called in reader.onload
           };
           reader.readAsDataURL(blob);
           break;
@@ -747,6 +855,7 @@
       }
       if (!imageFound) {
         console.log("Pasted content is not an image. Default paste behavior allowed.");
+        // Allow default paste, then update preview if it's a URL
         setTimeout(() => updateImagePreview(inputElement.id, previewElementId), 0);
       }
     }
@@ -826,7 +935,7 @@
               delete tool.category;
               dataNeedsUpdate = true;
             }
-            if (!tool.appID || typeof tool.appID !== 'string' || tool.appID.length < 10) { // Basic check for existing valid-ish ID
+            if (!tool.appID || typeof tool.appID !== 'string' || tool.appID.length < 10) {
               console.log(`Generating new appID for tool: ${key}`);
               tool.appID = generateUUIDv4();
               dataNeedsUpdate = true;
@@ -837,23 +946,27 @@
 
       if (dataNeedsUpdate) {
         console.log("Data was modified (category removed or appID added), updating output and input fields.");
-        updateOutput();
-        dataInput.value = dataOutput.value;
+        updateOutput(); // This updates currentToolsData and dataOutput.value
+        dataInput.value = dataOutput.value; // Reflect changes in the input textarea
       }
 
       updateSuggestions();
-      renderToolList();
+      renderToolList(); // This uses currentToolsData
       manageArea.classList.remove("hidden");
       outputArea.classList.remove("hidden");
-      if (!dataNeedsUpdate) { // Update output only if it wasn't updated already
-        updateOutput();
+      if (!dataNeedsUpdate) {
+        updateOutput(); // Update output if it wasn't already (e.g. no modifications needed)
       }
       disableButtons(false);
     }
 
     function renderToolList() {
       toolList.innerHTML = "";
-      const keys = Object.keys(currentToolsData).sort();
+      // Sort keys using localeCompare with numeric option for natural sort
+      const keys = Object.keys(currentToolsData).sort((a, b) => {
+        return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+      });
+
       if (keys.length === 0) {
         toolList.innerHTML = `<p style="padding: 1rem 1.2rem; color: var(--secondary-color);">No tools loaded or defined yet. Click "Add New Tool" to start.</p>`;
         return;
@@ -889,22 +1002,24 @@
       clearError(saveError);
       clearPasteError('editImage');
       clearPasteError('editImageLarge');
-      editForm.reset();
+      editForm.reset(); // Resets form fields to default
+
+      // Manually reset Base64 states because form.reset() doesn't trigger input events or clear custom classes
+      clearBase64Image('editImage', 'editImagePreview');
+      clearBase64Image('editImageLarge', 'editImageLargePreview');
+
       document.getElementById("editToolId").value = toolKey || "";
-      updateImagePreview('editImage', 'editImagePreview'); // Reset previews
-      updateImagePreview('editImageLarge', 'editImageLargePreview'); // Reset previews
 
       if (toolKey && currentToolsData[toolKey]) {
         const toolData = currentToolsData[toolKey];
         formTitle.textContent = `Edit Tool: ${toolKey}`;
         deleteToolBtn.classList.remove("hidden");
-        editAppIDInput.value = toolData.appID || "Error: Missing ID"; // Should always exist now
+        editAppIDInput.value = toolData.appID || generateUUIDv4(); // Ensure appID, fallback if somehow missing
         document.getElementById("editToolKey").value = toolKey;
         document.getElementById("editToolKey").readOnly = true;
         document.getElementById("editTitle").value = toolData.title || "";
         document.getElementById("editImage").value = toolData.image || "";
         document.getElementById("editImageLarge").value = toolData.imageLarge || "";
-        // document.getElementById("editCategory").value = toolData.category || ""; // Removed
         document.getElementById("editVersion").value = toolData.version || "";
         document.getElementById("editUpdated").value = toolData.updated || "";
         document.getElementById("editDocsUrl").value = toolData.docsUrl || "";
@@ -921,23 +1036,21 @@
           document.getElementById("editDownloadUrlWindows").value = toolData.downloadUrl_windows || "";
           document.getElementById("editDownloadUrlLinux").value = toolData.downloadUrl_linux || "";
         }
+        // Update previews after setting values, this will handle Base64 UI
         updateImagePreview('editImage', 'editImagePreview');
         updateImagePreview('editImageLarge', 'editImageLargePreview');
       } else {
         formTitle.textContent = "Add New Tool";
         deleteToolBtn.classList.add("hidden");
-        editAppIDInput.value = generateUUIDv4(); // Generate ID for new tool
+        editAppIDInput.value = generateUUIDv4();
         document.getElementById("editToolKey").readOnly = false;
         let i = 1;
         let suggestedKey = `newTool${i}`;
         while (currentToolsData.hasOwnProperty(suggestedKey)) { i++; suggestedKey = `newTool${i}`; }
         document.getElementById("editToolKey").value = suggestedKey;
         document.getElementById("editUpdated").value = getTodayDateString();
-        editDescriptionInput.value = "";
-        editDetailedDescriptionInput.value = "";
-        document.getElementById("editDownloadUrl").value = "";
-        document.getElementById("editDownloadUrlWindows").value = "";
-        document.getElementById("editDownloadUrlLinux").value = "";
+        // Other fields are reset by editForm.reset()
+        // Previews are reset by clearBase64Image calls at the beginning
       }
       editFormContainer.classList.remove("hidden");
       editFormContainer.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -949,13 +1062,16 @@
 
     function hideEditForm() {
       editFormContainer.classList.add("hidden");
-      editForm.reset();
+      editForm.reset(); // Standard form reset
       clearError(saveError);
       clearPasteError('editImage');
       clearPasteError('editImageLarge');
+
+      // Explicitly reset image fields and their UI states
+      clearBase64Image('editImage', 'editImagePreview');
+      clearBase64Image('editImageLarge', 'editImageLargePreview');
+
       document.getElementById("editToolKey").readOnly = false;
-      updateImagePreview('editImage', 'editImagePreview'); // Hide previews on cancel
-      updateImagePreview('editImageLarge', 'editImageLargePreview');
     }
 
     async function handleSaveTool(event) {
@@ -964,23 +1080,23 @@
       clearError(saveError);
       const originalKey = document.getElementById("editToolId").value;
       const newKey = document.getElementById("editToolKey").value.trim();
-      const appID = editAppIDInput.value.trim(); // Get App ID from readonly field
+      const appID = editAppIDInput.value.trim();
 
       if (!newKey) { displayError(saveError, "Tool Key is required."); document.getElementById("editToolKey").focus(); disableButtons(false); return; }
       if (!/^[a-zA-Z0-9-_]+$/.test(newKey)) { displayError(saveError, "Tool Key can only contain letters, numbers, hyphens (-), and underscores (_)."); document.getElementById("editToolKey").focus(); disableButtons(false); return; }
       if ((!originalKey || originalKey !== newKey) && currentToolsData.hasOwnProperty(newKey)) { displayError(saveError, `Tool Key "${newKey}" already exists. Choose a unique key.`); document.getElementById("editToolKey").focus(); disableButtons(false); return; }
-      if (!appID) { displayError(saveError, "App ID is missing. Please reload or add the tool again."); disableButtons(false); return; } // Should not happen
+      if (!appID) { displayError(saveError, "App ID is missing. Please reload or add the tool again."); disableButtons(false); return; }
 
       const descriptionMarkdown = editDescriptionInput.value.trim();
       const detailedDescriptionMarkdown = editDetailedDescriptionInput.value.trim();
-      const descriptionHtml = marked.parse(descriptionMarkdown);
-      const detailedDescriptionHtml = marked.parse(detailedDescriptionMarkdown);
+      const descriptionHtml = descriptionMarkdown ? marked.parse(descriptionMarkdown) : "";
+      const detailedDescriptionHtml = detailedDescriptionMarkdown ? marked.parse(detailedDescriptionMarkdown) : "";
+
       const toolData = {
-        appID: appID, // Save appID
+        appID: appID,
         title: document.getElementById("editTitle").value.trim(),
-        image: document.getElementById("editImage").value.trim(),
-        imageLarge: document.getElementById("editImageLarge").value.trim(),
-        // category: document.getElementById("editCategory").value.trim(), // Removed
+        image: document.getElementById("editImage").value.trim(), // This will have Base64 if pasted
+        imageLarge: document.getElementById("editImageLarge").value.trim(), // Same here
         version: document.getElementById("editVersion").value.trim(),
         updated: document.getElementById("editUpdated").value.trim(),
         descriptionMarkdown: descriptionMarkdown,
@@ -994,31 +1110,57 @@
       const dlDefault = document.getElementById("editDownloadUrl").value.trim();
       const dlWindows = document.getElementById("editDownloadUrlWindows").value.trim();
       const dlLinux = document.getElementById("editDownloadUrlLinux").value.trim();
-      if (dlWindows || dlLinux) {
-        if (dlDefault) toolData.downloadUrl = dlDefault;
-        if (dlWindows) toolData.downloadUrl_windows = dlWindows;
-        if (dlLinux) toolData.downloadUrl_linux = dlLinux;
-      } else if (dlDefault) {
+      if (dlWindows || dlLinux) { // If any platform specific URL exists
+        if (dlDefault) toolData.downloadUrl = { default: dlDefault }; // Store default under object
+        else toolData.downloadUrl = {}; // Ensure downloadUrl is an object
+
+        if (dlWindows) toolData.downloadUrl.windows = dlWindows;
+        if (dlLinux) toolData.downloadUrl.linux = dlLinux;
+
+        // Remove old flat properties if they exist and new object structure is used
+        delete toolData.downloadUrl_windows;
+        delete toolData.downloadUrl_linux;
+
+      } else if (dlDefault) { // Only default URL
         toolData.downloadUrl = dlDefault;
+        // Remove object structure if only default exists now
+        delete toolData.downloadUrl_windows;
+        delete toolData.downloadUrl_linux;
+      } else { // No download URLs
+        delete toolData.downloadUrl;
+        delete toolData.downloadUrl_windows;
+        delete toolData.downloadUrl_linux;
       }
+
       Object.keys(toolData).forEach((key) => {
-        if (key !== 'appID' && key !== 'descriptionMarkdown' && key !== 'detailedDescriptionMarkdown' && (toolData[key] === "" || toolData[key] === null || toolData[key] === undefined)) {
+        if (key !== 'appID' &&
+          key !== 'descriptionMarkdown' &&
+          key !== 'detailedDescriptionMarkdown' &&
+          (toolData[key] === "" || toolData[key] === null || toolData[key] === undefined || (typeof toolData[key] === 'object' && Object.keys(toolData[key]).length === 0))
+        ) {
           delete toolData[key];
         }
       });
-      if (!toolData.downloadUrl) delete toolData.downloadUrl;
-      if (!toolData.downloadUrl_windows) delete toolData.downloadUrl_windows;
-      if (!toolData.downloadUrl_linux) delete toolData.downloadUrl_linux;
+
       if (!descriptionMarkdown) { delete toolData.description; delete toolData.descriptionMarkdown; }
       if (!detailedDescriptionMarkdown) { delete toolData.detailedDescription; delete toolData.detailedDescriptionMarkdown; }
+
       if (originalKey && originalKey !== newKey && currentToolsData.hasOwnProperty(originalKey)) {
         delete currentToolsData[originalKey];
       }
       currentToolsData[newKey] = toolData;
       console.log("Tool saved:", newKey, toolData);
-      updateOutput();
-      dataInput.value = dataOutput.value;
-      await handleLoadData();
+
+      updateOutput(); // This will also sort keys for the output
+      dataInput.value = dataOutput.value; // Update input field to reflect the saved state
+
+      // It's better to call renderToolList and other updates directly instead of full handleLoadData if possible,
+      // to avoid re-parsing and potential data loss if dataInput was manually changed.
+      // However, handleLoadData also does cleanup (appID, category removal) which might be desired.
+      // For simplicity and robustness of current logic, we'll keep handleLoadData.
+      // If performance becomes an issue with very large datasets, this could be optimized.
+      await handleLoadData(); // This will re-render list, update suggestions, etc.
+      // The form will be hidden by handleLoadData's call to hideEditForm()
     }
 
     async function handleDeleteTool() {
@@ -1030,29 +1172,34 @@
         console.log("Tool deleted:", toolKey);
         updateOutput();
         dataInput.value = dataOutput.value;
-        await handleLoadData();
+        await handleLoadData(); // Re-render and hide form
       }
     }
 
     function updateOutput() {
       try {
         const sortedData = {};
-        Object.keys(currentToolsData).sort().forEach(key => {
-          sortedData[key] = currentToolsData[key];
-        });
+        // Sort keys for the output JSON, consistent with the tool list display
+        Object.keys(currentToolsData).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+          .forEach(key => {
+            sortedData[key] = currentToolsData[key];
+          });
         dataOutput.value = JSON.stringify(sortedData, null, 2);
-        clearError(loadError);
+        clearError(loadError); // Clear any previous load errors if output is successful
       } catch (error) {
         dataOutput.value = "Error generating output JSON.";
         console.error("Error stringifying data:", error);
-        displayError(loadError, `Error generating output: ${error.message}`);
+        displayError(loadError, `Error generating output: ${error.message}`); // Display error in loadError area
       }
       clearCopyStatus();
     }
 
     async function copyOutputToClipboard() {
       const textToCopy = dataOutput.value;
-      if (!textToCopy) { showCopyStatus("Nothing to copy.", false); return; }
+      if (!textToCopy || textToCopy === "Error generating output JSON.") {
+        showCopyStatus("Nothing valid to copy.", false);
+        return;
+      }
       try {
         if (navigator.clipboard && window.isSecureContext) {
           await navigator.clipboard.writeText(textToCopy);
@@ -1079,8 +1226,17 @@
 
     function clearCopyStatus() {
       copyStatus.style.opacity = '0';
-      setTimeout(() => { copyStatus.textContent = ""; copyStatus.className = ""; }, 300);
+      setTimeout(() => { if (copyStatus.style.opacity === '0') { copyStatus.textContent = ""; copyStatus.className = ""; } }, 300);
     }
+
+    // Initial setup if needed, e.g. for marked.js
+    if (window.marked) {
+      marked.setOptions({
+        breaks: true, // Convert GFM line breaks to <br>
+        gfm: true,    // Enable GFM tables and other features
+      });
+    }
+
   </script>
 </body>
 

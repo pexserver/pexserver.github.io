@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CommandAPI ドキュメント</title>
+    <link rel="icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon">
+    <link rel="shortcut icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon">
+    <meta name="description" content="Minecraft Bedrock Edition用CommandAPIフレームワークのドキュメントです。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="../../../lib/css/ScriptDocs.css"> 
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="apple-mobile-web-app-title" content="CommandAPI Docs">
+</head>
+
+<body>
+    <div class="docs-layout">
+        <aside class="docs-sidebar" id="docsSidebar">
+            <a href="#introduction" class="logo"><i class="fas fa-code-branch"></i> CommandAPI</a>
+            <nav>
+                <ul>
+                    <li><a href="#introduction" class="active-link">はじめに</a></li>
+                    <li><a href="#core-components">コアコンポーネント</a></li>
+                    <li><a href="#getting-started">はじめ方 (HelpCommand例)</a></li>
+                    <li><a href="#files-overview">ファイル概要</a></li>
+                    <li><a href="#api-details">API詳細</a></li>
+                </ul>
+            </nav>
+        </aside>
+        <div class="docs-content-area">
+            <header class="docs-mobile-header">
+                <a href="#introduction" class="logo-mobile">CommandAPI</a>
+                <button class="menu-toggle-btn" id="menuToggleBtn" aria-label="ナビゲーションを開閉" aria-expanded="false"
+                    aria-controls="docsSidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </header>
+            <main class="docs-main-content">
+                <section class="docs-section-content" id="introduction">
+                    <div class="page-title-section">
+                        <h1><i class="fas fa-book-open"></i> はじめに</h1>
+                        <p class="lead">CommandAPIは、Minecraft Bedrock Editionでカスタムコマンドを定義・管理するためのフレームワークです。</p>
+                    </div>
+                    <p>このフレームワークは、<code>@minecraft/server</code>
+                        APIを利用し、開発者がより効率的に、かつ型安全にカスタムコマンドを実装できるよう支援します。パラメータ処理、権限管理、Enum型の自動登録など、煩雑な作業を簡略化することを目的としています。
+                    </p>
+                    <h3>主な特徴</h3>
+                    <ul class="api-list">
+                        <li><strong>オブジェクト指向設計:</strong> <code>BaseCommand</code>クラスを継承し、各コマンドを独立したクラスとして定義します。</li>
+                        <li><strong>宣言的なパラメータ定義:</strong> コマンドが受け付けるパラメータを、型、任意性、説明と共に配列で簡単に定義できます。</li>
+                        <li><strong>Enum型の自動登録:</strong>
+                            パラメータにEnum型を使用する場合、<code>enumName</code>と<code>enumValues</code>を指定するだけで、APIが自動的にMinecraftに登録します。
+                        </li>
+                        <li><strong>一元化されたコマンド管理:</strong>
+                            <code>GlobalCommandRegistry</code>を通じて、すべてのカスタムコマンドを一箇所で管理・登録します。</li>
+                        <li><strong>TypeScriptによる型安全性:</strong> TypeScriptの型システムを活用し、開発時のエラーを早期に発見しやすくします。</li>
+                    </ul>
+                </section>
+
+                <section class="docs-section-content" id="core-components">
+                    <h2><i class="fas fa-cogs"></i> コアコンポーネント</h2>
+                    <p>CommandAPIは、いくつかの主要なファイルとクラスで構成されています。</p>
+                    <div class="item-card">
+                        <h3><span class="card-icon"><i class="fas fa-puzzle-piece"></i></span>BaseCommand.ts</h3>
+                        <p>全てのカスタムコマンドクラスが継承する抽象基底クラスです。コマンドの基本的な構造（名前、説明、権限レベル、パラメータなど）と、Minecraftのコマンドシステムと連携するための内部ロジックを提供します。
+                        </p>
+                        <h4>主要な抽象プロパティ/メソッド</h4>
+                        <ul class="api-list">
+                            <li><strong><code>name: string</code></strong> <span>コマンドの一意な名前 (例:
+                                    <code>"custom:my_command"</code>)。</span></li>
+                            <li><strong><code>description: string</code></strong> <span>コマンドの機能説明。</span></li>
+                            <li><strong><code>execute(origin, ...args): CustomCommandResult | void</code></strong>
+                                <span>コマンド実行時の処理ロジック。</span></li>
+                        </ul>
+                        <h4>主要な読み取り専用プロパティ</h4>
+                        <ul class="api-list">
+                            <li><strong><code>permissionLevel: CommandPermissionLevel</code></strong> <span>実行に必要な権限レベル
+                                    (デフォルト: <code>Admin</code>)。</span></li>
+                            <li><strong><code>parameters: CommandParameter[]</code></strong>
+                                <span>コマンドが受け付けるパラメータ定義の配列。</span></li>
+                        </ul>
+                    </div>
+                    <div class="item-card">
+                        <h3><span class="card-icon"><i class="fas fa-list-ol"></i></span>types.ts - CommandParameter
+                        </h3>
+                        <p><code>CommandParameter</code>インターフェースは、コマンドが受け取る各パラメータの仕様を定義します。</p>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>プロパティ</th>
+                                        <th>型</th>
+                                        <th>必須/任意</th>
+                                        <th>説明</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>name</code></td>
+                                        <td>string</td>
+                                        <td>必須</td>
+                                        <td>パラメータの内部名。<code>execute</code>メソッドの引数名と対応。</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>type</code></td>
+                                        <td>CustomCommandParamType</td>
+                                        <td>必須</td>
+                                        <td>パラメータのデータ型。</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>description</code></td>
+                                        <td>string</td>
+                                        <td>任意</td>
+                                        <td>パラメータの説明文。</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>isOptional</code></td>
+                                        <td>boolean</td>
+                                        <td>任意</td>
+                                        <td><code>true</code>の場合、このパラメータは任意。</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>enumName</code></td>
+                                        <td>string</td>
+                                        <td><code>type</code>がEnumの場合必須</td>
+                                        <td>登録するEnum型の一意な名前。</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>enumValues</code></td>
+                                        <td>string[]</td>
+                                        <td><code>type</code>がEnumの場合必須</td>
+                                        <td>Enum型が取りうる値の配列。</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="note-box">
+                            <p><strong>Enumパラメータについて:</strong>
+                                <code>type</code>が<code>CustomCommandParamType.Enum</code>の場合、<code>enumName</code>で指定された名前がMinecraft内部でのパラメータ識別子として使用されます。<code>name</code>プロパティは、<code>execute</code>メソッドへの引数マッピングのために引き続き重要です。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="item-card">
+                        <h3><span class="card-icon"><i class="fas fa-archive"></i></span>CommandRegistry.ts</h3>
+                        <p><code>CommandRegistryService</code>クラス（シングルトンインスタンスとして<code>GlobalCommandRegistry</code>が提供される）は、定義された全てのカスタムコマンドをMinecraftのシステムに登録する役割を担います。
+                        </p>
+                        <h4>主要なメソッド</h4>
+                        <ul class="api-list">
+                            <li><strong><code>registerCommand(commandInstance: BaseCommand): void</code></strong>
+                                <span>作成したコマンドのインスタンスを登録キューに追加します。</span></li>
+                            <li><strong><code>getRegisteredCommands(): ReadonlyArray<BaseCommand></code></strong>
+                                <span>現在登録されている（またはキューに入っている）コマンドのリストを取得します。</span></li>
+                        </ul>
+                        <p>コマンドの実際の登録処理は、サーバーの<code>system.beforeEvents.startup</code>イベント購読を通じて自動的に行われます。</p>
+                    </div>
+                </section>
+
+                <section class="docs-section-content" id="getting-started">
+                    <h2><i class="fas fa-rocket"></i> はじめ方 (HelpCommand 実装例)</h2>
+                    <p>カスタムコマンドを作成し、登録する基本的な手順と、実用的な<code>pex:help</code>コマンドの実装例を示します。</p>
+                    <div class="item-card">
+                        <h3>1. <code>HelpCommand</code> クラスの定義</h3>
+                        <p>以下は、利用可能なカスタムコマンドのリストや詳細情報を表示する<code>pex:help</code>コマンドのサンプル実装です。このコマンドは、他の登録済みコマンドの情報を動的に取得して表示します。
+                        </p>
+                        <pre class="language-typescript"><code>import {
+    CustomCommandParamType, CommandPermissionLevel,
+    CustomCommandOrigin, CustomCommandResult, Player, CustomCommandStatus
+} from "@minecraft/server";
+import { BaseCommand } from "../../lib/CommandAPI/BaseCommand"; // パスは実際のプロジェクト構造に合わせてください
+import { GlobalCommandRegistry } from "../../lib/CommandAPI/CommandRegistry"; // 同上
+import { CommandParameter } from "../../lib/CommandAPI/types"; // 同上
+
+function getParamTypeName(type: CustomCommandParamType): string {
+    switch (type) {
+        case CustomCommandParamType.Boolean: return "真偽値 (true/false)";
+        case CustomCommandParamType.Float: return "数値 (小数)";
+        case CustomCommandParamType.Integer: return "数値 (整数)"; // Note: APIではIntegerだが、ヘルプではIntegerを使用
+        case CustomCommandParamType.String: return "文字列";
+        case CustomCommandParamType.Enum: return "選択肢";
+        default: return \`不明な型(\${type})\`;
+    }
+}
+
+const COMMANDS_PER_PAGE = 10;
+
+class HelpCommand extends BaseCommand {
+    readonly name = "pex:help";
+    readonly description = "利用可能なカスタムコマンドのヘルプ情報を表示します。";
+    readonly permissionLevel = CommandPermissionLevel.Any;
+
+    readonly parameters: CommandParameter[] = [
+        {
+            name: "ターゲットまたはページ番号", // nameをより具体的に
+            type: CustomCommandParamType.String, // 文字列として受け取り、内部で数値かコマンド名か判定
+            description: "ヘルプを表示するコマンド名、またはページ番号を指定します。(省略可)",
+            isOptional: true,
+        },
+    ];
+
+    execute(origin: CustomCommandOrigin, targetOrPage?: string): CustomCommandResult {
+        const player = origin.sourceEntity instanceof Player ? origin.sourceEntity : null;
+        const registeredCommands = GlobalCommandRegistry.getRegisteredCommands();
+
+        let pageNumber = 1;
+        let specificCommandName: string | undefined = undefined;
+
+        if (targetOrPage) {
+            const parsedPage = parseInt(targetOrPage, 10);
+            if (!isNaN(parsedPage) && parsedPage > 0) {
+                pageNumber = parsedPage;
+            } else {
+                // targetOrPageが数値でない場合、コマンド名として扱う
+                specificCommandName = targetOrPage;
+            }
+        }
+
+        if (specificCommandName) {
+            const cmdNameToFind = specificCommandName.toLowerCase().includes(":")
+                ? specificCommandName.toLowerCase()
+                : \`pex:\${specificCommandName.toLowerCase()}\`; // デフォルトネームスペースをpex:と仮定
+
+            const commandToDisplay = registeredCommands.find(
+                cmd => cmd.name.toLowerCase() === cmdNameToFind
+            );
+
+            if (!commandToDisplay) {
+                const message = \`§cコマンド "\${specificCommandName}" が見つかりません。\n§e/pex:help §rでコマンドリストを確認してください。\`;
+                if (player) player.sendMessage(message);
+                else console.log(message.replace(/§[0-9a-fklmnor]/g, ''));
+                return { status: CustomCommandStatus.Failure, message: \`コマンドが見つかりません: \${specificCommandName}\` };
+            }
+
+            let detailMessage = \`§2--- ヘルプ: /\${commandToDisplay.name} ---§r\n\`;
+            detailMessage += \`§b説明:§r \${commandToDisplay.description}\n\`;
+            detailMessage += \`§b権限レベル:§r \${CommandPermissionLevel[commandToDisplay.permissionLevel]}\n\`;
+
+            detailMessage += \`§b使用法:§r /\${commandToDisplay.name}\`;
+            if (commandToDisplay.parameters.length > 0) {
+                commandToDisplay.parameters.forEach(param => {
+                    const optionalText = param.isOptional ? "?" : "";
+                    // Enumの場合、enumNameが存在すればそれを使用、なければparam.name
+                    const paramDisplayName = param.type === CustomCommandParamType.Enum && param.enumName ? param.enumName : param.name;
+                    detailMessage += \` <\${paramDisplayName}\${optionalText}>\`;
+                });
+                detailMessage += "\n\n§bパラメータ:§r\n";
+                commandToDisplay.parameters.forEach(param => {
+                    const paramDisplayName = param.type === CustomCommandParamType.Enum && param.enumName ? param.enumName : param.name;
+                    detailMessage += \`  §e<\${paramDisplayName}\${param.isOptional ? "?" : ""}>§r (\${getParamTypeName(param.type)}): \${param.description || "説明なし"}\n\`;
+                    if (param.type === CustomCommandParamType.Enum && param.enumValues) {
+                        detailMessage += \`    §7選択肢: \${param.enumValues.join(" | ")}\n\`;
+                    }
+                });
+            } else {
+                detailMessage += "\n§7このコマンドはパラメータを取りません。\n";
+            }
+
+            if (player) player.sendMessage(detailMessage);
+            else console.log(detailMessage.replace(/§[0-9a-fklmnor]/g, ''));
+            return { status: CustomCommandStatus.Success };
+        }
+
+        if (registeredCommands.length === 0) {
+            const noCommandsMessage = "現在登録されているカスタムコマンドはありません。";
+            if (player) player.sendMessage(noCommandsMessage);
+            else console.log(noCommandsMessage);
+            return { status: CustomCommandStatus.Success };
+        }
+
+        const totalPages = Math.ceil(registeredCommands.length / COMMANDS_PER_PAGE);
+        if (pageNumber > totalPages && totalPages > 0) { // totalPagesが0の場合の考慮
+            pageNumber = totalPages;
+        }
+        if (pageNumber < 1) {
+            pageNumber = 1;
+        }
+
+        const startIndex = (pageNumber - 1) * COMMANDS_PER_PAGE;
+        const endIndex = startIndex + COMMANDS_PER_PAGE;
+        const commandsToShow = registeredCommands.slice(startIndex, endIndex);
+
+        let helpMessage = \`§2--- 利用可能なカスタムコマンド (ページ \${pageNumber}/\${totalPages}) ---§r\n\`;
+        if (commandsToShow.length > 0) {
+            commandsToShow.forEach(cmd => {
+                helpMessage += \`§e/\${cmd.name}§r: \${cmd.description}\n\`;
+            });
+        } else if (registeredCommands.length > 0) { // コマンドはあるが、指定ページが空の場合
+             helpMessage += `§cこのページにはコマンドがありません。\n`;
+        }
+
+
+        if (totalPages > 1) {
+            helpMessage += "§7次のページ: §e/pex:help <ページ番号>§r\n";
+        }
+        helpMessage += "§7特定のコマンドの詳細: §e/pex:help <コマンド名>§r";
+
+        if (player) player.sendMessage(helpMessage);
+        else console.log(helpMessage.replace(/§[0-9a-fklmnor]/g, ''));
+
+        return { status: CustomCommandStatus.Success };
+    }
+}
+
+// HelpCommand自身の登録 (main.tsなどで行う)
+// GlobalCommandRegistry.registerCommand(new HelpCommand());</code></pre>
+                    </div>
+                    <div class="item-card">
+                        <h3>2. コマンドの登録</h3>
+                        <p>作成した<code>HelpCommand</code>（および他のカスタムコマンド）のインスタンスを生成し、<code>GlobalCommandRegistry</code>に登録します。これは通常、スクリプトのメインファイル（例:
+                            <code>main.ts</code>）で行います。</p>
+                        <pre class="language-typescript"><code>// 例: main.ts
+import { GlobalCommandRegistry } from "./CommandAPI"; // CommandAPIの場所に合わせて調整
+import { HelpCommand } from "./commands/HelpCommand"; // HelpCommandのパス
+// 他のカスタムコマンドもインポート
+// import { MyOtherCommand } from "./commands/MyOtherCommand";
+
+// HelpCommandインスタンスを作成・登録
+GlobalCommandRegistry.registerCommand(new HelpCommand());
+
+// 他のコマンドも同様に登録
+// GlobalCommandRegistry.registerCommand(new MyOtherCommand());
+
+console.log('[CommandSetup] カスタムコマンドの登録処理を開始しました。');</code></pre>
+                        <div class="tip-box">
+                            <p><strong>重要:</strong>
+                                コマンドクラスを定義したファイルが、<code>main.ts</code>などのエントリーポイントとなるスクリプトから正しくインポートされていることを確認してください。コマンドのMinecraftへの実際の登録は、サーバー起動サイクルの早い段階で行われます。
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="docs-section-content" id="files-overview">
+                    <h2><i class="fas fa-sitemap"></i> ファイル概要</h2>
+                    <p>CommandAPIフレームワークを構成する主要なファイルとその役割は以下の通りです。</p>
+                    <div class="info-panel">
+                        <h3><i class="fas fa-file-code"></i> CommandAPI ファイル群</h3>
+                        <ul class="api-list">
+                            <li><strong><code>BaseCommand.ts</code></strong>
+                                <span>全てのカスタムコマンドが継承する抽象クラス。コマンド定義の核となります。</span></li>
+                            <li><strong><code>CommandRegistry.ts</code></strong>
+                                <span><code>CommandRegistryService</code>クラスと、そのシングルトンインスタンス<code>GlobalCommandRegistry</code>を定義。コマンドの登録処理を管理します。</span>
+                            </li>
+                            <li><strong><code>types.ts</code></strong>
+                                <span><code>CommandParameter</code>インターフェースなど、API内で使用される型定義を集約しています。</span></li>
+                            <li><strong><code>import.ts</code></strong>
+                                <span>APIの主要なエクスポートをまとめたファイル。利用側でのインポートを簡略化します。</span></li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="docs-section-content" id="api-details">
+                    <h2><i class="fas fa-question-circle"></i> API詳細</h2>
+                    <p>主要なクラスとインターフェースの詳細です。</p>
+                    <div class="item-card">
+                        <h3><code>BaseCommand</code> 抽象クラス</h3>
+                        <p>カスタムコマンドを作成する際の基盤となります。</p>
+                        <h4>必須の抽象プロパティ/メソッド</h4>
+                        <ul class="api-list">
+                            <li><strong><code>name: string</code></strong>
+                                <span>コマンドの一意な名前。<code>namespace:command_name</code>形式を推奨。</span></li>
+                            <li><strong><code>description: string</code></strong> <span>コマンドの機能や使い方を説明する文字列。</span></li>
+                            <li><strong><code>execute(origin: CustomCommandOrigin, ...args: any[]): CustomCommandResult | void</code></strong>
+                                <span>コマンドが実行された際の実際の処理を記述するメソッド。<code>args</code>は<code>parameters</code>プロパティで定義した順に渡されます。</span>
+                            </li>
+                        </ul>
+                        <h4>オプションのプロパティ</h4>
+                        <ul class="api-list">
+                            <li><strong><code>permissionLevel: CommandPermissionLevel</code></strong>
+                                <span>コマンド実行に必要な権限レベル。デフォルトは<code>CommandPermissionLevel.Admin</code>。</span></li>
+                            <li><strong><code>parameters: CommandParameter[]</code></strong>
+                                <span>コマンドが受け付けるパラメータの定義配列。デフォルトは空配列<code>[]</code>。</span></li>
+                        </ul>
+                    </div>
+                    <div class="item-card">
+                        <h3><code>CommandParameter</code> インターフェース</h3>
+                        <p>コマンドが受け付ける各パラメータの詳細を定義します。（詳細は「コアコンポーネント」セクションの表を参照）</p>
+                        <h4>利用可能な <code>CustomCommandParamType</code> の値</h4>
+                        <p>以下は代表的な型です。詳細は<code>@minecraft/server</code>のドキュメントを参照してください。</p>
+                        <ul>
+                            <li><code>Boolean</code>, <code>Int</code> (※HelpCommand例ではInteger), <code>Float</code>,
+                                <code>String</code></li>
+                            <li><code>Target</code> (プレイヤー名やセレクタ)</li>
+                            <li><code>BlockPosition</code> (座標 X Y Z)</li>
+                            <li><code>Message</code> (コマンドの残りの部分全てを文字列として取得)</li>
+                            <li><code>Json</code> (JSON文字列)</li>
+                            <li><code>Enum</code> (事前に定義された文字列のリストから選択)</li>
+                        </ul>
+                    </div>
+                    <div class="item-card">
+                        <h3><code>GlobalCommandRegistry</code> (<code>CommandRegistryService</code>インスタンス)</h3>
+                        <p>コマンドの登録処理を一元的に行います。</p>
+                        <h4>主要メソッド</h4>
+                        <ul class="api-list">
+                            <li><strong><code>registerCommand(commandInstance: BaseCommand): void</code></strong>
+                                <span><code>BaseCommand</code>を継承したコマンドのインスタンスを登録キューに追加します。同じ名前のコマンドが既にキューにある場合、警告が出力されます。</span>
+                            </li>
+                            <li><strong><code>getRegisteredCommands(): ReadonlyArray<BaseCommand></code></strong>
+                                <span>現在レジストリに登録されている（または登録処理待ちの）全てのコマンドインスタンスの配列を返します。</span></li>
+                        </ul>
+                    </div>
+                </section>
+                <footer class="docs-footer">
+                    <p>© 2024 PEX Server / CommandAPI. All rights reserved.</p>
+                </footer>
+            </main>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.getElementById('docsSidebar');
+            const menuToggleBtn = document.getElementById('menuToggleBtn');
+            const contentSections = document.querySelectorAll('.docs-section-content');
+            const sidebarLinks = document.querySelectorAll('.docs-sidebar nav a');
+
+            function getPrimaryColorRGB() {
+                const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
+                if (primaryColor.startsWith('#')) {
+                    const hex = primaryColor.substring(1);
+                    const r = parseInt(hex.substring(0, 2), 16);
+                    const g = parseInt(hex.substring(2, 4), 16);
+                    const b = parseInt(hex.substring(4, 6), 16);
+                    return `${r},${g},${b}`;
+                }
+                return '74,85,162';
+            }
+            document.documentElement.style.setProperty('--primary-rgb', getPrimaryColorRGB());
+
+            function showSection(sectionId, shouldScroll = true) {
+                contentSections.forEach(section => {
+                    section.classList.remove('active-section');
+                    if (section.id === sectionId) {
+                        section.classList.add('active-section');
+                        if (shouldScroll) {
+                            const mainContentArea = document.querySelector('.docs-content-area');
+                            if (mainContentArea) mainContentArea.scrollTop = 0;
+                            window.scrollTo({ top: 0, behavior: 'auto' });
+                        }
+                    }
+                });
+                sidebarLinks.forEach(link => {
+                    link.classList.remove('active-link');
+                    if (link.getAttribute('href') === '#' + sectionId) {
+                        link.classList.add('active-link');
+                    }
+                });
+            }
+
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    const targetId = this.getAttribute('href').substring(1);
+                    e.preventDefault();
+                    history.pushState(null, '', '#' + targetId);
+                    showSection(targetId);
+                    if (window.innerWidth <= 992 && sidebar.classList.contains('is-open')) {
+                        sidebar.classList.remove('is-open');
+                        menuToggleBtn.setAttribute('aria-expanded', 'false');
+                        menuToggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
+                    }
+                });
+            });
+
+            if (menuToggleBtn) {
+                menuToggleBtn.addEventListener('click', () => {
+                    sidebar.classList.toggle('is-open');
+                    const isExpanded = sidebar.classList.contains('is-open');
+                    menuToggleBtn.setAttribute('aria-expanded', isExpanded.toString());
+                    menuToggleBtn.innerHTML = isExpanded ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
+                });
+            }
+
+            function handleHashChange() {
+                let hash = window.location.hash.substring(1);
+                if (!hash) { // If no hash, default to introduction
+                    hash = 'introduction';
+                    history.replaceState(null, '', '#' + hash); // Update URL without adding to history
+                }
+                const targetSection = document.getElementById(hash);
+                if (targetSection) {
+                    showSection(hash, false);
+                } else { // Fallback if hash is invalid
+                    showSection('introduction', false);
+                    history.replaceState(null, '', '#introduction');
+                }
+            }
+            window.addEventListener('hashchange', handleHashChange);
+            handleHashChange();
+        });
+    </script>
+</body>
+
+</html> 
