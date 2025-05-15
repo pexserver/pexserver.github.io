@@ -514,7 +514,7 @@
         "###### 6",
         "* *",
         "_ _",
-        "** **",
+        "**@|**",
         "__ __",
         "~~ ~~",
         "` `",
@@ -572,22 +572,22 @@
         "export",
       ].sort();
 
-      let currentWordInfo = { word: "", range: null };
+      let currentWordInfo = { word: "", range: null, triggerChar: null };
       let activeSuggestionIndex = -1;
       let debounceTimer = null;
       let hideAutocompleteTimeout = null;
 
-      const escapeHtml = (unsafe) =>
-        unsafe.replace(
+      const escapeHtml = (input) =>
+        input.replace(
           /[&<"'>]/g,
-          (c) =>
+          (char) =>
           ({
             "&": "&amp;",
             "<": "&lt;",
             '"': "&quot;",
             "'": "&#39;",
             ">": "&gt;",
-          }[c])
+          }[char])
         );
 
       function debounce(func, delay) {
@@ -641,31 +641,37 @@
       function getCurrentWordInfo() {
         const selection = window.getSelection();
         if (!selection || !selection.rangeCount || !selection.isCollapsed)
-          return { word: "", range: null };
+          return { word: "", range: null, triggerChar: null };
         const range = selection.getRangeAt(0);
         const container = range.startContainer;
-        const offset = range.startOffset;
+        let offset = range.startOffset;
 
         if (container.nodeType === Node.TEXT_NODE) {
           const text = container.textContent;
+          let triggerChar = null;
+          let searchEndOffset = offset;
 
-          const triggerCharsRegex = /[\s\n\(\[\<]/;
-          let start = offset - 1;
-          while (start >= 0 && !triggerCharsRegex.test(text[start])) {
+          const wordConstituentRegex = /[a-zA-Z0-9_*#\[\]<>\/\.:~`!-]/;
+          if (offset > 0 && !wordConstituentRegex.test(text[offset - 1])) {
+            triggerChar = text[offset - 1];
+            searchEndOffset = offset - 1;
+          }
+
+          let start = searchEndOffset - 1;
+          while (start >= 0 && wordConstituentRegex.test(text[start])) {
             start--;
           }
           start++;
 
-          const word = text.substring(start, offset);
-          const precedingChar = start > 0 ? text[start - 1] : null;
+          const word = text.substring(start, searchEndOffset);
 
-          const wordRange = document.createRange();
-          wordRange.setStart(container, start);
-          wordRange.setEnd(container, offset);
+          const currentRange = document.createRange();
+          currentRange.setStart(container, start);
+          currentRange.setEnd(container, offset);
 
-          return { word, range: wordRange, precedingChar };
+          return { word, range: currentRange, triggerChar };
         }
-        return { word: "", range: null };
+        return { word: "", range: null, triggerChar: null };
       }
 
       function getCursorCoords() {
@@ -697,86 +703,114 @@
       }
 
       function showAutocomplete() {
-        currentWordInfo = getCurrentWordInfo();
-        const { word, range, precedingChar } = currentWordInfo;
-        const minLengthTrigger = 1;
-        const immediateTriggerChars = ["<", "[", "#", "/", ":"];
+        currentWordInfo = getCurrentWordInfo(); // この関数は変更なしと仮定
+        const { word, range, triggerChar } = currentWordInfo;
 
-        const shouldTrigger =
-          range &&
-          ((word && word.length >= minLengthTrigger) ||
-            (precedingChar &&
-              immediateTriggerChars.includes(precedingChar) &&
-              word.length === 0));
-
-        if (!shouldTrigger) {
-          hideAutocomplete();
+        if (!range) {
+          hideAutocomplete(); // この関数は変更なしと仮定
           return;
         }
 
-        const lowerCaseWord = word.toLowerCase();
-        const matchedSuggestions = suggestions
-          .filter(
-            (s) =>
-              (lowerCaseWord &&
-                s.toLowerCase().startsWith(lowerCaseWord) &&
-                s.toLowerCase() !== lowerCaseWord) ||
-              (!lowerCaseWord && precedingChar && s.startsWith(precedingChar))
-          )
+        const userInputForMatching = (word + (triggerChar || "")).toLowerCase();
+
+        if (userInputForMatching.trim() === "" && triggerChar && triggerChar.trim() === "") {
+          if (word === "" && triggerChar && triggerChar.trim() !== "") {
+            // wordが空でトリガー文字が非空白の場合は継続 (例: `## `)
+          } else if (word === "" && (!triggerChar || triggerChar.trim() === "")) {
+            // wordが空でトリガー文字がないか空白の場合は非表示 (例: 単にスペース)
+            hideAutocomplete();
+            return;
+          }
+        }
+
+        const trulyMatchedSuggestions = suggestions // `suggestions` 配列は変更なしと仮定
+          .map(s_original => {
+            const s_display = s_original.replace(/@/g, ' ').replace(/\|/g, '');
+            const s_matchable = s_original.replace(/@/g, ' ').replace(/\|/g, '').toLowerCase();
+            return {
+              original_for_insertion: s_original,
+              display_text: s_display,
+              matchable_text: s_matchable,
+              has_cursor_marker: s_original.includes('|'),
+              is_special_pattern: s_original.includes('@')
+            };
+          })
+          .filter(item => {
+            if (!item.matchable_text.startsWith(userInputForMatching)) {
+              return false;
+            }
+            if (item.matchable_text === userInputForMatching) {
+              return item.has_cursor_marker || item.is_special_pattern;
+            }
+            return true;
+          })
           .slice(0, 15);
 
-        if (matchedSuggestions.length > 0) {
-          const coords = getCursorCoords();
+        if (trulyMatchedSuggestions.length > 0) {
+          const coords = getCursorCoords(); // この関数は変更なしと仮定
           if (!coords) {
             hideAutocomplete();
             return;
           }
 
           const fragment = document.createDocumentFragment();
-          activeSuggestionIndex = -1;
-          matchedSuggestions.forEach((suggestion, index) => {
+          // activeSuggestionIndex はここでは直接変更せず、highlightSuggestion に任せる
+
+          trulyMatchedSuggestions.forEach((item, index) => {
             const li = document.createElement("li");
-            li.textContent = suggestion;
-            li.dataset.index = index;
-            li.addEventListener("mouseenter", () =>
-              highlightSuggestion(index)
-            );
+            li.dataset.originalSuggestion = item.original_for_insertion;
+            li.textContent = item.display_text;
+            li.dataset.index = index; // `data-index` は highlightSuggestion では直接使われないが、デバッグ等に有用
+            li.addEventListener("mouseenter", () => highlightSuggestion(index));
             li.addEventListener("click", (e) => {
               e.stopPropagation();
-              insertSuggestion(suggestion);
+              insertSuggestion(li.dataset.originalSuggestion); // この関数は変更なしと仮定
             });
             fragment.appendChild(li);
           });
 
           autocompleteList.innerHTML = "";
           autocompleteList.appendChild(fragment);
-          positionAutocomplete(coords);
+          positionAutocomplete(coords); // この関数は変更なしと仮定
           autocompleteList.style.display = "block";
+
+          // ★★★ 修正点 1: リスト表示時に最初のアイテムをハイライト ★★★
+          if (autocompleteList.hasChildNodes()) {
+            // activeSuggestionIndex = 0; // highlightSuggestion内で設定される
+            highlightSuggestion(0); // 最初のアイテムをハイライトする (activeSuggestionIndex もここで更新)
+          } else {
+            activeSuggestionIndex = -1;
+          }
+
         } else {
           hideAutocomplete();
+          activeSuggestionIndex = -1;
         }
       }
+
 
       function positionAutocomplete(coords) {
         const list = autocompleteList;
         const { innerWidth, innerHeight } = window;
-        const listRect = list.getBoundingClientRect();
+        const listRect = list.getBoundingClientRect(); // この行は実際には使われていないので削除しても良い
 
         let top = coords.y;
         let left = coords.x;
 
+        // リストがウィンドウの右端を超える場合は左にずらす
         if (left + list.offsetWidth > innerWidth) {
-          left = innerWidth - list.offsetWidth - 10;
+          left = innerWidth - list.offsetWidth - 10; // 10pxのマージン
         }
+        // リストがウィンドウの下端を超える場合は上にずらす
         if (top + list.offsetHeight > innerHeight) {
-          const spaceAbove = coords.y - list.offsetHeight - 25;
+          const spaceAbove = coords.y - list.offsetHeight - 25; // カーソルの上部からのスペース (25はカーソルとリストの間隔など)
           top =
-            spaceAbove > 0
+            spaceAbove > 0 // 上に十分なスペースがあるか
               ? spaceAbove
-              : innerHeight - list.offsetHeight - 10;
+              : innerHeight - list.offsetHeight - 10; // なければウィンドウ下端に合わせる
         }
-        list.style.left = `${Math.max(5, left)}px`;
-        list.style.top = `${Math.max(5, top)}px`;
+        list.style.left = `${Math.max(5, left)}px`; // 左端が画面外に出ないように
+        list.style.top = `${Math.max(5, top)}px`;   // 上端が画面外に出ないように
       }
 
       function hideAutocomplete() {
@@ -784,12 +818,13 @@
         if (autocompleteList.style.display !== "none") {
           autocompleteList.style.display = "none";
           autocompleteList.innerHTML = "";
-          currentWordInfo = { word: "", range: null };
+          // currentWordInfo は showAutocomplete が呼ばれる際に更新されるので、ここではリセット不要の場合もある
+          // currentWordInfo = { word: "", range: null, triggerChar: null };
           activeSuggestionIndex = -1;
         }
       }
 
-      function insertSuggestion(suggestion) {
+      function insertSuggestion(suggestionWithMarkers) {
         const { range } = currentWordInfo;
         if (!range) {
           hideAutocomplete();
@@ -802,95 +837,72 @@
           return;
         }
 
-        // 現在のスクロール位置を保存
         const scrollX = window.scrollX;
         const scrollY = window.scrollY;
         const editorScrollTop = markdownEditor.scrollTop;
 
         try {
           selection.removeAllRanges();
-          selection.addRange(range); // 置換対象の単語/トリガーを選択
+          selection.addRange(range);
 
-          let cursorOffset;
+          const textForCursorCalculation = suggestionWithMarkers.replace(/@/g, '');
+          let cursorOffset = textForCursorCalculation.indexOf('|');
+          const textToInsert = textForCursorCalculation.replace(/\|/g, '');
 
-          // 特定の候補に対するカーソル位置を定義
-          // キー: 候補文字列, 値: 挿入後の文字列の先頭からのオフセット
-          const specificCursorOffsets = {
-            // ペアになる構文: コンテンツ入力のために中央にカーソルを配置
-            "* *": 2,                         
-            "_ _": 2,                         
-            "** **": 3,                       
-            "__ __": 3,                       
-            "~~ ~~": 3,                       
-            "` `": 2,                         
-
-            // リンクと画像: テキスト部分にカーソルを配置
-            "[link text](url)": 2,             // 挿入後: [|link text](url)
-            "![alt text](image_url)": 3,      // 挿入後: ![|alt text](image_url)
-
-            // コードブロック: 言語定義と最初の改行の後にカーソルを配置
-            "```javascript\n\n```": "```javascript\n".length,
-            "```python\n\n```": "```python\n".length,
-            "```html\n\n```": "```html\n".length,
-            "```css\n\n```": "```css\n".length,
-            "```\n\n```": "```\n".length
-          };
-
-          if (specificCursorOffsets.hasOwnProperty(suggestion)) {
-            cursorOffset = specificCursorOffsets[suggestion];
-          } else {
-            // デフォルト: 挿入された候補の末尾にカーソル
-            cursorOffset = suggestion.length;
+          if (cursorOffset === -1) {
+            cursorOffset = textToInsert.length;
           }
 
-          range.deleteContents(); // 現在入力中の単語やトリガー文字を削除
-          const textNode = document.createTextNode(suggestion);
-          range.insertNode(textNode); // 候補文字列を挿入
+          range.deleteContents();
+          const textNode = document.createTextNode(textToInsert);
+          range.insertNode(textNode);
 
-          // カーソル位置を設定
-          range.setStart(textNode, cursorOffset);
-          range.collapse(true); // 範囲選択をカーソルに畳む
-          selection.removeAllRanges(); // 古い選択状態をクリア
-          selection.addRange(range);   // 新しいカーソル位置を適用
+          const finalCursorOffset = Math.min(cursorOffset, textNode.nodeValue.length);
+          range.setStart(textNode, finalCursorOffset);
+          range.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(range);
 
         } catch (e) {
           console.error("Error inserting suggestion:", e);
-          // エラー処理 (必要に応じてユーザーに通知など)
         }
 
         hideAutocomplete();
-        markdownEditor.focus(); // エディタにフォーカスを戻す
+        markdownEditor.focus();
 
-        // スクロール位置を復元し、プレビューを更新
         requestAnimationFrame(() => {
           window.scrollTo(scrollX, scrollY);
           markdownEditor.scrollTop = editorScrollTop;
-          debouncedUpdatePreview(); // プレビュー更新 (元のコードにもここにありました)
+          debouncedUpdatePreview();
         });
       }
 
-
       function highlightSuggestion(index) {
         const items = autocompleteList.querySelectorAll("li");
-        if (index < 0 || index >= items.length) {
-          index = -1;
+        if (!items.length) {
+          activeSuggestionIndex = -1;
+          return;
         }
 
-        if (activeSuggestionIndex !== -1 && items[activeSuggestionIndex]) {
+        // 前のハイライトを解除
+        if (activeSuggestionIndex >= 0 && activeSuggestionIndex < items.length && items[activeSuggestionIndex]) {
           items[activeSuggestionIndex].classList.remove("highlighted");
         }
 
-        activeSuggestionIndex = index;
-        if (activeSuggestionIndex !== -1 && items[activeSuggestionIndex]) {
+        // 新しいインデックスをアクティブにする
+        // index が範囲外の場合も考慮 (例えば -1 ならハイライトなし)
+        if (index >= 0 && index < items.length) {
+          activeSuggestionIndex = index;
           items[activeSuggestionIndex].classList.add("highlighted");
-
           items[activeSuggestionIndex].scrollIntoView({
             block: "nearest",
             inline: "nearest",
           });
+        } else {
+          // 有効なアイテムをハイライトできなかった場合 (例: index が -1 などで、何も選択しない状態にしたい場合)
+          activeSuggestionIndex = -1; // ハイライトなしの状態を示す
         }
       }
-
       function handleAutocompleteKeydown(event) {
         if (
           autocompleteList.style.display !== "block" ||
@@ -902,30 +914,45 @@
         const items = autocompleteList.querySelectorAll("li");
         if (!items.length) return false;
 
+        let newIndex = activeSuggestionIndex; // 現在のインデックスを保持
+
         switch (event.key) {
           case "ArrowDown":
             event.preventDefault();
-            highlightSuggestion((activeSuggestionIndex + 1) % items.length);
+            if (activeSuggestionIndex === -1) {
+              newIndex = 0;
+            } else {
+              newIndex = (activeSuggestionIndex + 1) % items.length;
+            }
+            highlightSuggestion(newIndex);
             return true;
 
           case "ArrowUp":
             event.preventDefault();
-            highlightSuggestion(
-              (activeSuggestionIndex - 1 + items.length) % items.length
-            );
+            if (activeSuggestionIndex === -1) {
+              newIndex = items.length - 1;
+            } else {
+              newIndex = (activeSuggestionIndex - 1 + items.length) % items.length;
+            }
+            highlightSuggestion(newIndex);
             return true;
-
 
           case "Enter":
           case "Tab":
-            event.preventDefault();
-            highlightSuggestion((activeSuggestionIndex + 1) % items.length);
-            if (activeSuggestionIndex !== -1) {
+            let targetIndexToInsert = activeSuggestionIndex;
+            if (targetIndexToInsert === -1 && items.length > 0) {
+              // 何もハイライトされていなければ、最初のアイテムを選択して挿入
+              targetIndexToInsert = 0;
+            }
+
+            if (targetIndexToInsert !== -1 && items[targetIndexToInsert]) {
               event.preventDefault();
-              insertSuggestion(items[activeSuggestionIndex].textContent);
+              insertSuggestion(items[targetIndexToInsert].dataset.originalSuggestion);
             } else {
+              // ハイライトされたアイテムがなく、リストも空か、何らかの理由で挿入できない場合
               hideAutocomplete();
-              return event.key === "Enter";
+              // デフォルトのEnter/Tabの動作を許可したい場合は return false; だが、
+              // 通常は予測変換が開いている時点でEnter/Tabは変換の確定に使いたいので true のまま。
             }
             return true;
 
@@ -990,6 +1017,9 @@
 
           if (!sel.isCollapsed) {
             console.log("Tab on selection - Indent/Outdent logic needed");
+            // TODO: Implement indent/outdent for selected text
+            // For now, let's just insert spaces as a fallback, or do nothing.
+            // document.execCommand("insertText", false, "  ");
           } else {
             document.execCommand("insertText", false, "  ");
           }
@@ -1057,16 +1087,19 @@
           const compressed = LZString.compressToEncodedURIComponent(text);
           const url = `${window.location.origin}${window.location.pathname}?data=${compressed}`;
           if (url.length > 2000) {
+            // A common limit for URL length in browsers/servers
             alert("内容が長すぎるため、共有URLを作成できませんでした。");
             return;
           }
           navigator.clipboard.writeText(url).then(
             () => alert("共有URLをクリップボードにコピーしました。"),
-            () =>
+            (err) => {
+              console.error("Clipboard copy failed:", err);
               prompt(
                 "URLのコピーに失敗しました。手動でコピーしてください:",
                 url
-              )
+              );
+            }
           );
         } catch (e) {
           alert("共有URLの生成中にエラーが発生しました。");
@@ -1076,15 +1109,19 @@
 
       markdownEditor.addEventListener("contextmenu", (event) => {
         event.preventDefault();
-        hideAutocomplete();
+        hideAutocomplete(); // Hide autocomplete if it's open
 
+        // Show or hide context menu items based on selection or context
+        // For simplicity, always show all items for now.
         insertSampleBtn.style.display = "block";
+        // formatBtn.style.display = "block"; // Assuming Prettier is always available
+        // showBlankBtn.style.display = "block";
 
         const { clientX: x, clientY: y } = event;
         const { offsetWidth: menuW, offsetHeight: menuH } = contextMenu;
         const { innerWidth: winW, innerHeight: winH } = window;
 
-        contextMenu.style.left = `${Math.min(x, winW - menuW - 5)}px`;
+        contextMenu.style.left = `${Math.min(x, winW - menuW - 5)}px`; // -5 for padding
         contextMenu.style.top = `${Math.min(y, winH - menuH - 5)}px`;
         contextMenu.style.display = "block";
       });
@@ -1110,8 +1147,8 @@
           }
           const formatted = prettier.format(text, {
             parser: "markdown",
-            plugins: prettierPlugins,
-            tabWidth: 2,
+            plugins: prettierPlugins, // prettierPlugins should be { markdown: parserMarkdown }
+            tabWidth: 2, // Example option
           });
           if (text !== formatted) {
             markdownEditor.innerText = formatted;
@@ -1126,6 +1163,8 @@
       });
 
       showBlankBtn.addEventListener("click", () => {
+        // A more robust way to copy styles would be to iterate through document.styleSheets
+        // and copy relevant rules. For simplicity, using a predefined minimal set.
         const styles = `<style>/* Copy relevant styles from main #preview CSS here */ body{margin:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";line-height:1.6}h1,h2{border-bottom:1px solid #eee;padding-bottom:.3em}code{background-color:#f5f5f5;padding:.2em .4em;border-radius:3px;font-family:monospace}pre{background-color:#f5f5f5;padding:1em;border-radius:3px;overflow:auto;font-family:monospace}blockquote{border-left:.25em solid #ddd;padding:0 1em;color:#777;margin-left:0}table{border-collapse:collapse;max-width:100%;display:block;overflow-x:auto}th,td{border:1px solid #ddd;padding:.5em .75em}img{max-width:100%;height:auto}.task-list-item{list-style-type:none}.task-list-item input{margin-right:.3em}</style>`;
         const newWindow = window.open("", "_blank");
         if (newWindow) {
@@ -1134,7 +1173,7 @@
           );
           newWindow.document.close();
         } else {
-          alert("ポップアップを開けませんでした。");
+          alert("ポップアップを開けませんでした。ブラウザのポップアップブロック設定を確認してください。");
         }
         contextMenu.style.display = "none";
         markdownEditor.focus();
@@ -1152,16 +1191,21 @@
           } catch (e) {
             console.error("URL Decompression failed:", e);
             alert("URLデータの読み込みに失敗しました。");
+            // Fallback to empty or default content if decompression fails
           }
         }
 
+        // Set content and update preview
+        // If initialText is empty (no 'data' param or failed decompression),
+        // editor will use its placeholder or remain empty.
         if (initialText) {
           markdownEditor.innerText = initialText;
         }
-
+        // Always update preview, even if content is empty (to clear previous state if any)
         updatePreview();
       }
 
+      // Initial load
       loadInitialContent();
     });
   </script>
