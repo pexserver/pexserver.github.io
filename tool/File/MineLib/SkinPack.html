@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スキンパックジェネレーター ドキュメント</title>
+    <link rel="icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon">
+    <link rel="shortcut icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon">
+    <meta name="description" content="Minecraft Bedrock Edition用カスタムスキンパックジェネレーターのREADMEページです。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://pexserver.github.io/lib/css/ScriptDocs.css">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="apple-mobile-web-app-title" content="SkinPack Gen Docs">
+    <style>
+        .app-container {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fc;
+            color: #333e48;
+            padding: 20px;
+            border: 1px solid #e0e7ef;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .app-container h3 {
+            color: #4a90e2;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-color);
+            font-size: 1em;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1em;
+            transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+            background-color: #fff;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+        }
+
+        .custom-file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .custom-file-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .custom-file-input-label {
+            display: block;
+            padding: 10px 15px;
+            background-color: var(--secondary-color);
+            color: white;
+            border-radius: var(--border-radius);
+            text-align: center;
+            cursor: pointer;
+            transition: background-color var(--transition-speed);
+            font-weight: 500;
+        }
+
+        .custom-file-input-wrapper:hover .custom-file-input-label {
+            background-color: #45c4a8;
+        }
+
+        .file-info-text {
+            display: block;
+            font-size: 0.9em;
+            color: var(--muted-text-color);
+            margin-top: 5px;
+            min-height: 1.2em;
+        }
+
+        .image-preview-container {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .image-preview {
+            max-width: 100px;
+            max-height: 100px;
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 5px;
+            background-color: #fdfdfd;
+            object-fit: contain;
+            display: none;
+            margin: 0 auto;
+        }
+
+        .error-message {
+            display: block;
+            color: var(--danger-color);
+            font-size: 0.9em;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
+        .skin-entry {
+            background-color: #fdfdff;
+            border: 1px solid var(--border-color);
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            animation: slideInUpEmbed 0.5s ease-out forwards;
+            opacity: 0;
+        }
+
+        .skin-entry.fade-out {
+            animation: slideOutDownEmbed 0.5s ease-out forwards !important;
+        }
+
+        @keyframes slideInUpEmbed {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideOutDownEmbed {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+        }
+
+        .skin-entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .skin-entry-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #3a7ac8;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #45c4a8;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        .btn-full-width {
+            width: 100%;
+        }
+
+        .action-buttons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .load-zip-area {
+            padding: 20px;
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            text-align: center;
+            background-color: #f9faff;
+        }
+
+        .load-zip-area .form-label {
+            margin-bottom: 10px;
+        }
+
+        .load-zip-area .custom-file-input-label {
+            background-color: var(--accent-color);
+        }
+
+        .load-zip-area:hover .custom-file-input-label {
+            background-color: #d98e1f;
+        }
+
+        .texture-cape-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            align-items: start;
+        }
+
+        .file-input-column {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (max-width: 768px) {
+            .texture-cape-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="docs-layout">
+        <aside class="docs-sidebar" id="docsSidebar">
+            <a href="#introduction" class="logo"><i class="fas fa-paint-roller"></i> SkinPack Gen</a>
+            <nav>
+                <ul>
+                    <li><a href="#introduction" class="active-link"><i class="fas fa-home"></i> はじめに</a></li>
+                    <li><a href="#features"><i class="fas fa-star"></i> 主な機能</a></li>
+                    <li><a href="#how-to-use"><i class="fas fa-magic"></i> 使い方</a></li>
+                    <li><a href="#file-structure"><i class="fas fa-folder-open"></i> 生成ファイル構造</a></li>
+                    <li><a href="#tips-and-notes"><i class="fas fa-lightbulb"></i> ヒントと注意点</a></li>
+                    <li><a href="#live-tool"><i class="fas fa-tools"></i> ツールを試す (UI体験)</a></li>
+                    <li><a href="#developer-info"><i class="fas fa-code"></i> 開発者向け情報</a></li>
+                </ul>
+            </nav>
+        </aside>
+        <div class="docs-content-area">
+            <header class="docs-mobile-header">
+                <a href="#introduction" class="logo-mobile">SkinPack Gen</a>
+                <button class="menu-toggle-btn" id="menuToggleBtn" aria-label="ナビゲーションを開閉" aria-expanded="false"
+                    aria-controls="docsSidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </header>
+            <main class="docs-main-content">
+                <section class="docs-section-content" id="introduction">
+                    <div class="page-title-section">
+                        <h1><i class="fas fa-paint-brush"></i> Minecraft スキンパックジェネレーター (ケープ対応)</h1>
+                        <p class="lead">ブラウザ上でカスタムスキンパック (ケープ付き) を簡単に作成・編集し、<code>.mcpack</code> ファイルとしてエクスポート！</p>
+                    </div>
+                    <p>
+                        このツールは、Minecraft Bedrock Edition で使用できるオリジナルのスキンパックを、専門的な知識なしに作成するためのウェブアプリケーションです。
+                        複数のスキンやケープを管理し、Minecraftに直接インポート可能な形式でダウンロードできます。
+                    </p>
+                </section>
+
+                <section class="docs-section-content" id="features">
+                    <h2><i class="fas fa-star"></i> 主な機能</h2>
+                    <ul class="api-list">
+                        <li><strong><i class="fas fa-user-edit"></i> スキン情報編集:</strong> 表示名、テクスチャ、ケープ、モデルタイプをスキンごとに設定。
+                        </li>
+                        <li><strong><i class="fas fa-image"></i> 画像プレビュー:</strong> アップロードしたスキンとケープのテクスチャをその場でプレビュー。</li>
+                        <li><strong><i class="fas fa-check-circle"></i> ケープサイズ検証:</strong>
+                            ケープテクスチャは64x32ピクセルのみ許可。自動でサイズをチェック。</li>
+                        <li><strong><i class="fas fa-list-ol"></i> 複数スキン対応:</strong> 1つのパックに複数のスキンを簡単に追加・管理。</li>
+                        <li><strong><i class="fas fa-cogs"></i> manifest.json 自動生成:</strong>
+                            パック認識に必要な<code>manifest.json</code>を適切なUUIDと共に自動生成。</li>
+                        <li><strong><i class="fas fa-cubes"></i> geometry.json 同梱:</strong>
+                            ケープとカスタムスキン用の標準ジオメトリ定義を自動で同梱。</li>
+                        <li><strong><i class="fas fa-file-alt"></i> skins.json 生成:</strong>
+                            設定に基づいた<code>skins.json</code>を自動生成。</li>
+                        <li><strong><i class="fas fa-download"></i> MCPACKエクスポート:</strong>
+                            完成したパックをMinecraftに直接インポート可能な<code>.mcpack</code>ファイルで出力。</li>
+                        <li><strong><i class="fas fa-upload"></i> 既存パックの読み込み・編集:</strong>
+                            作成済みの<code>.zip</code>または<code>.mcpack</code>ファイルを読み込み、編集して再エクスポート可能。</li>
+                        <li><strong><i class="fas fa-desktop"></i> モダンUI:</strong> クリーンで直感的な操作が可能なユーザーインターフェース。</li>
+                        <li><strong><i class="fab fa-github"></i> GitHub Pages対応:</strong> CDN利用により、GitHub
+                            Pagesなどでのホスティングが容易。</li>
+                    </ul>
+                </section>
+
+                <section class="docs-section-content" id="how-to-use">
+                    <h2><i class="fas fa-magic"></i> 使い方</h2>
+                    <div class="item-card">
+                        <h3>1. <i class="fas fa-globe"></i> ページを開く</h3>
+                        <p>このツールが含まれるHTMLファイルをウェブブラウザで開きます (GitHub Pages等で公開されている場合はそのURLにアクセス)。</p>
+                    </div>
+                    <div class="item-card">
+                        <h3>2. <i class="fas fa-archive"></i> パック全体の設定</h3>
+                        <p>「パック情報」セクションで、スキンパック全体の表示名（例:
+                            <code>PEXくらんのケープコレクション</code>）を入力します。これは主に<code>skins.json</code>内の<code>localization_name</code>に反映されます。
+                        </p>
+                    </div>
+                    <div class="item-card">
+                        <h3>3. <i class="fas fa-palette"></i> スキン情報の編集</h3>
+                        <p>「スキンリスト」セクションで、個々のスキン情報を設定します。</p>
+                        <ul class="api-list">
+                            <li><strong>スキン追加:</strong> 「新しいスキンを追加」ボタンで、新しいスキン編集フォームを追加します。</li>
+                            <li>各スキンフォームで以下を設定:
+                                <ul style="margin-left: 20px; margin-top: 5px;">
+                                    <li><strong>ローカライズ名:</strong> スキンごとの表示名 (例: <code>アクアケープガール</code>)。</li>
+                                    <li><strong>スキンテクスチャ (.png):</strong> 「ファイル選択」ボタンでスキン本体のPNG画像をアップロード。プレビューが表示されます。
+                                    </li>
+                                    <li><strong>ケープテクスチャ (.png) - 64x32pxのみ:</strong>
+                                        「ファイル選択」ボタンでケープ用のPNG画像をアップロード。**必ず64x32ピクセル**である必要があります。サイズが異なる場合はエラーが表示され、使用できません。
+                                    </li>
+                                    <li><strong>ジオメトリ:</strong> 「通常体型 (Classic)」または「スリム体型 (Slim)」のモデルを選択します。</li>
+                                </ul>
+                            </li>
+                            <li><strong>スキン削除:</strong> 各スキンフォームの「このスキンを削除」ボタンで、そのスキンをリストから削除します。</li>
+                        </ul>
+                    </div>
+                    <div class="item-card">
+                        <h3>4. <i class="fas fa-file-archive"></i> パックの生成</h3>
+                        <p>全てのスキンの設定が完了したら、「MCPACKとしてパックを生成」ボタンをクリックします。処理が完了すると、<code>.mcpack</code>ファイルが自動的にダウンロードされます。
+                        </p>
+                        <p class="note-box">「ツールを試す」セクションの埋め込みUIでは、このステップで実際のファイルダウンロードは行われません。UIの動作体験のみとなります。</p>
+                    </div>
+                    <div class="item-card">
+                        <h3>5. <i class="fas fa-folder-plus"></i> 既存パックの読み込み (オプション)</h3>
+                        <p>「既存のZIP/MCPACKを読み込む」エリアの「ファイルを選択...」ボタンで、編集したい<code>.zip</code>または<code>.mcpack</code>ファイルを選択します。ファイル内容が読み込まれ、編集可能になります。
+                        </p>
+                    </div>
+                </section>
+
+                <section class="docs-section-content" id="file-structure">
+                    <h2><i class="fas fa-folder-open"></i> 生成されるファイル構造 (MCPACK内部)</h2>
+                    <p>このツールで生成される<code>.mcpack</code>ファイル（実体はZIPファイル）には、通常以下のファイルが含まれます。</p>
+                    <pre><code class="language-text">my_custom_pack.mcpack/
+├── manifest.json
+├── geometry.json
+├── skins.json
+├── skin1.png
+├── cape1.png
+├── skin2.png
+└── cape2.png
+...etc</code></pre>
+                    <div class="item-card">
+                        <h3><i class="fas fa-file-code"></i> manifest.json の例</h3>
+                        <pre><code class="language-json">{
+    "format_version": 2,
+    "header": {
+        "name": "SkinPacks",
+        "uuid": "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx",
+        "version": [ 0, 0, 1 ],
+        "description": "Custom Skin Pack generated by tool"
+    },
+    "modules": [
+        {
+            "type": "skin_pack",
+            "uuid": "yyyyyyyy-yyyy-4yyy-yyyy-yyyyyyyyyyyy",
+            "version": [ 0, 0, 1 ]
+        }
+    ]
+}</code></pre>
+                    </div>
+                    <div class="item-card">
+                        <h3><i class="fas fa-file-code"></i> skins.json の例</h3>
+                        <pre><code class="language-json">{
+    "skins": [
+        {
+            "localization_name": "アクアケープガール",
+            "geometry": "geometry.humanoid.customSlim",
+            "texture": "aqua_girl_skin.png",
+            "cape": "aqua_cape.png",
+            "type": "free"
+        },
+        {
+            "localization_name": "炎の騎士",
+            "geometry": "geometry.humanoid.custom",
+            "texture": "fire_knight.png",
+            "cape": "flame_cape_64x32.png",
+            "type": "free"
+        }
+    ],
+    "serialize_name": "my_custom_cape_pack",
+    "localization_name": "PEXくらんのケープコレクション"
+}</code></pre>
+                    </div>
+                    <div class="item-card">
+                        <h3><i class="fas fa-file-code"></i> geometry.json</h3>
+                        <p>ケープ (<code>geometry.cape</code>)、通常スキン (<code>geometry.humanoid.custom</code>)、スリムスキン
+                            (<code>geometry.humanoid.customSlim</code>) のジオメトリ定義が含まれます。これは固定の内容です。</p>
+                    </div>
+                </section>
+
+                <section class="docs-section-content" id="tips-and-notes">
+                    <h2><i class="fas fa-lightbulb"></i> ヒントと注意点</h2>
+                    <ul class="api-list">
+                        <li><strong><i class="fas fa-file-image"></i> 画像形式:</strong>
+                            スキンテクスチャとケープテクスチャは<strong>PNG形式</strong>のみ対応しています。</li>
+                        <li><strong><i class="fas fa-ruler-combined"></i> ケープのサイズ:</strong> ケープのテクスチャは必ず<strong>横64ピクセル
+                                x 縦32ピクセル</strong>で作成してください。これ以外のサイズの画像はエラーとなり使用できません。</li>
+                        <li><strong><i class="fas fa-signature"></i> ファイル名:</strong>
+                            アップロードされた画像ファイルの名前が、パック内部のファイル名として基本的に使用されます。特殊文字や長すぎる名前は避けるのが無難です。ファイル名に<code>.png</code>拡張子がない場合は自動で付与されます。
+                        </li>
+                        <li><strong><i class="fab fa-windows"></i> Minecraftへのインポート:</strong>
+                            ダウンロードした<code>.mcpack</code>ファイルをダブルクリックするか、Minecraft Bedrock
+                            Editionで開くことで、スキンパックがゲームにインポートされます。</li>
+                        <li><strong><i class="fas fa-fingerprint"></i> UUID:</strong> 各パックやモジュールには一意の識別子 (UUID)
+                            が必要です。このツールはパック生成時に新しいUUIDを自動で割り当てます。</li>
+                        <li><strong><i class="fas fa-exclamation-triangle"></i> 上書き注意:</strong>
+                            ゲーム内で同じUUIDを持つ既存のスキンパックがある場合、新しいもので上書きされる可能性があります。</li>
+                    </ul>
+                </section>
+
+                <section class="docs-section-content" id="live-tool">
+                    <h2><i class="fas fa-tools"></i> ツールを試す (UI体験のみ)</h2>
+                    <p>以下に、このジェネレーターツールのUIを直接埋め込んでいます。実際のファイル生成は行われませんが、操作感やファイル選択、プレビュー機能などを体験できます。</p>
+                    <div class="app-container" style="max-width: none; margin-top:1em;">
+                        <header class="app-header" style="margin-bottom:20px;">
+                            <h3>スキンパックジェネレーター (体験版UI)</h3>
+                        </header>
+                        <section class="section" id="pack-info-section-embed"
+                            style="padding-bottom:15px; margin-bottom:20px;">
+                            <h4 class="section-title" style="font-size:1.3em; margin-bottom:10px;">パック全体の設定</h4>
+                            <div class="form-group">
+                                <label class="form-label" for="pack-name-embed">パック名 (Skins.jsonの表示名):</label>
+                                <input class="form-input" type="text" id="pack-name-embed" value="My Embedded Pack">
+                            </div>
+                        </section>
+                        <section class="section" id="skin-list-section-embed"
+                            style="padding-bottom:15px; margin-bottom:20px;">
+                            <h4 class="section-title" style="font-size:1.3em; margin-bottom:10px;">スキン編集エリア</h4>
+                            <div id="skins-container-embed"></div>
+                            <button class="btn btn-secondary" id="add-skin-button-embed"
+                                type="button">新しいスキンを追加</button>
+                        </section>
+                        <section class="section" id="pack-actions-section-embed"
+                            style="border-bottom:none; margin-bottom:0; padding-bottom:0;">
+                            <h4 class="section-title" style="font-size:1.3em; margin-bottom:10px;">パックの生成と読み込み</h4>
+                            <div class="action-buttons-container">
+                                <button class="btn btn-primary btn-full-width" id="generate-zip-button-embed"
+                                    type="button">MCPACKとして生成 (体験)</button>
+                                <div class="load-zip-area">
+                                    <label class="form-label" for="load-zip-input-embed">既存のZIP/MCPACKを読み込む (体験)</label>
+                                    <div class="custom-file-input-wrapper">
+                                        <label class="custom-file-input-label"
+                                            for="load-zip-input-trigger-embed">ファイルを選択...</label>
+                                        <input class="custom-file-input" type="file" id="load-zip-input-embed"
+                                            accept=".zip,.mcpack">
+                                    </div>
+                                    <span class="file-info-text" id="load-zip-filename-embed">ファイルが選択されていません</span>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <section class="docs-section-content" id="developer-info">
+                    <h2><i class="fas fa-code"></i> 開発者向け情報</h2>
+                    <div class="item-card">
+                        <h3>主要技術スタック</h3>
+                        <ul class="api-list">
+                            <li>HTML5</li>
+                            <li>CSS3 (モダンデザイン、簡単なアニメーション)</li>
+                            <li>JavaScript (ES6+準拠、バニラJS)</li>
+                        </ul>
+                    </div>
+                    <div class="item-card">
+                        <h3>外部ライブラリ</h3>
+                        <ul class="api-list">
+                            <li><strong>JSZip:</strong> ZIPファイルの生成と読み込みに使用。
+                                (<a href="https://stuk.github.io/jszip/" target="_blank"
+                                    rel="noopener noreferrer">公式サイト</a>) - CDN経由で読み込み。</li>
+                        </ul>
+                    </div>
+                    <div class="item-card">
+                        <h3>コアロジック</h3>
+                        <p>ツールは以下の主要なロジックで動作します。</p>
+                        <ol class="api-list">
+                            <li><strong>UI構築:</strong> HTMLとCSSで基本的なレイアウトとスタイルを定義。JavaScriptで動的にスキン編集フォームを生成・管理。</li>
+                            <li><strong>データ管理:</strong>
+                                ユーザーが入力したパック名や各スキン情報（名前、ジオメトリ、アップロードされた画像ファイルオブジェクトなど）をJavaScriptの配列/オブジェクトで保持。</li>
+                            <li><strong>ファイル生成:</strong>
+                                <ul style="margin-left:20px; margin-top:5px;">
+                                    <li><code>manifest.json</code>: UUIDを動的に生成し、ヘッダー情報と共にJSON文字列化。</li>
+                                    <li><code>geometry.json</code>: 事前定義されたJSONオブジェクトを文字列化。</li>
+                                    <li><code>skins.json</code>: データ管理配列からスキン情報を抽出し、適切なJSON構造に整形して文字列化。</li>
+                                </ul>
+                            </li>
+                            <li><strong>ZIP (MCPACK) アーカイブ:</strong>
+                                JSZipライブラリを使用し、上記で生成したJSON文字列とユーザーがアップロードした画像ファイルをZIP形式にまとめ、拡張子<code>.mcpack</code>でユーザーにダウンロードさせる。(埋め込み体験版ではこの最終ダウンロード処理を省略)
+                            </li>
+                            <li><strong>既存パック読み込み:</strong>
+                                JSZipでアップロードされたZIP/MCPACKファイルをメモリ上で展開。<code>skins.json</code>をパースしてUIにスキン情報を復元。関連する画像ファイルもZIPから読み込み、プレビューや再生成のために保持する。
+                            </li>
+                            <li><strong>画像処理:</strong>
+                                <code>FileReader</code>で画像をBase64データURLに変換しプレビュー表示。ケープ画像の場合は<code>Image</code>オブジェクトでサイズ検証。
+                            </li>
+                        </ol>
+                    </div>
+                </section>
+                <footer class="docs-footer">
+                    <p>© <span id="currentYear"></span> スキンパックジェネレーター. (ドキュメントスタイル参考: PEX Server)</p>
+                </footer>
+            </main>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script id="skinPackGeneratorLogic">
+        document.addEventListener('DOMContentLoaded', () => {
+            const skinsContainer = document.getElementById('skins-container-embed');
+            const addSkinButton = document.getElementById('add-skin-button-embed');
+            const generateZipButton = document.getElementById('generate-zip-button-embed');
+            const loadZipInput = document.getElementById('load-zip-input-embed');
+            const packNameInput = document.getElementById('pack-name-embed');
+            const loadZipFilenameSpan = document.getElementById('load-zip-filename-embed');
+
+            if (!skinsContainer || !addSkinButton || !generateZipButton || !loadZipInput || !packNameInput || !loadZipFilenameSpan) {
+                return;
+            }
+
+            let skinEntries = [];
+            let skinCounter = 0;
+
+            const defaultManifestContent = {
+                format_version: 2,
+                header: { name: "SkinPacks", uuid: generateUUID(), version: [0, 0, 1], description: "Custom Skin Pack" },
+                modules: [{ type: "skin_pack", uuid: generateUUID(), version: [0, 0, 1] }]
+            };
+
+            const defaultGeometryContent = {
+                "format_version": "1.12.0",
+                "minecraft:geometry": [
+                    {
+                        "description": { "identifier": "geometry.cape", "texture_width": 64, "texture_height": 32 },
+                        "bones": [
+                            { "name": "body", "pivot": [0.0, 24.0, 0.0], "parent": "waist" },
+                            { "name": "waist", "pivot": [0.0, 12.0, 0.0] },
+                            {
+                                "name": "cape", "parent": "body", "pivot": [0.0, 24.0, 3.0], "rotation": [0.0, 180.0, 0.0],
+                                "cubes": [{ "origin": [-5.0, 8.0, 3.0], "size": [10, 16, 1], "uv": [0, 0] }]
+                            }
+                        ]
+                    },
+                    {
+                        "description": { "identifier": "geometry.humanoid.custom", "visible_bounds_width": 1, "visible_bounds_height": 2, "visible_bounds_offset": [0, 1, 0], "texture_width": 64, "texture_height": 64 },
+                        "bones": [
+                            { "name": "root", "pivot": [0.0, 0.0, 0.0] }, { "name": "body", "parent": "waist", "pivot": [0.0, 24.0, 0.0], "cubes": [{ "origin": [-4.0, 12.0, -2.0], "size": [8, 12, 4], "uv": [16, 16] }] },
+                            { "name": "waist", "parent": "root", "pivot": [0.0, 12.0, 0.0] }, { "name": "head", "parent": "body", "pivot": [0.0, 24.0, 0.0], "cubes": [{ "origin": [-4.0, 24.0, -4.0], "size": [8, 8, 8], "uv": [0, 0] }] },
+                            { "name": "cape", "pivot": [0.0, 24, 3.0], "parent": "body" }, { "name": "hat", "parent": "head", "pivot": [0.0, 24.0, 0.0], "cubes": [{ "origin": [-4.0, 24.0, -4.0], "size": [8, 8, 8], "uv": [32, 0], "inflate": 0.5 }] },
+                            { "name": "leftArm", "parent": "body", "pivot": [5.0, 22.0, 0.0], "cubes": [{ "origin": [4.0, 12.0, -2.0], "size": [4, 12, 4], "uv": [32, 48] }] },
+                            { "name": "leftSleeve", "parent": "leftArm", "pivot": [5.0, 22.0, 0.0], "cubes": [{ "origin": [4.0, 12.0, -2.0], "size": [4, 12, 4], "uv": [48, 48], "inflate": 0.25 }] },
+                            { "name": "leftItem", "pivot": [6.0, 15.0, 1.0], "parent": "leftArm" }, { "name": "rightArm", "parent": "body", "pivot": [-5.0, 22.0, 0.0], "cubes": [{ "origin": [-8.0, 12.0, -2.0], "size": [4, 12, 4], "uv": [40, 16] }] },
+                            { "name": "rightSleeve", "parent": "rightArm", "pivot": [-5.0, 22.0, 0.0], "cubes": [{ "origin": [-8.0, 12.0, -2.0], "size": [4, 12, 4], "uv": [40, 32], "inflate": 0.25 }] },
+                            { "name": "rightItem", "pivot": [-6, 15, 1], "locators": { "lead_hold": [-6, 15, 1] }, "parent": "rightArm" }, { "name": "leftLeg", "parent": "root", "pivot": [1.9, 12.0, 0.0], "cubes": [{ "origin": [-0.1, 0.0, -2.0], "size": [4, 12, 4], "uv": [16, 48] }] },
+                            { "name": "leftPants", "parent": "leftLeg", "pivot": [1.9, 12.0, 0.0], "cubes": [{ "origin": [-0.1, 0.0, -2.0], "size": [4, 12, 4], "uv": [0, 48], "inflate": 0.25 }] },
+                            { "name": "rightLeg", "parent": "root", "pivot": [-1.9, 12.0, 0.0], "cubes": [{ "origin": [-3.9, 0.0, -2.0], "size": [4, 12, 4], "uv": [0, 16] }] },
+                            { "name": "rightPants", "parent": "rightLeg", "pivot": [-1.9, 12.0, 0.0], "cubes": [{ "origin": [-3.9, 0.0, -2.0], "size": [4, 12, 4], "uv": [0, 32], "inflate": 0.25 }] },
+                            { "name": "jacket", "parent": "body", "pivot": [0.0, 24.0, 0.0], "cubes": [{ "origin": [-4.0, 12.0, -2.0], "size": [8, 12, 4], "uv": [16, 32], "inflate": 0.25 }] }
+                        ]
+                    },
+                    {
+                        "description": { "identifier": "geometry.humanoid.customSlim", "visible_bounds_width": 1, "visible_bounds_height": 2, "visible_bounds_offset": [0, 1, 0], "texture_width": 64, "texture_height": 64 },
+                        "bones": [
+                            { "name": "root", "pivot": [0.0, 0.0, 0.0] }, { "name": "waist", "parent": "root", "pivot": [0.0, 12.0, 0.0] }, { "name": "body", "parent": "waist", "pivot": [0.0, 24.0, 0.0], "cubes": [{ "origin": [-4.0, 12.0, -2.0], "size": [8, 12, 4], "uv": [16, 16] }] },
+                            { "name": "head", "parent": "body", "pivot": [0.0, 24.0, 0.0], "cubes": [{ "origin": [-4.0, 24.0, -4.0], "size": [8, 8, 8], "uv": [0, 0] }] },
+                            { "name": "hat", "parent": "head", "pivot": [0.0, 24.0, 0.0], "cubes": [{ "origin": [-4.0, 24.0, -4.0], "size": [8, 8, 8], "uv": [32, 0], "inflate": 0.5 }] },
+                            { "name": "rightLeg", "parent": "root", "pivot": [-1.9, 12.0, 0.0], "cubes": [{ "origin": [-3.9, 0.0, -2.0], "size": [4, 12, 4], "uv": [0, 16] }] },
+                            { "name": "rightPants", "parent": "rightLeg", "pivot": [-1.9, 12.0, 0.0], "cubes": [{ "origin": [-3.9, 0.0, -2.0], "size": [4, 12, 4], "uv": [0, 32], "inflate": 0.25 }] },
+                            { "name": "leftLeg", "parent": "root", "pivot": [1.9, 12.0, 0.0], "cubes": [{ "origin": [-0.1, 0.0, -2.0], "size": [4, 12, 4], "uv": [0, 16] }], "mirror": true },
+                            { "name": "leftPants", "parent": "leftLeg", "pivot": [1.9, 12.0, 0.0], "cubes": [{ "origin": [-0.1, 0.0, -2.0], "size": [4, 12, 4], "uv": [0, 48], "inflate": 0.25 }] },
+                            { "name": "leftArm", "parent": "body", "pivot": [5.0, 21.5, 0.0], "cubes": [{ "origin": [4.0, 11.5, -2.0], "size": [3, 12, 4], "uv": [32, 48] }] },
+                            { "name": "leftSleeve", "parent": "leftArm", "pivot": [5.0, 21.5, 0.0], "cubes": [{ "origin": [4.0, 11.5, -2.0], "size": [3, 12, 4], "uv": [48, 48], "inflate": 0.25 }] },
+                            { "name": "leftItem", "pivot": [6, 14.5, 1], "parent": "leftArm" }, { "name": "rightArm", "parent": "body", "pivot": [-5.0, 21.5, 0.0], "cubes": [{ "origin": [-7.0, 11.5, -2.0], "size": [3, 12, 4], "uv": [40, 16] }] },
+                            { "name": "rightSleeve", "parent": "rightArm", "pivot": [-5.0, 21.5, 0.0], "cubes": [{ "origin": [-7.0, 11.5, -2.0], "size": [3, 12, 4], "uv": [40, 32], "inflate": 0.25 }] },
+                            { "name": "rightItem", "pivot": [-6, 14.5, 1], "locators": { "lead_hold": [-6, 14.5, 1] }, "parent": "rightArm" }, { "name": "jacket", "parent": "body", "pivot": [0.0, 24.0, 0.0], "cubes": [{ "origin": [-4.0, 12.0, -2.0], "size": [8, 12, 4], "uv": [16, 32], "inflate": 0.25 }] },
+                            { "name": "cape", "pivot": [0.0, 24, -3.0], "parent": "body" }
+                        ]
+                    }
+                ]
+            };
+
+            function generateUUID() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+
+            function displayImagePreview(file, previewImgElementId, sizeErrorElementId, isCapeValidation, skinEntryData, inputType) {
+                const previewImg = document.getElementById(previewImgElementId);
+                const sizeErrorEl = sizeErrorElementId ? document.getElementById(sizeErrorElementId) : null;
+                const fileInfoSpanId = (inputType === 'texture') ? `texture-filename-${skinEntryData.id}` : `cape-filename-${skinEntryData.id}`;
+                const fileInfoSpan = document.getElementById(fileInfoSpanId);
+
+                if (!previewImg || !skinEntryData) return;
+
+                if (sizeErrorEl) sizeErrorEl.textContent = '';
+                previewImg.style.display = 'none';
+                previewImg.src = "#";
+
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e_reader) => {
+                        const dataUrl = e_reader.target.result;
+                        if (isCapeValidation) {
+                            const imgValidator = new Image();
+                            imgValidator.onload = () => {
+                                if (imgValidator.naturalWidth === 64 && imgValidator.naturalHeight === 32) {
+                                    previewImg.src = dataUrl;
+                                    previewImg.style.display = 'block';
+                                    skinEntryData.capeFile = file;
+                                    if (fileInfoSpan) fileInfoSpan.textContent = file.name;
+                                    skinEntryData.capeFileName = file.name;
+                                } else {
+                                    if (sizeErrorEl) sizeErrorEl.textContent = `エラー: ケープは64x32px固定 (現在: ${imgValidator.naturalWidth}x${imgValidator.naturalHeight})`;
+                                    skinEntryData.capeFile = null;
+                                    const capeInputEl = document.getElementById(skinEntryData.id.replace("skin-", "cape-"));
+                                    if (capeInputEl) capeInputEl.value = '';
+                                    if (fileInfoSpan) fileInfoSpan.textContent = `サイズ不正: ${file.name}`;
+                                }
+                            };
+                            imgValidator.onerror = () => {
+                                if (sizeErrorEl) sizeErrorEl.textContent = "画像検証エラー";
+                                skinEntryData.capeFile = null;
+                            };
+                            imgValidator.src = dataUrl;
+                        } else {
+                            previewImg.src = dataUrl;
+                            previewImg.style.display = 'block';
+                            skinEntryData.textureFile = file;
+                            if (fileInfoSpan) fileInfoSpan.textContent = file.name;
+                            skinEntryData.textureFileName = file.name;
+                        }
+                    };
+                    reader.onerror = () => {
+                        const errorText = "ファイル読込エラー";
+                        if (isCapeValidation && sizeErrorEl) sizeErrorEl.textContent = errorText;
+                        else if (fileInfoSpan) fileInfoSpan.textContent = errorText;
+                        if (isCapeValidation) skinEntryData.capeFile = null; else skinEntryData.textureFile = null;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    if (isCapeValidation) {
+                        skinEntryData.capeFile = null;
+                        if (fileInfoSpan) fileInfoSpan.textContent = `未選択 (例: ${skinEntryData.capeFileName || `cape${skinEntryData.id.replace('skin-', '').replace('-embed', '')}.png`})`;
+                    } else {
+                        skinEntryData.textureFile = null;
+                        if (fileInfoSpan) fileInfoSpan.textContent = `未選択 (例: ${skinEntryData.textureFileName || `skin${skinEntryData.id.replace('skin-', '').replace('-embed', '')}.png`})`;
+                    }
+                }
+            }
+
+            function createSkinEntryUI(skinData = {}) {
+                skinCounter++;
+                const skinIdSuffix = "-embed";
+                const skinId = `skin-${skinCounter}${skinIdSuffix}`;
+                const displayCounter = skinCounter;
+
+                const entryDiv = document.createElement('div');
+                entryDiv.classList.add('skin-entry');
+                entryDiv.dataset.id = skinId;
+
+                const defaultLocalizationName = skinData.localization_name || `カスタムスキン ${displayCounter}`;
+                const defaultGeometry = skinData.geometry || 'geometry.humanoid.custom';
+                const initialTextureFileName = skinData.textureFileName || `skin${displayCounter}.png`;
+                const initialCapeFileName = skinData.capeFileName || `cape${displayCounter}.png`;
+
+                entryDiv.innerHTML = `
+                    <div class="skin-entry-header">
+                        <h3 class="skin-entry-title">スキン ${displayCounter}</h3>
+                        <button class="btn btn-danger remove-skin-button" data-remove-id="${skinId}" type="button">削除</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="name-${skinId}">スキン表示名:</label>
+                        <input class="form-input" type="text" id="name-${skinId}" value="${defaultLocalizationName}">
+                    </div>
+                    <div class="texture-cape-grid">
+                        <div class="file-input-column">
+                            <label class="form-label" for="texture-${skinId}">スキンテクスチャ (.png):</label>
+                            <div class="custom-file-input-wrapper">
+                                <label class="custom-file-input-label" for="texture-${skinId}-trigger">ファイル選択</label>
+                                <input class="custom-file-input" type="file" id="texture-${skinId}" accept="image/png">
+                            </div>
+                            <span class="file-info-text" id="texture-filename-${skinId}">${initialTextureFileName}</span>
+                            <div class="image-preview-container">
+                                <img id="texture-preview-${skinId}" class="image-preview" src="#" alt="スキンテクスチャ プレビュー">
+                            </div>
+                             <input type="hidden" id="texture-basefilename-${skinId}" value="${initialTextureFileName}">
+                        </div>
+                        <div class="file-input-column">
+                            <label class="form-label" for="cape-${skinId}">ケープテクスチャ (64x32px .png):</label>
+                            <div class="custom-file-input-wrapper">
+                                <label class="custom-file-input-label" for="cape-${skinId}-trigger">ファイル選択</label>
+                                <input class="custom-file-input" type="file" id="cape-${skinId}" accept="image/png">
+                            </div>
+                            <span class="file-info-text" id="cape-filename-${skinId}">${initialCapeFileName}</span>
+                            <div class="image-preview-container">
+                                <img id="cape-preview-${skinId}" class="image-preview" src="#" alt="ケープテクスチャ プレビュー">
+                            </div>
+                            <span class="error-message" id="cape-size-error-${skinId}"></span>
+                            <input type="hidden" id="cape-basefilename-${skinId}" value="${initialCapeFileName}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="geometry-${skinId}">モデルタイプ:</label>
+                        <select class="form-select" id="geometry-${skinId}">
+                            <option value="geometry.humanoid.custom" ${defaultGeometry === 'geometry.humanoid.custom' ? 'selected' : ''}>通常モデル (Classic)</option>
+                            <option value="geometry.humanoid.customSlim" ${defaultGeometry === 'geometry.humanoid.customSlim' ? 'selected' : ''}>スリムモデル (Slim)</option>
+                        </select>
+                    </div>
+                `;
+                skinsContainer.appendChild(entryDiv);
+                entryDiv.querySelector(`label[for='texture-${skinId}-trigger']`).onclick = () => entryDiv.querySelector(`#texture-${skinId}`).click();
+                entryDiv.querySelector(`label[for='cape-${skinId}-trigger']`).onclick = () => entryDiv.querySelector(`#cape-${skinId}`).click();
+
+                const newSkinEntryData = {
+                    id: skinId, uiElement: entryDiv, textureFile: skinData.textureFile || null,
+                    textureFileName: initialTextureFileName, capeFile: skinData.capeFile || null, capeFileName: initialCapeFileName,
+                    fromZip: skinData.fromZip || false, textureZipEntry: skinData.textureZipEntry || null, capeZipEntry: skinData.capeZipEntry || null
+                };
+                skinEntries.push(newSkinEntryData);
+
+                entryDiv.querySelector(`#texture-${skinId}`).addEventListener('change', (e) => {
+                    displayImagePreview(e.target.files[0], `texture-preview-${skinId}`, null, false, newSkinEntryData, 'texture');
+                });
+                entryDiv.querySelector(`#cape-${skinId}`).addEventListener('change', (e) => {
+                    displayImagePreview(e.target.files[0], `cape-preview-${skinId}`, `cape-size-error-${skinId}`, true, newSkinEntryData, 'cape');
+                });
+                entryDiv.querySelector('.remove-skin-button').addEventListener('click', function () {
+                    removeSkinEntryWithAnimation(this.dataset.removeId);
+                });
+                if (newSkinEntryData.textureFile && newSkinEntryData.fromZip) {
+                    displayImagePreview(newSkinEntryData.textureFile, `texture-preview-${skinId}`, null, false, newSkinEntryData, 'texture');
+                }
+                if (newSkinEntryData.capeFile && newSkinEntryData.fromZip) {
+                    displayImagePreview(newSkinEntryData.capeFile, `cape-preview-${skinId}`, `cape-size-error-${skinId}`, true, newSkinEntryData, 'cape');
+                }
+                requestAnimationFrame(() => { entryDiv.style.opacity = '1'; });
+            }
+
+            function removeSkinEntryWithAnimation(skinIdToRemove) {
+                const entryToRemoveData = skinEntries.find(s => s.id === skinIdToRemove);
+                if (entryToRemoveData && entryToRemoveData.uiElement) {
+                    entryToRemoveData.uiElement.classList.add('fade-out');
+                    entryToRemoveData.uiElement.addEventListener('animationend', () => {
+                        if (entryToRemoveData.uiElement && entryToRemoveData.uiElement.parentNode) {
+                            entryToRemoveData.uiElement.remove();
+                        }
+                        skinEntries = skinEntries.filter(s => s.id !== skinIdToRemove);
+                    }, { once: true });
+                }
+            }
+
+            async function generateZipEmbed() {
+                alert("体験版UIのため、実際のファイル生成は行われません。\nファイル選択、プレビュー、データ入力をお試しください。");
+            }
+
+            async function loadZipEmbed(file) {
+                if (!window.JSZip) { alert("JSZipライブラリ未ロード"); return; }
+                const zip = new JSZip();
+                try {
+                    const loadedZip = await zip.loadAsync(file);
+                    skinEntries = []; skinsContainer.innerHTML = ''; skinCounter = 0;
+                    const skinsFile = loadedZip.file("skins.json");
+                    if (skinsFile) {
+                        const skinsContent = await skinsFile.async("string");
+                        const skinsData = JSON.parse(skinsContent);
+                        if (skinsData.localization_name) packNameInput.value = skinsData.localization_name;
+                        if (skinsData.skins && Array.isArray(skinsData.skins)) {
+                            for (const skin of skinsData.skins) {
+                                const textureZipFileEntry = skin.texture ? loadedZip.file(skin.texture) : null;
+                                const capeZipFileEntry = skin.cape ? loadedZip.file(skin.cape) : null;
+                                let textureFileObject = null; let capeFileObject = null;
+                                if (textureZipFileEntry) {
+                                    const blob = await textureZipFileEntry.async("blob");
+                                    textureFileObject = new File([blob], skin.texture, { type: "image/png" });
+                                }
+                                if (capeZipFileEntry) {
+                                    const blob = await capeZipFileEntry.async("blob");
+                                    const tempImg = new Image(); const capeUrl = URL.createObjectURL(blob);
+                                    try {
+                                        await new Promise((resolve, reject) => {
+                                            tempImg.onload = () => {
+                                                if (tempImg.naturalWidth === 64 && tempImg.naturalHeight === 32) {
+                                                    capeFileObject = new File([blob], skin.cape, { type: "image/png" });
+                                                } URL.revokeObjectURL(capeUrl); resolve();
+                                            };
+                                            tempImg.onerror = () => { URL.revokeObjectURL(capeUrl); reject(); }; tempImg.src = capeUrl;
+                                        });
+                                    } catch { }
+                                }
+                                createSkinEntryUI({
+                                    localization_name: skin.localization_name, geometry: skin.geometry,
+                                    textureFileName: skin.texture, capeFileName: skin.cape,
+                                    textureFile: textureFileObject, capeFile: capeFileObject,
+                                    fromZip: true, textureZipEntry: textureZipFileEntry, capeZipEntry: capeFileObject ? capeZipFileEntry : null
+                                });
+                            }
+                        }
+                        alert('ZIP/MCPACKの読み込み体験が完了しました。');
+                    } else {
+                        alert("ZIP/MCPACKに skins.json が見つかりませんでした。"); createSkinEntryUI();
+                    }
+                } catch (e) {
+                    alert("ZIP/MCPACKファイルの読み込み体験に失敗: " + (e.message || e));
+                }
+            }
+
+            addSkinButton.addEventListener('click', () => createSkinEntryUI());
+            generateZipButton.addEventListener('click', generateZipEmbed);
+            loadZipInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    loadZipFilenameSpan.textContent = file.name;
+                    loadZipEmbed(file);
+                    event.target.value = '';
+                } else {
+                    loadZipFilenameSpan.textContent = "ファイルが選択されていません";
+                }
+            });
+            const loadZipTriggerEmbed = document.querySelector("label[for='load-zip-input-trigger-embed']");
+            if (loadZipTriggerEmbed) loadZipTriggerEmbed.onclick = () => loadZipInput.click();
+            createSkinEntryUI();
+            if (!defaultGeometryContent || !defaultGeometryContent["minecraft:geometry"]) {
+                console.error("FATAL: defaultGeometryContentが定義されていません！");
+            }
+        });
+    </script>
+    <script id="docsNavigationLogic">
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.getElementById('docsSidebar');
+            const menuToggleBtn = document.getElementById('menuToggleBtn');
+            const contentSections = document.querySelectorAll('.docs-main-content .docs-section-content');
+            const sidebarLinks = document.querySelectorAll('.docs-sidebar nav a');
+            const currentYearSpan = document.getElementById('currentYear');
+
+            if (currentYearSpan) currentYearSpan.textContent = new Date().getFullYear();
+
+            if (!sidebar || !menuToggleBtn || contentSections.length === 0 || sidebarLinks.length === 0) return;
+
+            function getPrimaryColorRGB() {
+                const primaryColorVal = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
+                if (primaryColorVal.startsWith('#')) {
+                    const hex = primaryColorVal.substring(1); const r = parseInt(hex.substring(0, 2), 16); const g = parseInt(hex.substring(2, 4), 16); const b = parseInt(hex.substring(4, 6), 16); return `${r},${g},${b}`;
+                }
+                const bodyStyle = getComputedStyle(document.body);
+                const bodyPrimaryColor = bodyStyle.getPropertyValue('--primary-color').trim();
+                if (bodyPrimaryColor && bodyPrimaryColor.startsWith('#')) {
+                    const hex = bodyPrimaryColor.substring(1); const r = parseInt(hex.substring(0, 2), 16); const g = parseInt(hex.substring(2, 4), 16); const b = parseInt(hex.substring(4, 6), 16); return `${r},${g},${b}`;
+                }
+                return '74,144,226';
+            }
+            document.documentElement.style.setProperty('--primary-rgb', getPrimaryColorRGB());
+
+            function showSection(sectionId, shouldScroll = true) {
+                contentSections.forEach(section => {
+                    section.classList.remove('active-section');
+                    if (section.id === sectionId) {
+                        section.classList.add('active-section');
+                        if (shouldScroll) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+                sidebarLinks.forEach(link => {
+                    link.classList.remove('active-link');
+                    if (link.getAttribute('href') === '#' + sectionId) link.classList.add('active-link');
+                });
+            }
+
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    const targetId = this.getAttribute('href').substring(1);
+                    if (document.getElementById(targetId)) {
+                        e.preventDefault(); history.pushState(null, '', '#' + targetId); showSection(targetId);
+                        if (window.innerWidth <= 992 && sidebar.classList.contains('is-open')) {
+                            sidebar.classList.remove('is-open'); menuToggleBtn.setAttribute('aria-expanded', 'false'); menuToggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
+                        }
+                    }
+                });
+            });
+
+            if (menuToggleBtn) {
+                menuToggleBtn.addEventListener('click', () => {
+                    sidebar.classList.toggle('is-open'); const isExpanded = sidebar.classList.contains('is-open');
+                    menuToggleBtn.setAttribute('aria-expanded', isExpanded.toString());
+                    menuToggleBtn.innerHTML = isExpanded ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
+                });
+            }
+
+            function handleHashChange() {
+                let hash = window.location.hash.substring(1);
+                if (!hash || !document.getElementById(hash)) { hash = 'introduction'; history.replaceState(null, '', '#' + hash); }
+                showSection(hash, true);
+            }
+            window.addEventListener('hashchange', handleHashChange);
+            handleHashChange();
+            Prism.highlightAll();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft スキンパックジェネレーター v2</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary-color: #4a90e2;
+            /* 明るい青 */
+            --secondary-color: #50e3c2;
+            /* ミントグリーン */
+            --accent-color: #f5a623;
+            /* オレンジ */
+            --background-color: #f7f9fc;
+            --surface-color: #ffffff;
+            --text-color: #333e48;
+            --muted-text-color: #7a8b9a;
+            --border-color: #e0e7ef;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --font-family: 'Inter', sans-serif;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            /* 上寄せ */
+            min-height: 100vh;
+        }
+
+        .app-container {
+            background-color: var(--surface-color);
+            padding: 30px 40px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            width: 100%;
+            max-width: 850px;
+            animation: fadeIn var(--transition-speed) ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .app-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .app-header h1 {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        .app-header p {
+            font-size: 1.1em;
+            color: var(--muted-text-color);
+        }
+
+        .section {
+            margin-bottom: 35px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 1.6em;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            position: relative;
+            padding-bottom: 8px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background-color: var(--secondary-color);
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-color);
+            font-size: 1em;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1em;
+            transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+            background-color: #fff;
+            /* Ensure input background */
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+        }
+
+        /* Custom file input */
+        .custom-file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .custom-file-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .custom-file-input-label {
+            display: block;
+            padding: 10px 15px;
+            background-color: var(--secondary-color);
+            color: white;
+            border-radius: var(--border-radius);
+            text-align: center;
+            cursor: pointer;
+            transition: background-color var(--transition-speed);
+            font-weight: 500;
+        }
+
+        .custom-file-input-wrapper:hover .custom-file-input-label {
+            background-color: #45c4a8;
+            /* Darker mint */
+        }
+
+        .file-info-text {
+            display: block;
+            font-size: 0.9em;
+            color: var(--muted-text-color);
+            margin-top: 5px;
+            min-height: 1.2em;
+            /* Prevent layout shift */
+        }
+
+        .image-preview-container {
+            margin-top: 10px;
+            text-align: center;
+            /* Center the image */
+        }
+
+        .image-preview {
+            max-width: 100px;
+            max-height: 100px;
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 5px;
+            background-color: #fdfdfd;
+            object-fit: contain;
+            /* Prevents stretching */
+            display: none;
+            /* Initially hidden */
+            margin: 0 auto;
+            /* Center if block */
+        }
+
+        .error-message {
+            display: block;
+            color: var(--danger-color);
+            font-size: 0.9em;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
+        .skin-entry {
+            background-color: #fdfdff;
+            border: 1px solid var(--border-color);
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            animation: slideInUp 0.5s ease-out forwards;
+            opacity: 0;
+            /* For animation */
+        }
+
+        .skin-entry.fade-out {
+            animation: slideOutDown 0.5s ease-out forwards !important;
+        }
+
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideOutDown {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+        }
+
+
+        .skin-entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .skin-entry-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            /* Space for icon if any */
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #3a7ac8;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #45c4a8;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        .btn-full-width {
+            width: 100%;
+        }
+
+        .action-buttons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .load-zip-area {
+            padding: 20px;
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            text-align: center;
+            background-color: #f9faff;
+        }
+
+        .load-zip-area .form-label {
+            margin-bottom: 10px;
+        }
+
+        .load-zip-area .custom-file-input-label {
+            background-color: var(--accent-color);
+        }
+
+        .load-zip-area:hover .custom-file-input-label {
+            background-color: #d98e1f;
+        }
+
+        /* Grid for texture/cape input */
+        .texture-cape-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            align-items: start;
+            /* Align items to the top of their grid cell */
+        }
+
+        .file-input-column {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .app-container {
+                padding: 20px;
+            }
+
+            .app-header h1 {
+                font-size: 1.8em;
+            }
+
+            .section-title {
+                font-size: 1.4em;
+            }
+
+            .btn {
+                padding: 10px 18px;
+                font-size: 0.9em;
+            }
+
+            .texture-cape-grid {
+                grid-template-columns: 1fr;
+                /* Stack on smaller screens */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>スキンパック ジェネレーター</h1>
+            <p>カスタムスキンとケープでオリジナルのスキンパックを作成！</p>
+        </header>
+
+        <section class="section" id="pack-info-section">
+            <h2 class="section-title">パック全体の設定</h2>
+            <div class="form-group">
+                <label class="form-label" for="pack-name">パック名 (Skins.jsonの表示名):</label>
+                <input class="form-input" type="text" id="pack-name" value="My Custom Cape Pack">
+            </div>
+        </section>
+
+        <section class="section" id="skin-list-section">
+            <h2 class="section-title">スキン編集エリア</h2>
+            <div id="skins-container">
+                <!-- スキンエントリーがここに追加される -->
+            </div>
+            <button class="btn btn-secondary" id="add-skin-button" type="button">新しいスキンを追加</button>
+        </section>
+
+        <section class="section" id="pack-actions-section">
+            <h2 class="section-title">パックの生成と読み込み</h2>
+            <div class="action-buttons-container">
+                <button class="btn btn-primary btn-full-width" id="generate-zip-button"
+                    type="button">MCPACKとして生成</button>
+
+                <div class="load-zip-area">
+                    <label class="form-label" for="load-zip-input">既存のZIP/MCPACKファイルを読み込む</label>
+                    <div class="custom-file-input-wrapper">
+                        <label class="custom-file-input-label" for="load-zip-input-trigger">ファイルを選択...</label>
+                        <input class="custom-file-input" type="file" id="load-zip-input" accept=".zip,.mcpack">
+                    </div>
+                    <span class="file-info-text" id="load-zip-filename">ファイルが選択されていません</span>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const skinsContainer = document.getElementById('skins-container');
+            const addSkinButton = document.getElementById('add-skin-button');
+            const generateZipButton = document.getElementById('generate-zip-button');
+            const loadZipInput = document.getElementById('load-zip-input');
+            const packNameInput = document.getElementById('pack-name');
+            const loadZipFilenameSpan = document.getElementById('load-zip-filename');
+
+            let skinEntries = [];
+            let skinCounter = 0;
+
+            const defaultManifestContent = {
+                format_version: 2,
+                header: { name: "SkinPacks", uuid: generateUUID(), version: [0, 0, 1], description: "Custom Skin Pack" },
+                modules: [{ type: "skin_pack", uuid: generateUUID(), version: [0, 0, 1] }]
+            };
+
+            const defaultGeometryContent = {
+                "format_version": "1.12.0",
+                "minecraft:geometry": [
+                    {
+                        "description": {
+                            "identifier": "geometry.cape",
+                            "texture_width": 64,
+                            "texture_height": 32
+                        },
+                        "bones": [
+                            {
+                                "name": "body",
+                                "pivot": [0.0, 24.0, 0.0],
+                                "parent": "waist"
+                            },
+                            {
+                                "name": "waist",
+                                "pivot": [0.0, 12.0, 0.0]
+                            },
+                            {
+                                "name": "cape",
+                                "parent": "body",
+                                "pivot": [0.0, 24.0, 3.0],
+                                "rotation": [0.0, 180.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-5.0, 8.0, 3.0],
+                                        "size": [10, 16, 1],
+                                        "uv": [0, 0]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+
+                    {
+                        "description": {
+                            "identifier": "geometry.humanoid.custom",
+                            "visible_bounds_width": 1,
+                            "visible_bounds_height": 2,
+                            "visible_bounds_offset": [0, 1, 0],
+                            "texture_width": 64,
+                            "texture_height": 64
+                        },
+                        "bones": [
+                            {
+                                "name": "root",
+                                "pivot": [0.0, 0.0, 0.0]
+                            },
+                            {
+                                "name": "body",
+                                "parent": "waist",
+                                "pivot": [0.0, 24.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-4.0, 12.0, -2.0],
+                                        "size": [8, 12, 4],
+                                        "uv": [16, 16]
+                                    }
+                                ]
+                            },
+
+                            {
+                                "name": "waist",
+                                "parent": "root",
+                                "pivot": [0.0, 12.0, 0.0]
+                            },
+
+                            {
+                                "name": "head",
+                                "parent": "body",
+                                "pivot": [0.0, 24.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-4.0, 24.0, -4.0],
+                                        "size": [8, 8, 8],
+                                        "uv": [0, 0]
+                                    }
+                                ]
+                            },
+
+                            {
+                                "name": "cape",
+                                "pivot": [0.0, 24, 3.0],
+                                "parent": "body"
+                            },
+                            {
+                                "name": "hat",
+                                "parent": "head",
+                                "pivot": [0.0, 24.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-4.0, 24.0, -4.0],
+                                        "size": [8, 8, 8],
+                                        "uv": [32, 0],
+                                        "inflate": 0.5
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "leftArm",
+                                "parent": "body",
+                                "pivot": [5.0, 22.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [4.0, 12.0, -2.0],
+                                        "size": [4, 12, 4],
+                                        "uv": [32, 48]
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "leftSleeve",
+                                "parent": "leftArm",
+                                "pivot": [5.0, 22.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [4.0, 12.0, -2.0],
+                                        "size": [4, 12, 4],
+                                        "uv": [48, 48],
+                                        "inflate": 0.25
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "leftItem",
+                                "pivot": [6.0, 15.0, 1.0],
+                                "parent": "leftArm"
+                            },
+                            {
+                                "name": "rightArm",
+                                "parent": "body",
+                                "pivot": [-5.0, 22.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-8.0, 12.0, -2.0],
+                                        "size": [4, 12, 4],
+                                        "uv": [40, 16]
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "rightSleeve",
+                                "parent": "rightArm",
+                                "pivot": [-5.0, 22.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-8.0, 12.0, -2.0],
+                                        "size": [4, 12, 4],
+                                        "uv": [40, 32],
+                                        "inflate": 0.25
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "rightItem",
+                                "pivot": [-6, 15, 1],
+                                "locators": {
+                                    "lead_hold": [-6, 15, 1]
+                                },
+                                "parent": "rightArm"
+                            },
+
+                            {
+                                "name": "leftLeg",
+                                "parent": "root",
+                                "pivot": [1.9, 12.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-0.1, 0.0, -2.0],
+                                        "size": [4, 12, 4],
+                                        "uv": [16, 48]
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "leftPants",
+                                "parent": "leftLeg",
+                                "pivot": [1.9, 12.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-0.1, 0.0, -2.0],
+                                        "size": [4, 12, 4],
+                                        "uv": [0, 48],
+                                        "inflate": 0.25
+                                    }
+                                ]
+                            },
+
+                            {
+                                "name": "rightLeg",
+                                "parent": "root",
+                                "pivot": [-1.9, 12.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-3.9, 0.0, -2.0],
+                                        "size": [4, 12, 4],
+                                        "uv": [0, 16]
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "rightPants",
+                                "parent": "rightLeg",
+                                "pivot": [-1.9, 12.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-3.9, 0.0, -2.0],
+                                        "size": [4, 12, 4],
+                                        "uv": [0, 32],
+                                        "inflate": 0.25
+                                    }
+                                ]
+                            },
+
+                            {
+                                "name": "jacket",
+                                "parent": "body",
+                                "pivot": [0.0, 24.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-4.0, 12.0, -2.0],
+                                        "size": [8, 12, 4],
+                                        "uv": [16, 32],
+                                        "inflate": 0.25
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+
+                    {
+                        "description": {
+                            "identifier": "geometry.humanoid.customSlim",
+                            "visible_bounds_width": 1,
+                            "visible_bounds_height": 2,
+                            "visible_bounds_offset": [0, 1, 0],
+                            "texture_width": 64,
+                            "texture_height": 64
+                        },
+                        "bones": [
+                            {
+                                "name": "root",
+                                "pivot": [0.0, 0.0, 0.0]
+                            },
+                            {
+                                "name": "waist",
+                                "parent": "root",
+                                "pivot": [0.0, 12.0, 0.0]
+                            },
+                            {
+                                "name": "body",
+                                "parent": "waist",
+                                "pivot": [0.0, 24.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-4.0, 12.0, -2.0],
+                                        "size": [8, 12, 4],
+                                        "uv": [16, 16]
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "head",
+                                "parent": "body",
+                                "pivot": [0.0, 24.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-4.0, 24.0, -4.0],
+                                        "size": [8, 8, 8],
+                                        "uv": [0, 0]
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "hat",
+                                "parent": "head",
+                                "pivot": [0.0, 24.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-4.0, 24.0, -4.0],
+                                        "size": [8, 8, 8],
+                                        "uv": [32, 0],
+                                        "inflate": 0.5
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "rightLeg",
+                                "parent": "root",
+                                "pivot": [-1.9, 12.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-3.9, 0.0, -2.0],
+                                        "size": [4, 12, 4],
+                                        "uv": [0, 16]
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "rightPants",
+                                "parent": "rightLeg",
+                                "pivot": [-1.9, 12.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-3.9, 0.0, -2.0],
+                                        "size": [4, 12, 4],
+                                        "uv": [0, 32],
+                                        "inflate": 0.25
+                                    }
+                                ]
+                            },
+
+                            {
+                                "name": "leftLeg",
+                                "parent": "root",
+                                "pivot": [1.9, 12.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-0.1, 0.0, -2.0],
+                                        "size": [4, 12, 4],
+                                        "uv": [0, 16]
+                                    }
+                                ],
+                                "mirror": true
+                            },
+                            {
+                                "name": "leftPants",
+                                "parent": "leftLeg",
+                                "pivot": [1.9, 12.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-0.1, 0.0, -2.0],
+                                        "size": [4, 12, 4],
+                                        "uv": [0, 48],
+                                        "inflate": 0.25
+                                    }
+                                ]
+                            },
+
+                            {
+                                "name": "leftArm",
+                                "parent": "body",
+                                "pivot": [5.0, 21.5, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [4.0, 11.5, -2.0],
+                                        "size": [3, 12, 4],
+                                        "uv": [32, 48]
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "leftSleeve",
+                                "parent": "leftArm",
+                                "pivot": [5.0, 21.5, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [4.0, 11.5, -2.0],
+                                        "size": [3, 12, 4],
+                                        "uv": [48, 48],
+                                        "inflate": 0.25
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "leftItem",
+                                "pivot": [6, 14.5, 1],
+                                "parent": "leftArm"
+                            },
+                            {
+                                "name": "rightArm",
+                                "parent": "body",
+                                "pivot": [-5.0, 21.5, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-7.0, 11.5, -2.0],
+                                        "size": [3, 12, 4],
+                                        "uv": [40, 16]
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "rightSleeve",
+                                "parent": "rightArm",
+                                "pivot": [-5.0, 21.5, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-7.0, 11.5, -2.0],
+                                        "size": [3, 12, 4],
+                                        "uv": [40, 32],
+                                        "inflate": 0.25
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "rightItem",
+                                "pivot": [-6, 14.5, 1],
+                                "locators": {
+                                    "lead_hold": [-6, 14.5, 1]
+                                },
+                                "parent": "rightArm"
+                            },
+
+                            {
+                                "name": "jacket",
+                                "parent": "body",
+                                "pivot": [0.0, 24.0, 0.0],
+                                "cubes": [
+                                    {
+                                        "origin": [-4.0, 12.0, -2.0],
+                                        "size": [8, 12, 4],
+                                        "uv": [16, 32],
+                                        "inflate": 0.25
+                                    }
+                                ]
+                            },
+
+                            {
+                                "name": "cape",
+                                "pivot": [0.0, 24, -3.0],
+                                "parent": "body"
+                            }
+                        ]
+                    }
+                ]
+            }
+
+
+            function generateUUID() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+
+            function displayImagePreview(file, previewImgElementId, sizeErrorElementId, isCapeValidation, skinEntryData, inputType) {
+                const previewImg = document.getElementById(previewImgElementId);
+                const sizeErrorEl = sizeErrorElementId ? document.getElementById(sizeErrorElementId) : null;
+                const fileInfoSpanId = (inputType === 'texture') ? `texture-filename-${skinEntryData.id}` : `cape-filename-${skinEntryData.id}`;
+                const fileInfoSpan = document.getElementById(fileInfoSpanId);
+
+
+                if (!previewImg || !skinEntryData) return;
+
+                if (sizeErrorEl) sizeErrorEl.textContent = '';
+                previewImg.style.display = 'none';
+                previewImg.src = "#";
+
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e_reader) => {
+                        const dataUrl = e_reader.target.result;
+                        if (isCapeValidation) {
+                            const imgValidator = new Image();
+                            imgValidator.onload = () => {
+                                if (imgValidator.naturalWidth === 64 && imgValidator.naturalHeight === 32) {
+                                    previewImg.src = dataUrl;
+                                    previewImg.style.display = 'block';
+                                    skinEntryData.capeFile = file;
+                                    if (fileInfoSpan) fileInfoSpan.textContent = file.name;
+                                    skinEntryData.capeFileName = file.name;
+                                } else {
+                                    if (sizeErrorEl) sizeErrorEl.textContent = `エラー: ケープは64x32px固定 (現在: ${imgValidator.naturalWidth}x${imgValidator.naturalHeight})`;
+                                    skinEntryData.capeFile = null;
+                                    const capeInputEl = document.getElementById(`cape-${skinEntryData.id}`);
+                                    if (capeInputEl) capeInputEl.value = '';
+                                    if (fileInfoSpan) fileInfoSpan.textContent = `サイズ不正: ${file.name}`;
+                                }
+                            };
+                            imgValidator.onerror = () => {
+                                if (sizeErrorEl) sizeErrorEl.textContent = "画像検証エラー";
+                                skinEntryData.capeFile = null;
+                            };
+                            imgValidator.src = dataUrl;
+                        } else {
+                            previewImg.src = dataUrl;
+                            previewImg.style.display = 'block';
+                            skinEntryData.textureFile = file;
+                            if (fileInfoSpan) fileInfoSpan.textContent = file.name;
+                            skinEntryData.textureFileName = file.name;
+                        }
+                    };
+                    reader.onerror = () => {
+                        const errorText = "ファイル読込エラー";
+                        if (isCapeValidation && sizeErrorEl) sizeErrorEl.textContent = errorText;
+                        else if (fileInfoSpan) fileInfoSpan.textContent = errorText;
+
+                        if (isCapeValidation) skinEntryData.capeFile = null;
+                        else skinEntryData.textureFile = null;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    if (isCapeValidation) {
+                        skinEntryData.capeFile = null;
+                        if (fileInfoSpan) fileInfoSpan.textContent = `未選択 (例: ${skinEntryData.capeFileName || `cape${skinEntryData.id.split('-')[1]}.png`})`;
+                    } else {
+                        skinEntryData.textureFile = null;
+                        if (fileInfoSpan) fileInfoSpan.textContent = `未選択 (例: ${skinEntryData.textureFileName || `skin${skinEntryData.id.split('-')[1]}.png`})`;
+                    }
+                }
+            }
+
+
+            function createSkinEntryUI(skinData = {}) {
+                skinCounter++;
+                const skinId = `skin-${skinCounter}`;
+
+                const entryDiv = document.createElement('div');
+                entryDiv.classList.add('skin-entry');
+                entryDiv.dataset.id = skinId;
+
+                const defaultLocalizationName = skinData.localization_name || `カスタムスキン ${skinCounter}`;
+                const defaultGeometry = skinData.geometry || 'geometry.humanoid.custom';
+                const initialTextureFileName = skinData.textureFileName || `skin${skinCounter}.png`;
+                const initialCapeFileName = skinData.capeFileName || `cape${skinCounter}.png`;
+
+                entryDiv.innerHTML = `
+                    <div class="skin-entry-header">
+                        <h3 class="skin-entry-title">スキン ${skinCounter}</h3>
+                        <button class="btn btn-danger remove-skin-button" data-remove-id="${skinId}" type="button">削除</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="name-${skinId}">スキン表示名:</label>
+                        <input class="form-input" type="text" id="name-${skinId}" value="${defaultLocalizationName}">
+                    </div>
+
+                    <div class="texture-cape-grid">
+                        <div class="file-input-column">
+                            <label class="form-label" for="texture-${skinId}">スキンテクスチャ (.png):</label>
+                            <div class="custom-file-input-wrapper">
+                                <label class="custom-file-input-label" for="texture-${skinId}-trigger">ファイル選択</label>
+                                <input class="custom-file-input" type="file" id="texture-${skinId}" accept="image/png">
+                            </div>
+                            <span class="file-info-text" id="texture-filename-${skinId}">${initialTextureFileName}</span>
+                            <div class="image-preview-container">
+                                <img id="texture-preview-${skinId}" class="image-preview" src="#" alt="スキンテクスチャ プレビュー">
+                            </div>
+                             <input type="hidden" id="texture-basefilename-${skinId}" value="${initialTextureFileName}">
+                        </div>
+
+                        <div class="file-input-column">
+                            <label class="form-label" for="cape-${skinId}">ケープテクスチャ (64x32px .png):</label>
+                            <div class="custom-file-input-wrapper">
+                                <label class="custom-file-input-label" for="cape-${skinId}-trigger">ファイル選択</label>
+                                <input class="custom-file-input" type="file" id="cape-${skinId}" accept="image/png">
+                            </div>
+                            <span class="file-info-text" id="cape-filename-${skinId}">${initialCapeFileName}</span>
+                            <div class="image-preview-container">
+                                <img id="cape-preview-${skinId}" class="image-preview" src="#" alt="ケープテクスチャ プレビュー">
+                            </div>
+                            <span class="error-message" id="cape-size-error-${skinId}"></span>
+                            <input type="hidden" id="cape-basefilename-${skinId}" value="${initialCapeFileName}">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="geometry-${skinId}">モデルタイプ:</label>
+                        <select class="form-select" id="geometry-${skinId}">
+                            <option value="geometry.humanoid.custom" ${defaultGeometry === 'geometry.humanoid.custom' ? 'selected' : ''}>通常モデル (Classic)</option>
+                            <option value="geometry.humanoid.customSlim" ${defaultGeometry === 'geometry.humanoid.customSlim' ? 'selected' : ''}>スリムモデル (Slim)</option>
+                        </select>
+                    </div>
+                `;
+                skinsContainer.appendChild(entryDiv);
+
+                // Custom file input label hook
+                entryDiv.querySelector(`label[for='texture-${skinId}-trigger']`).onclick = () => entryDiv.querySelector(`#texture-${skinId}`).click();
+                entryDiv.querySelector(`label[for='cape-${skinId}-trigger']`).onclick = () => entryDiv.querySelector(`#cape-${skinId}`).click();
+
+
+                const newSkinEntryData = {
+                    id: skinId,
+                    uiElement: entryDiv,
+                    textureFile: skinData.textureFile || null,
+                    textureFileName: initialTextureFileName, 
+                    capeFile: skinData.capeFile || null,
+                    capeFileName: initialCapeFileName,   
+                    fromZip: skinData.fromZip || false,
+                    textureZipEntry: skinData.textureZipEntry || null,
+                    capeZipEntry: skinData.capeZipEntry || null
+                };
+                skinEntries.push(newSkinEntryData);
+
+
+                entryDiv.querySelector(`#texture-${skinId}`).addEventListener('change', (e) => {
+                    displayImagePreview(e.target.files[0], `texture-preview-${skinId}`, null, false, newSkinEntryData, 'texture');
+                });
+                entryDiv.querySelector(`#cape-${skinId}`).addEventListener('change', (e) => {
+                    displayImagePreview(e.target.files[0], `cape-preview-${skinId}`, `cape-size-error-${skinId}`, true, newSkinEntryData, 'cape');
+                });
+
+
+                entryDiv.querySelector('.remove-skin-button').addEventListener('click', function () {
+                    removeSkinEntryWithAnimation(this.dataset.removeId);
+                });
+
+
+                if (newSkinEntryData.textureFile && newSkinEntryData.fromZip) {
+                    displayImagePreview(newSkinEntryData.textureFile, `texture-preview-${skinId}`, null, false, newSkinEntryData, 'texture');
+                }
+                if (newSkinEntryData.capeFile && newSkinEntryData.fromZip) {
+                    displayImagePreview(newSkinEntryData.capeFile, `cape-preview-${skinId}`, `cape-size-error-${skinId}`, true, newSkinEntryData, 'cape');
+                }
+                // Set initial opacity to 0 for animation after appending
+                requestAnimationFrame(() => {
+                    entryDiv.style.opacity = '1';
+                });
+            }
+            function removeSkinEntryWithAnimation(skinIdToRemove) {
+                const entryToRemoveData = skinEntries.find(s => s.id === skinIdToRemove);
+                if (entryToRemoveData && entryToRemoveData.uiElement) {
+                    entryToRemoveData.uiElement.classList.add('fade-out');
+                    entryToRemoveData.uiElement.addEventListener('animationend', () => {
+                        if (entryToRemoveData.uiElement && entryToRemoveData.uiElement.parentNode) {
+                            entryToRemoveData.uiElement.remove();
+                        }
+                        skinEntries = skinEntries.filter(s => s.id !== skinIdToRemove);
+                    }, { once: true });
+                }
+            }
+
+
+            async function generateZip() {
+                if (!window.JSZip) {
+                    alert("JSZipライブラリが読み込めていません。ページを再読み込みするか、開発者にお問い合わせください。");
+                    return;
+                }
+                const zip = new JSZip();
+
+                const manifest = JSON.parse(JSON.stringify(defaultManifestContent));
+                manifest.header.uuid = generateUUID();
+                manifest.modules[0].uuid = generateUUID();
+                zip.file("manifest.json", JSON.stringify(manifest, null, 4));
+
+                zip.file("geometry.json", JSON.stringify(defaultGeometryContent, null, 4));
+
+                const skinsJson = {
+                    skins: [],
+                    serialize_name: "custom_skin_pack_" + Date.now(),
+                    localization_name: packNameInput.value.trim() || "My Custom Generated Pack"
+                };
+
+                let allFilesValidAndPresent = true;
+
+                for (const entry of skinEntries) {
+                    const skinEntryUI = entry.uiElement;
+                    if (!skinEntryUI) continue;
+
+                    const localizationNameVal = skinEntryUI.querySelector(`#name-${entry.id}`).value.trim();
+                    const geometryVal = skinEntryUI.querySelector(`#geometry-${entry.id}`).value;
+
+                    let textureFileNameVal = (entry.textureFileName || `skin_default_${entry.id.split('-')[1]}.png`).trim();
+                    let capeFileNameVal = (entry.capeFileName || `cape_default_${entry.id.split('-')[1]}.png`).trim();
+
+                    if (!textureFileNameVal.toLowerCase().endsWith('.png')) textureFileNameVal += '.png';
+                    if (!capeFileNameVal.toLowerCase().endsWith('.png')) capeFileNameVal += '.png';
+
+                    const skinDefinition = {
+                        localization_name: localizationNameVal || `Skin ${entry.id.split('-')[1]}`,
+                        geometry: geometryVal,
+                        texture: textureFileNameVal,
+                        cape: capeFileNameVal,
+                        type: "free"
+                    };
+                    skinsJson.skins.push(skinDefinition);
+
+                    if (entry.textureFile) {
+                        zip.file(textureFileNameVal, entry.textureFile);
+                    } else if (entry.fromZip && entry.textureZipEntry) {
+                        zip.file(textureFileNameVal, await entry.textureZipEntry.async("blob"));
+                    } else {
+                        alert(`必須ファイルエラー: スキン "${skinDefinition.localization_name}" のテクスチャファイルが選択されていません。`);
+                        allFilesValidAndPresent = false; break;
+                    }
+
+                    if (entry.capeFile) {
+                        zip.file(capeFileNameVal, entry.capeFile);
+                    } else if (entry.fromZip && entry.capeZipEntry) {
+                        const capeBlob = await entry.capeZipEntry.async("blob");
+                        const tempImg = new Image();
+                        const capeUrl = URL.createObjectURL(capeBlob);
+                        let capeValid = false;
+                        try {
+                            await new Promise((resolve, reject) => {
+                                tempImg.onload = () => {
+                                    if (tempImg.naturalWidth === 64 && tempImg.naturalHeight === 32) capeValid = true;
+                                    URL.revokeObjectURL(capeUrl);
+                                    resolve();
+                                };
+                                tempImg.onerror = () => { URL.revokeObjectURL(capeUrl); reject(); };
+                                tempImg.src = capeUrl;
+                            });
+                            if (capeValid) zip.file(capeFileNameVal, capeBlob);
+                            else {
+                                alert(`必須ファイルエラー: ZIP内のスキン "${skinDefinition.localization_name}" のケープ (${capeFileNameVal}) は64x32pxではありません。`);
+                                allFilesValidAndPresent = false; break;
+                            }
+                        } catch {
+                            alert(`必須ファイルエラー: ZIP内のスキン "${skinDefinition.localization_name}" のケープ (${capeFileNameVal}) の読み込み/検証に失敗しました。`);
+                            allFilesValidAndPresent = false; break;
+                        }
+                    } else {
+                        alert(`必須ファイルエラー: スキン "${skinDefinition.localization_name}" のケープファイルが選択されていないか、サイズが無効です (64x32px固定)。`);
+                        allFilesValidAndPresent = false; break;
+                    }
+                }
+
+                if (!allFilesValidAndPresent) {
+                    console.error("ファイルが不足または無効なため、ZIP生成を中止しました。");
+                    return;
+                }
+
+                zip.file("skins.json", JSON.stringify(skinsJson, null, 4));
+
+                try {
+                    const content = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 9 } });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(content);
+                    let safePackName = skinsJson.localization_name.replace(/[^a-z0-9_ \-]/gi, '_').replace(/ /g, '_');
+                    if (!safePackName) safePackName = "custom_skin_pack";
+                    link.download = safePackName + ".mcpack";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(link.href);
+                    alert('パックが ' + link.download + ' としてダウンロードされました！');
+                } catch (err) {
+                    console.error("ZIP生成エラー:", err);
+                    alert("MCPACKファイルの生成に失敗しました: " + (err.message || err));
+                }
+            }
+
+            async function loadZip(file) {
+                if (!window.JSZip) { alert("JSZipライブラリ未ロード"); return; }
+                const zip = new JSZip();
+                try {
+                    const loadedZip = await zip.loadAsync(file);
+                    skinEntries = [];
+                    skinsContainer.innerHTML = '';
+                    skinCounter = 0;
+
+                    const skinsFile = loadedZip.file("skins.json");
+                    if (skinsFile) {
+                        const skinsContent = await skinsFile.async("string");
+                        const skinsData = JSON.parse(skinsContent);
+
+                        if (skinsData.localization_name) packNameInput.value = skinsData.localization_name;
+
+                        if (skinsData.skins && Array.isArray(skinsData.skins)) {
+                            for (const skin of skinsData.skins) {
+                                const textureZipFileEntry = skin.texture ? loadedZip.file(skin.texture) : null;
+                                const capeZipFileEntry = skin.cape ? loadedZip.file(skin.cape) : null;
+
+                                let textureFileObject = null;
+                                if (textureZipFileEntry) {
+                                    const blob = await textureZipFileEntry.async("blob");
+                                    textureFileObject = new File([blob], skin.texture, { type: "image/png" });
+                                }
+
+                                let capeFileObject = null;
+                                if (capeZipFileEntry) {
+                                    const blob = await capeZipFileEntry.async("blob");
+                                    // ZIP内のケープをここで検証し、無効なら null のままにする
+                                    const tempImg = new Image();
+                                    const capeUrl = URL.createObjectURL(blob);
+                                    try {
+                                        await new Promise((resolve, reject) => {
+                                            tempImg.onload = () => {
+                                                if (tempImg.naturalWidth === 64 && tempImg.naturalHeight === 32) {
+                                                    capeFileObject = new File([blob], skin.cape, { type: "image/png" });
+                                                } else {
+                                                    console.warn(`ZIP内のケープ '${skin.cape}' はサイズが無効 (${tempImg.naturalWidth}x${tempImg.naturalHeight}) でした。読み込みません。`);
+                                                }
+                                                URL.revokeObjectURL(capeUrl);
+                                                resolve();
+                                            };
+                                            tempImg.onerror = () => { URL.revokeObjectURL(capeUrl); reject(); };
+                                            tempImg.src = capeUrl;
+                                        });
+                                    } catch {
+                                        console.warn(`ZIP内のケープ '${skin.cape}' の読み込みに失敗しました。`);
+                                    }
+                                }
+
+                                createSkinEntryUI({
+                                    localization_name: skin.localization_name,
+                                    geometry: skin.geometry,
+                                    textureFileName: skin.texture,
+                                    capeFileName: skin.cape,
+                                    textureFile: textureFileObject,
+                                    capeFile: capeFileObject,
+                                    fromZip: true,
+                                    textureZipEntry: textureZipFileEntry,
+                                    capeZipEntry: capeFileObject ? capeZipFileEntry : null 
+                                });
+                            }
+                        }
+                        alert('ZIP/MCPACKが正常に読み込まれました。');
+                    } else {
+                        alert("ZIP/MCPACKに skins.json が見つかりませんでした。");
+                        createSkinEntryUI();
+                    }
+                } catch (e) {
+                    console.error("ZIPの読み込み/解析エラー:", e);
+                    alert("ZIP/MCPACKファイルの読み込みに失敗: " + (e.message || e));
+                }
+            }
+
+            addSkinButton.addEventListener('click', () => createSkinEntryUI());
+            generateZipButton.addEventListener('click', generateZip);
+
+            loadZipInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    loadZipFilenameSpan.textContent = file.name;
+                    loadZip(file);
+                    event.target.value = '';
+                } else {
+                    loadZipFilenameSpan.textContent = "ファイルが選択されていません";
+                }
+            });
+            document.querySelector("label[for='load-zip-input-trigger']").onclick = () => loadZipInput.click();
+
+
+            createSkinEntryUI(); 
+            if (!defaultGeometryContent || !defaultGeometryContent["minecraft:geometry"]) {
+                console.error("FATAL: defaultGeometryContent が正しく定義されていません！");
+                alert("アプリケーションの初期化に失敗しました。geometry.jsonのデータを確認してください。");
+            }
+
+        });
+    </script>
+</body>
+
+</html>
