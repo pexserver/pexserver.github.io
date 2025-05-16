@@ -256,7 +256,7 @@ function initializeToolModals() {
         const setText = (el, value, fallback = "N/A") => {
           if (el) el.textContent = value || fallback;
         };
-        setText(modalCategory, toolData.category);
+        setText(modalCategory, toolData.categoryType);
         setText(modalVersion, toolData.version);
         setText(modalUpdated, toolData.updated);
 
