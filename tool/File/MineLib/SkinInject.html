@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スキンパックCLIツール ドキュメント</title>
+    <link rel="icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon">
+    <link rel="shortcut icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon">
+    <meta name="description" content="Minecraft Bedrock Edition用スキンパック自動置き換え＆暗号化CLIツールのドキュメントです。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://pexserver.github.io/lib/css/ScriptDocs.css">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="apple-mobile-web-app-title" content="SkinPack CLI Docs">
+    <style>
+        /* ドキュメント特有の微調整があればここに追加 */
+    </style>
+</head>
+
+<body>
+    <div class="docs-layout">
+        <aside class="docs-sidebar" id="docsSidebar">
+            <a href="#introduction" class="logo"><i class="fas fa-terminal"></i> SkinPack CLI</a>
+            <nav>
+                <ul>
+                    <li><a href="#introduction" class="active-link"><i class="fas fa-home"></i> はじめに</a></li>
+                    <li><a href="#features"><i class="fas fa-star"></i> 主な機能</a></li>
+                    <li><a href="#how-to-use"><i class="fas fa-cogs"></i> 使い方 (CLI)</a></li>
+                    <li><a href="#important-files"><i class="fas fa-folder-open"></i> 関連ファイル</a></li>
+                    <li><a href="#tips-and-notes"><i class="fas fa-lightbulb"></i> ヒントと注意点</a></li>
+                </ul>
+            </nav>
+        </aside>
+        <div class="docs-content-area">
+            <header class="docs-mobile-header">
+                <a href="#introduction" class="logo-mobile">SkinPack CLI</a>
+                <button class="menu-toggle-btn" id="menuToggleBtn" aria-label="ナビゲーションを開閉" aria-expanded="false"
+                    aria-controls="docsSidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </header>
+            <main class="docs-main-content">
+                <section class="docs-section-content" id="introduction">
+                    <div class="page-title-section">
+                        <h1><i class="fas fa-wrench"></i> Minecraft スキンパック自動置き換え & 暗号化ツール (CLI)</h1>
+                        <p class="lead">Node.js製CLIツールで、スキンパックのコンテンツ置き換えと暗号化を効率化！</p>
+                    </div>
+                    <p>
+                        このNode.js製コマンドラインインターフェース (CLI) ツールは、Minecraft Bedrock
+                        Editionのスキンパックの内容を効率的に置き換え、オプションで<code>McEncryptor.exe</code>（別途用意）を使用して暗号化処理を行うためのユーティリティです。
+                        既存のインストール済みスキンパック、ローカルの<code>.mcpack</code>ファイル、または解凍済みのスキンパックフォルダを対象に、対話的な操作で安全に処理を実行できます。
+                    </p>
+                </section>
+
+                <section class="docs-section-content" id="features">
+                    <h2><i class="fas fa-star"></i> 主な機能</h2>
+                    <ul class="api-list">
+                        <li><strong><i class="fas fa-mouse-pointer"></i> 多様なターゲット指定:</strong> インストール済みパック
+                            (Windowsのみ、重複名なし表示)、ローカル<code>.mcpack</code>/<code>.zip</code>、解凍済みフォルダから選択可能。</li>
+                        <li><strong><i class="fas fa-file-import"></i> ソースパックの柔軟な指定:</strong> 解凍済みフォルダ、またはWebツール (指定URL)
+                            で生成・DLした<code>.mcpack</code>を指定可能。</li>
+                        <li><strong><i class="fas fa-shield-alt"></i> 安全なコンテンツ置き換え:</strong>
+                            ターゲットの<code>manifest.json</code>を保持しつつ、他のコンテンツのみをソースパックの内容で置き換え。最終確認あり。</li>
+                        <li><strong><i class="fas fa-key"></i> McEncryptor.exe連携 (オプション):</strong>
+                            <code>./MCEnc/McEncryptor.exe</code> があれば、置き換え後に自動で暗号化処理を実行。</li>
+                        <li><strong><i class="fas fa-file-archive"></i> .mcpack の取り扱い:</strong>
+                            指定された<code>.mcpack</code>ファイルは一時ディレクトリに自動解凍・再圧縮。保存方法（上書き/新規）を選択可能。</li>
+                        <li><strong><i class="fas fa-broom"></i> 一時ファイルの自動クリーンアップ:</strong> 作成された一時ディレクトリは処理終了時に自動削除。
+                        </li>
+                        <li><strong><i class="fas fa-chalkboard-teacher"></i> ステップごとの明確な指示:</strong>
+                            色分けされたコンソール出力で、現在の処理ステップを分かりやすく表示。</li>
+                        <li><strong><i class="fas fa-comments"></i> 対話的な操作:</strong> ユーザーに選択肢や入力を求める対話的インターフェース。</li>
+                        <li><strong><i class="fab fa-windows"></i> Windowsファイル/フォルダ選択ダイアログ:</strong>
+                            PowerShell経由で標準ダイアログを表示し、パス入力を補助 (Windowsのみ)。</li>
+                    </ul>
+                </section>
+
+                <section class="docs-section-content" id="how-to-use">
+                    <h2><i class="fas fa-cogs"></i> 使い方 (CLIでの実行)</h2>
+                    <div class="item-card">
+                        <h3>1. <i class="fas fa-download"></i> 前提条件</h3>
+                        <ul class="api-list">
+                            <li>Node.js (v16.7.0以上推奨) がインストールされていること。</li>
+                            <li>必要なnpmパッケージのインストール: プロジェクトディレクトリで以下を実行。
+                                <pre><code class="language-bash">npm install inquirer chalk adm-zip open
+# TypeScript を使用している場合:
+npm install --save-dev @types/inquirer @types/adm-zip @types/node</code></pre>
+                            </li>
+                            <li>(オプション) <code>McEncryptor.exe</code> を使用する場合:
+                                スクリプト実行ディレクトリと同じ階層に<code>MCEnc</code>フォルダを作成し、その中に<code>McEncryptor.exe</code>を配置。</li>
+                        </ul>
+                    </div>
+                    <div class="item-card">
+                        <h3>2. <i class="fas fa-play-circle"></i> スクリプトの実行</h3>
+                        <p>ターミナルまたはコマンドプロンプトで、スクリプトファイルがあるディレクトリに移動し、実行します。（例: ファイル名が<code>index.ts</code>）</p>
+                        <pre><code class="language-bash">node index.js 
+# または (ts-node等が必要な場合)
+# npx ts-node index.ts
+# bun index.ts</code></pre>
+                    </div>
+                    <div class="item-card">
+                        <h3>3. <i class="fas fa-tasks"></i> 対話的な操作ステップ</h3>
+                        <p>スクリプト起動後、コンソールの指示に従い操作します。</p>
+                        <ol class="api-list">
+                            <li><strong>置き換え対象スキンパックの選択:</strong>
+                                <ul style="margin-left:1.5em; margin-top:0.5em;">
+                                    <li>インストール済みパック (Windowsのみ)</li>
+                                    <li>MCPACKファイル (.mcpack / .zip) を指定</li>
+                                    <li>解凍済みスキンパックフォルダを指定</li>
+                                </ul>
+                            </li>
+                            <li><strong>置き換え元リソースパックの選択:</strong>
+                                <ul style="margin-left:1.5em; margin-top:0.5em;">
+                                    <li>既存の解凍済みフォルダを指定</li>
+                                    <li>Webで生成した.mcpackファイルを指定 (指定URLを開き、DLした.mcpackファイルを選択)</li>
+                                </ul>
+                            </li>
+                            <li><strong>スキンパックの内容置き換え:</strong> ソースの内容でターゲットを更新
+                                (<code>manifest.json</code>はターゲットのものを維持)。最終確認あり。</li>
+                            <li>(オプション) <strong>変更されたスキンパックの再圧縮と保存:</strong> ターゲットがMCPACKだった場合に保存方法を選択。</li>
+                            <li>(オプション) <strong>McEncryptor.exe による暗号化処理:</strong> <code>McEncryptor.exe</code>が存在すれば実行。
+                            </li>
+                        </ol>
+                    </div>
+                    <div class="item-card">
+                        <h3>4. <i class="fas fa-check"></i> 完了とクリーンアップ</h3>
+                        <p>全ての処理が完了すると最終メッセージが表示され、一時ファイルは自動で削除されます。</p>
+                    </div>
+                </section>
+
+                <section class="docs-section-content" id="important-files">
+                    <h2><i class="fas fa-folder-open"></i> 関連ファイルと構成</h2>
+                    <div class="item-card">
+                        <h3><i class="fas fa-file-code"></i> <code>manifest.json</code> (スキンパック内)</h3>
+                        <p>スキンパックのメタデータ（名前、UUID、バージョン等）を定義します。このツールは、置き換え処理中にターゲットスキンパックの既存の<code>manifest.json</code>の内容を保持します。ソースパック側の<code>manifest.json</code>は、内容の妥当性確認にのみ使用されます。
+                        </p>
+                    </div>
+                    <div class="item-card">
+                        <h3><i class="fas fa-cog"></i> <code>McEncryptor.exe</code> (外部ツール)</h3>
+                        <p>このCLIツールには同梱されていません。ユーザーが別途用意し、スクリプトの実行ディレクトリからの相対パスで <code>./MCEnc/McEncryptor.exe</code>
+                            に配置する必要があります。このツールは、Minecraftスキンパックの暗号化や特定の形式への変換処理を想定しています。</p>
+                        <p class="note-box"><code>McEncryptor.exe</code>が見つからない場合、暗号化ステップは自動的にスキップされます。</p>
+                    </div>
+                </section>
+
+                <section class="docs-section-content" id="tips-and-notes">
+                    <h2><i class="fas fa-lightbulb"></i> ヒントと注意点</h2>
+                    <ul class="api-list">
+                        <li><strong><i class="fab fa-node-js"></i> Node.js バージョン:</strong> <code>fs.promises.cp</code>
+                            APIを使用するため、Node.js v16.7.0以上を強く推奨します。</li>
+                        <li><strong><i class="fas fa-user-shield"></i> 管理者権限:</strong>
+                            インストール済みスキンパックフォルダ（UWPアプリのデータフォルダ）を直接変更する場合、スクリプトの実行に管理者権限が必要なことがあります。</li>
+                        <li><strong><i class="fas fa-save"></i> バックアップ推奨:</strong>
+                            スキンパックの内容置き換えは元に戻せません。重要なデータは事前にバックアップしてください。</li>
+                        <li><strong><i class="fab fa-windows"></i> PowerShell実行ポリシー:</strong>
+                            Windowsでファイル/フォルダ選択ダイアログを使用する際、環境によってはPowerShellの実行ポリシーの調整が必要な場合があります。</li>
+                        <li><strong><i class="fas fa-bug"></i> エラー発生時:</strong>
+                            エラーメッセージを確認し、指示に従ってください。一時ファイルが残った場合は手動削除が必要になることがあります (通常は自動削除)。</li>
+                    </ul>
+                </section>
+                <footer class="docs-footer">
+                    <p>© <span id="currentYear"></span> スキンパック CLI ツール. (ドキュメントスタイル参考: PEX Server)</p>
+                </footer>
+            </main>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script id="docsNavigationLogic">
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.getElementById('docsSidebar');
+            const menuToggleBtn = document.getElementById('menuToggleBtn');
+            const contentSections = document.querySelectorAll('.docs-main-content .docs-section-content');
+            const sidebarLinks = document.querySelectorAll('.docs-sidebar nav a');
+            const currentYearSpan = document.getElementById('currentYear');
+
+            if (currentYearSpan) currentYearSpan.textContent = new Date().getFullYear();
+            if (!sidebar || !menuToggleBtn || contentSections.length === 0 || sidebarLinks.length === 0) return;
+
+            function getPrimaryColorRGB() {
+                const primaryColorVal = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
+                if (primaryColorVal.startsWith('#')) {
+                    const hex = primaryColorVal.substring(1); const r = parseInt(hex.substring(0, 2), 16); const g = parseInt(hex.substring(2, 4), 16); const b = parseInt(hex.substring(4, 6), 16); return `${r},${g},${b}`;
+                }
+                const bodyStyle = getComputedStyle(document.body);
+                const bodyPrimaryColor = bodyStyle.getPropertyValue('--primary-color').trim();
+                if (bodyPrimaryColor && bodyPrimaryColor.startsWith('#')) {
+                    const hex = bodyPrimaryColor.substring(1); const r = parseInt(hex.substring(0, 2), 16); const g = parseInt(hex.substring(2, 4), 16); const b = parseInt(hex.substring(4, 6), 16); return `${r},${g},${b}`;
+                }
+                return '74,144,226';
+            }
+            document.documentElement.style.setProperty('--primary-rgb', getPrimaryColorRGB());
+
+            function showSection(sectionId, shouldScroll = true) {
+                contentSections.forEach(section => {
+                    section.classList.remove('active-section');
+                    if (section.id === sectionId) {
+                        section.classList.add('active-section');
+                        if (shouldScroll) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+                sidebarLinks.forEach(link => {
+                    link.classList.remove('active-link');
+                    if (link.getAttribute('href') === '#' + sectionId) link.classList.add('active-link');
+                });
+            }
+
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    const targetId = this.getAttribute('href').substring(1);
+                    if (document.getElementById(targetId)) {
+                        e.preventDefault(); history.pushState(null, '', '#' + targetId); showSection(targetId);
+                        if (window.innerWidth <= 992 && sidebar.classList.contains('is-open')) {
+                            sidebar.classList.remove('is-open'); menuToggleBtn.setAttribute('aria-expanded', 'false'); menuToggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
+                        }
+                    }
+                });
+            });
+
+            if (menuToggleBtn) {
+                menuToggleBtn.addEventListener('click', () => {
+                    sidebar.classList.toggle('is-open'); const isExpanded = sidebar.classList.contains('is-open');
+                    menuToggleBtn.setAttribute('aria-expanded', isExpanded.toString());
+                    menuToggleBtn.innerHTML = isExpanded ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
+                });
+            }
+
+            function handleHashChange() {
+                let hash = window.location.hash.substring(1);
+                if (!hash || !document.getElementById(hash)) { hash = 'introduction'; history.replaceState(null, '', '#' + hash); }
+                showSection(hash, true);
+            }
+            window.addEventListener('hashchange', handleHashChange);
+            handleHashChange();
+            Prism.highlightAll();
+        });
+    </script>
+</body>
+
+</html>
