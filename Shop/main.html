@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PEXWeb Shop</title>
+    <link rel="stylesheet" href="./styles/shop.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- ログインモーダル -->
+    <div id="loginModal" class="modal visible login-modal">
+        <div class="modal-content">
+            <h2>ログイン</h2>
+            <div class="offline-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                インターネット接続がありません。接続を確認してください。
+            </div>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="username">ユーザー名</label>
+                    <input type="text" id="username" required autocomplete="username">
+                    <div class="loading-indicator"></div>
+                </div>
+                <div class="form-group">
+                    <label for="password">パスワード</label>
+                    <input type="password" id="password" required autocomplete="current-password">
+                    <div class="loading-indicator"></div>
+                </div>
+                <p id="loginError" class="error-message"></p>
+                <button type="submit" class="btn-primary">
+                    <span class="btn-text">ログイン</span>
+                    <span class="loading-indicator"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ（ログイン後に表示） -->
+    <div id="mainContent" class="hidden">
+        <header>
+            <h1>PEXWeb Shop</h1>
+            <div class="user-info">
+                <span class="username-display"></span>
+                <span class="balance-display">残高: <span id="balance">0</span>コイン</span>
+                <button id="logoutBtn" class="btn-secondary">ログアウト</button>
+            </div>
+        </header>
+
+        <nav>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="商品を検索...">
+            </div>
+            <div class="category-container">
+                <select id="categoryFilter">
+                    <option value="">すべてのカテゴリー</option>
+                </select>
+            </div>
+        </nav>
+
+        <main>
+            <div class="items-container" id="itemsContainer">
+                <!-- 商品が動的に追加されます -->
+            </div>
+        </main>
+
+        <footer>
+            <div class="controls"></div>
+                <button id="cartBtn" class="btn-primary">
+                    カート <span class="cart-count">0</span>
+                </button>
+                <button id="historyBtn" class="btn-secondary">履歴</button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- カートモーダル -->
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <h2>ショッピングカート</h2>
+            <div id="cartItems"></div>
+            <div class="cart-summary">
+                <div class="total">合計: <span id="cartTotal">0</span>コイン</div>
+                <button id="checkoutBtn" class="btn-primary">購入する</button>
+            </div>
+            <button class="close-btn" onclick="closeModal(document.getElementById('cartModal'))">×</button>
+        </div>
+    </div>
+
+    <!-- 履歴モーダル -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content"></div>
+            <h2>購入履歴</h2>
+            <div id="purchaseHistory"></div>
+            <button class="close-btn" onclick="closeModal(document.getElementById('historyModal'))">×</button>
+        </div>
+    </div>    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="./lib/shop.js"></script>
+    <script src="./lib/currency.js"></script>
+    <script src="./lib/dataManager.js"></script>
+    <script src="./scripts/main.js"></script>
+</body>
+</html>

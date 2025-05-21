@@ -1,0 +1,27 @@
+{
+  "name": "pexweb",
+  "version": "1.0.0",
+  "description": "WebToolは、開発者向けの便利なWebベースツールコレクションを提供するプラットフォームです。Markdownエディタ、チャットツール、コードツールなど、さまざまな機能を1つのプラットフォームで提供しています。",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pexserver/.github.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/pexserver/.github/issues"
+  },
+  "homepage": "https://github.com/pexserver/.github#readme",
+  "devDependencies": {
+    "@types/google-apps-script": "^1.0.97"
+  }
+}

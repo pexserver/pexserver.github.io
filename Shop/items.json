@@ -1,0 +1,47 @@
+[
+  {
+    "id": "skin-1",
+    "name": "クラシックスキン",
+    "description": "シンプルで使いやすい定番スキン",
+    "price": 100,
+    "category": "スキン",
+    "image": "../lib/Assets/images/None.jpg",
+    "stock": 100
+  },
+  {
+    "id": "skin-2",
+    "name": "プレミアムスキン",
+    "description": "特別なエフェクト付きの限定スキン",
+    "price": 500,
+    "category": "スキン",
+    "image": "../lib/Assets/images/None.jpg",
+    "stock": 50
+  },
+  {
+    "id": "emote-1",
+    "name": "基本エモート",
+    "description": "基本的なエモートセット",
+    "price": 200,
+    "category": "エモート",
+    "image": "../lib/Assets/images/None.jpg",
+    "stock": 200
+  },
+  {
+    "id": "emote-2",
+    "name": "レアエモート",
+    "description": "レアなアニメーション付きエモート",
+    "price": 300,
+    "category": "エモート",
+    "image": "../lib/Assets/images/None.jpg",
+    "stock": 30
+  },
+  {
+    "id": "tool-1",
+    "name": "カスタムツール",
+    "description": "ゲーム内で使用できる特殊なツール",
+    "price": 150,
+    "category": "ツール",
+    "image": "../lib/Assets/images/None.jpg",
+    "stock": 150
+  }
+]
