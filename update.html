@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>更新履歴 - PEX Server v4</title>
+    <link rel="icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon">
+    <link rel="shortcut icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon">
+    <meta name="description" content="PEX Server v4のアップデート履歴・バージョン情報を掲載しています。">
+    <!-- OGP設定 -->
+    <meta property="og:title" content="更新履歴 - PEX Server v4">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pexserver.github.io/update.html">
+    <meta property="og:image" content="https://pexserver.github.io/lib/Assets/images/ogp.png">
+    <meta property="og:description" content="PEX Server v4のアップデート履歴・バージョン情報を掲載しています。">
+    <meta property="og:site_name" content="PEX Server v4">
+    <meta property="og:locale" content="ja_JP">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@PEXkoukunn">
+    <!-- iOS設定 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PEX Update">
+    <link rel="apple-touch-icon" href="https://pexserver.github.io/lib/Assets/images/home.png">
+    <link rel="stylesheet" href="./lib/css/home.css">
+    <style>
+        /* 更新履歴ページ用のアニメーションとUX向上CSSを追加 */
+        body {
+            background: linear-gradient(120deg, #f8fafc 0%, #e0e7ef 100%);
+            animation: fadeInBg 1.2s;
+        }
+        @keyframes fadeInBg {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .container {
+            animation: slideUp 0.8s cubic-bezier(.4,2,.6,1) 0.1s both;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        /* アニメーション: フェードイン */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+        /* テーブル装飾 */
+        .update-history {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+            overflow: hidden;
+            margin-top: 1.5rem;
+        }
+        .update-history th, .update-history td {
+            padding: 1rem 1.2rem;
+            text-align: left;
+        }
+        .update-history thead {
+            background: #f5f7fa;
+        }
+        .update-history tbody tr {
+            transition: background 0.2s;
+        }
+        .update-history tbody tr:hover {
+            background: #f0f8ff;
+        }
+        /* セクションタイトル装飾 */
+        .section h2 {
+            font-size: 1.4rem;
+            margin-bottom: 0.5em;
+            border-left: 5px solid #4f8cff;
+            padding-left: 0.5em;
+            color: #2a2a2a;
+        }
+        /* レスポンシブ */
+        @media (max-width: 600px) {
+            .update-history th, .update-history td {
+                padding: 0.7rem 0.5rem;
+                font-size: 0.95em;
+            }
+        }
+        /* ヘッダー追加 */
+        header {
+            background:#1976d2;
+            color:#fff;
+            padding:1.2em 0 1em 0;
+            box-shadow:0 2px 8px #0001;
+        }
+        header .container {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+        }
+        header a {
+            color:#fff;
+            text-decoration:none;
+        }
+        header a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/index.html" style="font-size:1.3em;font-weight:600;letter-spacing:0.05em;">PEX Server v4</a>
+            <nav>
+                <a href="/update.html" style="margin-left:1.5em;font-weight:500;">更新履歴</a>
+                <a href="/about.html" style="margin-left:1.5em;font-weight:500;">About</a>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <div class="container fade-in" style="margin-top:3rem;">
+            <section class="hero" style="margin-top:0;">
+                <h1>PEX Server v4 更新履歴</h1>
+                <p>PEX Serverの主なアップデート履歴・バージョン情報を掲載しています。</p>
+            </section>
+            <section class="section fade-in">
+                <h2><i class="fas fa-history"></i> アップデート履歴</h2>
+                <div style="overflow-x:auto;">
+                <table class="update-history" style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th style="min-width:100px;">日付</th>
+                            <th style="min-width:100px;">バージョン</th>
+                            <th>主な変更点</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>2025-05-21</td>
+                            <td>v4.0.0</td>
+                            <td>PEX Server v4 公開。新UI・ツール統合・各種機能強化。</td>
+                        </tr>
+                        <tr>
+                            <td>2025-04-19</td>
+                            <td>v3.9.0</td>
+                            <td>MenuClient v3の後継版として新サーバー基盤を導入。</td>
+                        </tr>
+                        <tr>
+                            <td>2024-12-10</td>
+                            <td>v3.5.0</td>
+                            <td>AIツール・コードツールの追加、UI改善。</td>
+                        </tr>
+                        <!-- 以降、必要に応じて追記してください -->
+                    </tbody>
+                </table>
+                </div>
+            </section>
+        </div>
+    </main>
+    <script>
+    // ページロード時にfade-inを順次適用
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.fade-in').forEach((el, i) => {
+            el.style.animationDelay = (i * 0.2) + 's';
+        });
+    });
+    </script>
+</body>
+</html>

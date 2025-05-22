@@ -1,7 +1,7 @@
-import http, { IncomingMessage, ServerResponse } from 'node:http';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import url from 'node:url';
+import * as http from 'node:http';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import * as url from 'node:url';
 
 const DEFAULT_PORT = 8080;
 const DEFAULT_ROOT_DIR = path.resolve('');
@@ -21,7 +21,7 @@ const mimeTypes: Record<string, string> = {
     '.ico': 'image/x-icon',
 };
 
-async function requestHandler(req: IncomingMessage, res: ServerResponse) {
+async function requestHandler(req: http.IncomingMessage, res: http.ServerResponse) {
     if (!req.url) {
         sendError(res, 400, 'Bad Request: URL is missing');
         return;
@@ -84,7 +84,7 @@ async function requestHandler(req: IncomingMessage, res: ServerResponse) {
     }
 }
 
-function sendError(res: ServerResponse, statusCode: number, message: string) {
+function sendError(res: http.ServerResponse, statusCode: number, message: string) {
     res.writeHead(statusCode, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end(`${statusCode} ${message}`);
 }

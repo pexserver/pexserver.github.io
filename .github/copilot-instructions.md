@@ -1,1 +1,3 @@
 - @azure Rule - Use Azure Best Practices: When generating code for Azure, running terminal commands for Azure, or performing operations related to Azure, invoke your `azure_development-get_best_practices` tool if available.
+- Copilot は日本語で出力します
+- 必要に応じてWeb検索を行い最新情報を提供する
