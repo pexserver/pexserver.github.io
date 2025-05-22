@@ -6,6 +6,49 @@ const itemsPerPage = 8; // 1ページあたりの表示件数
 let platformModal = null;
 let currentToolDataForMainModal = null;
 
+// --- クッキー管理 ---
+const CookieManager = {
+    set: function (name, value, days = 365) {
+        const expires = new Date(Date.now() + days * 864e5).toUTCString();
+        document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+    },
+    get: function (name) {
+        return document.cookie.split('; ').reduce((r, v) => {
+            const parts = v.split('=');
+            return parts[0] === encodeURIComponent(name) ? decodeURIComponent(parts[1]) : r;
+        }, '');
+    },
+    remove: function (name) {
+        this.set(name, '', -1);
+    }
+};
+
+// --- お気に入り管理 ---
+const FAVORITE_KEY = 'pex_favorites';
+function getFavorites() {
+    const raw = CookieManager.get(FAVORITE_KEY);
+    if (!raw) return [];
+    try { return JSON.parse(raw); } catch { return []; }
+}
+function setFavorites(arr) {
+    CookieManager.set(FAVORITE_KEY, JSON.stringify(arr));
+}
+function isFavorite(toolId) {
+    return getFavorites().includes(toolId);
+}
+function addFavorite(toolId) {
+    const favs = getFavorites();
+    if (!favs.includes(toolId)) {
+        favs.push(toolId);
+        setFavorites(favs);
+    }
+}
+function removeFavorite(toolId) {
+    let favs = getFavorites();
+    favs = favs.filter(id => id !== toolId);
+    setFavorites(favs);
+}
+
 // --- ユーティリティ関数 ---
 
 /**
@@ -74,7 +117,7 @@ function ensurePlatformModalExists() {
   platformModal.id = "platform-modal";
   platformModal.classList.add("modal"); // modal.css のスタイルを適用
 
-  // スタイル設定（modal.css でカバーされない部分や上書き）
+  // スタイル設定（modal.css でカバーされている部分や上書き）
   platformModal.style.display = "none"; // 初期状態は非表示
   platformModal.style.position = "fixed";
   platformModal.style.left = "0";
@@ -227,6 +270,7 @@ function initializeToolModals() {
   const modalUpdated = document.getElementById("modal-updated");
   const modalDownloadBtn = document.getElementById("modal-download");
   const modalDocBtn = document.getElementById("modal-docs");
+  const modalFavoriteBtn = document.getElementById("modal-favorite-btn");
 
   // 要素が存在するか確認
   if (!toolGrid || !modal || !modalClose || !modalTitle || !modalImage || !modalDescription || !modalCategory || !modalVersion || !modalUpdated || !modalDownloadBtn || !modalDocBtn) {
@@ -303,6 +347,33 @@ function initializeToolModals() {
           modalDocBtn.style.display = "inline-flex";
         } else {
           modalDocBtn.style.display = "none";
+        }
+
+        // お気に入りボタンの状態反映
+        if (modalFavoriteBtn) {
+          if (isFavorite(toolId)) {
+            modalFavoriteBtn.classList.add('active');
+            modalFavoriteBtn.innerHTML = '<i class="fa fa-star"></i> お気に入り解除';
+          } else {
+            modalFavoriteBtn.classList.remove('active');
+            modalFavoriteBtn.innerHTML = '<i class="fa fa-star"></i> お気に入り追加';
+          }
+          modalFavoriteBtn.onclick = function() {
+            if (isFavorite(toolId)) {
+              removeFavorite(toolId);
+              modalFavoriteBtn.classList.remove('active');
+              modalFavoriteBtn.innerHTML = '<i class="fa fa-star"></i> お気に入り追加';
+            } else {
+              addFavorite(toolId);
+              modalFavoriteBtn.classList.add('active');
+              modalFavoriteBtn.innerHTML = '<i class="fa fa-star"></i> お気に入り解除';
+            }
+            // お気に入りカテゴリが選択中なら即時反映
+            const activeCat = document.querySelector('.category-nav a.active');
+            if (activeCat && activeCat.getAttribute('href') === '#favorite') {
+              filterAndDisplayTools({ category: 'favorite' });
+            }
+          };
         }
 
         // モーダル表示
@@ -451,7 +522,11 @@ function initializeFiltersAndPagination() {
       this.classList.add("active");
 
       const clickedCategory = this.getAttribute("href").replace("#", "");
-      const categoryToFilter = clickedCategory === "all" ? "" : clickedCategory;
+      let categoryToFilter = clickedCategory === "all" ? "" : clickedCategory;
+      // お気に入りカテゴリの場合は特別扱い
+      if (clickedCategory === "favorite") {
+        categoryToFilter = "favorite";
+      }
 
       // カテゴリフィルタのセレクトボックスも同期（任意）
       categoryFilter.value = categoryToFilter;
@@ -569,6 +644,11 @@ function filterAndDisplayTools(filters = {}) {
   // フィルタリング実行
   currentFilteredTools = allTools.filter(tool => {
     if (!tool) return false; // 無効なツールデータは除外
+
+    // お気に入りカテゴリの場合
+    if (effectiveFilters.category === 'favorite') {
+      return isFavorite(tool.id);
+    }
 
     // 検索フィルタ (タイトル or 説明に部分一致)
     const searchLower = effectiveFilters.search;
@@ -887,32 +967,32 @@ function renderPagination() {
 }
 
 
-/**
- * セクションタイトルを更新する関数
- */
+// --- セクションタイトル更新関数 ---
 function updateSectionTitle(category) {
-  const sectionTitle = document.querySelector(".section-title");
-  if (!sectionTitle) return;
-
-  let titleText = '<i class="fas fa-tools"></i> すべてのツール'; // デフォルト
-  let iconClass = 'fas fa-tools';
-
-  // カテゴリ名と対応する Font Awesome アイコンのマッピング（例）
-  const categoryMap = {
-    "server-management": { name: "サーバー管理", icon: "fas fa-server" },
-    "minecraft": { name: "マイクラ", icon: "fas fa-database" }, // 元の fas fa-database を使う
-    "other": { name: "その他", icon: "fas fa-shield-alt" },
-    "development": { name: "開発ツール", icon: "fas fa-code" }
-  };
-
-  if (category && categoryMap[category]) {
-    titleText = `<i class="${categoryMap[category].icon}"></i> ${categoryMap[category].name} のツール`;
-  } else if (category) {
-    // マッピングにないカテゴリの場合はカテゴリ名をそのまま表示
-    titleText = `<i class="fas fa-folder"></i> ${category} のツール`; // デフォルトフォルダアイコンなど
-  }
-
-  sectionTitle.innerHTML = titleText;
+    const sectionTitle = document.querySelector('.section-title');
+    if (!sectionTitle) return;
+    // カテゴリnavから該当カテゴリのa要素を取得
+    let navLink = null;
+    if (category) {
+        navLink = document.querySelector(`.category-nav a[href="#${category}"]`);
+    }
+    if (!navLink) {
+        navLink = document.querySelector('.category-nav a[href="#all"]');
+    }
+    if (navLink) {
+        // アイコンとラベルを抽出
+        const iconHtml = navLink.querySelector('i') ? navLink.querySelector('i').outerHTML : '';
+        // テキストノードのみ抽出（アイコン以外）
+        let label = '';
+        navLink.childNodes.forEach(node => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                label += node.textContent.trim();
+            }
+        });
+        sectionTitle.innerHTML = `${iconHtml}${label ? label : 'Loading...'}`;
+    } else {
+        sectionTitle.innerHTML = '<i class="fas fa-tools"></i>Loading...';
+    }
 }
 
 
