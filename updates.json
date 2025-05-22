@@ -1,0 +1,49 @@
+{
+  "categories": [
+    {
+      "name": "MainPage",
+      "updates": [
+        {
+          "date": "2025-05-22",
+          "version": "v4.0.1",
+          "description": "更新履歴のページを追加"
+        },
+        {
+          "date": "2025-05-21",
+          "version": "v4.0.0",
+          "description": "PEX Server v4 公開。新UI・ツール統合・各種機能強化。"
+        }
+      ]
+    },
+    {
+      "name": "ツール配布",
+      "updates": [
+        {
+          "date": "2025-05-22",
+          "version": "v1.0.2",
+          "description": "新しくお気に入りを追加できるようにしました - その他 ツールの追加.."
+        },
+        {
+          "date": "2025-04-19",
+          "version": "v1.0.0",
+          "description": "MenuClient v3の後継版として新サーバー基盤を導入。"
+        }
+      ]
+    },
+    {
+      "name": "その他",
+      "updates": [
+        {
+          "date": "2025-05-22",
+          "version": "v1.0.1",
+          "description": "Copilotによるスクリプト側の最適化\n軽量化等.."
+        },
+        {
+          "date": "2024-12-10",
+          "version": "v1.0.0",
+          "description": "AIツール・コードツールの追加、UI改善。"
+        }
+      ]
+    }
+  ]
+}

@@ -126,46 +126,49 @@
                 <h1>PEX Server v4 更新履歴</h1>
                 <p>PEX Serverの主なアップデート履歴・バージョン情報を掲載しています。</p>
             </section>
-            <section class="section fade-in">
-                <h2><i class="fas fa-history"></i> アップデート履歴</h2>
-                <div style="overflow-x:auto;">
-                <table class="update-history" style="width:100%;border-collapse:collapse;">
-                    <thead>
-                        <tr>
-                            <th style="min-width:100px;">日付</th>
-                            <th style="min-width:100px;">バージョン</th>
-                            <th>主な変更点</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>2025-05-21</td>
-                            <td>v4.0.0</td>
-                            <td>PEX Server v4 公開。新UI・ツール統合・各種機能強化。</td>
-                        </tr>
-                        <tr>
-                            <td>2025-04-19</td>
-                            <td>v3.9.0</td>
-                            <td>MenuClient v3の後継版として新サーバー基盤を導入。</td>
-                        </tr>
-                        <tr>
-                            <td>2024-12-10</td>
-                            <td>v3.5.0</td>
-                            <td>AIツール・コードツールの追加、UI改善。</td>
-                        </tr>
-                        <!-- 以降、必要に応じて追記してください -->
-                    </tbody>
-                </table>
-                </div>
-            </section>
+            <!-- ↓ここで動的に履歴を表示する -->
+            <div id="updates-dynamic" class="container" style="margin-top:2.5rem;"></div>
+            <!-- ↑ここにJSで挿入 -->
         </div>
     </main>
     <script>
-    // ページロード時にfade-inを順次適用
+    // updates.jsonを読み込んで動的に履歴を表示
+    async function loadUpdates() {
+        const res = await fetch('./updates.json');
+        const data = await res.json();
+        const container = document.getElementById('updates-dynamic');
+        if (!container) return;
+        data.categories.forEach(category => {
+            // カテゴリタイトル
+            const section = document.createElement('section');
+            section.className = 'section fade-in';
+            const h2 = document.createElement('h2');
+            h2.textContent = category.name + ' の更新履歴';
+            section.appendChild(h2);
+            // テーブル
+            const table = document.createElement('table');
+            table.className = 'update-history';
+            table.style.width = '100%';
+            table.innerHTML = `
+                <thead><tr><th>日付</th><th>バージョン</th><th>主な変更点</th></tr></thead>
+                <tbody></tbody>
+            `;
+            const tbody = table.querySelector('tbody');
+            category.updates.forEach(update => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${update.date}</td><td>${update.version}</td><td>${update.description}</td>`;
+                tbody.appendChild(tr);
+            });
+            section.appendChild(table);
+            container.appendChild(section);
+        });
+    }
     document.addEventListener('DOMContentLoaded', () => {
+        // 既存のfade-inアニメーション
         document.querySelectorAll('.fade-in').forEach((el, i) => {
             el.style.animationDelay = (i * 0.2) + 's';
         });
+        loadUpdates();
     });
     </script>
 </body>
