@@ -26,8 +26,11 @@
             </div>
         </div>
 
-        <div class="click-area" onclick="handleClick()">
-            クリックして攻撃！
+        <div class="command-area" id="command-area">
+            <button id="attack-btn">攻撃</button>
+            <button id="skill-btn">スキル</button>
+            <button id="item-btn">アイテム</button>
+            <button id="defend-btn">防御</button>
         </div>        <div class="menu-button">
             <button onclick="openModal()">メニュー</button>
         </div>
@@ -64,8 +67,103 @@
             </div>
         </div>
     </div>
+    <div id="skill-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-container" style="max-width:400px;">
+            <div class="modal-header">
+                <h2 class="modal-title">スキル選択</h2>
+                <button class="modal-close" onclick="closeSkillModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="skill-modal-body"></div>
+        </div>
+    </div>
+    <div id="item-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-container" style="max-width:400px;">
+            <div class="modal-header">
+                <h2 class="modal-title">アイテム選択</h2>
+                <button class="modal-close" onclick="closeItemModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="item-modal-body"></div>
+        </div>
+    </div>
 
     <script src="js/music.js"></script>
     <script src="js/game.js"></script>
+    <script>
+    // ターン制バトル用コマンドUIのイベント登録
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('attack-btn').onclick = () => handleCommand('attack');
+        document.getElementById('skill-btn').onclick = () => handleCommand('skill');
+        document.getElementById('item-btn').onclick = () => handleCommand('item');
+        document.getElementById('defend-btn').onclick = () => handleCommand('defend');
+    });    // スキル・アイテム選択モーダルの制御
+    function openSkillModal(skills, onSelect) {
+        const modal = document.getElementById('skill-modal');
+        const body = document.getElementById('skill-modal-body');
+        body.innerHTML = '';
+        
+        if (skills.length === 0) {
+            body.innerHTML = '<p style="text-align: center; color: #999;">使用可能なスキルがありません</p>';
+        } else {
+            skills.forEach(skill => {
+                const skillDiv = document.createElement('div');
+                skillDiv.className = 'skill-item';
+                skillDiv.innerHTML = `
+                    <div>
+                        <div class="skill-item-name">${skill.name}</div>
+                        <div class="skill-item-desc">${skill.description || ''}</div>
+                    </div>
+                    <div class="skill-item-cost">MP: ${skill.manaCost || 0}</div>
+                `;
+                skillDiv.onclick = () => { 
+                    closeSkillModal(); 
+                    onSelect(skill); 
+                };
+                body.appendChild(skillDiv);
+            });
+        }
+        modal.style.display = 'block';
+    }
+    
+    function closeSkillModal() {
+        document.getElementById('skill-modal').style.display = 'none';
+    }
+    
+    function openItemModal(items, onSelect) {
+        const modal = document.getElementById('item-modal');
+        const body = document.getElementById('item-modal-body');
+        body.innerHTML = '';
+        
+        if (items.length === 0) {
+            body.innerHTML = '<p style="text-align: center; color: #999;">使用可能なアイテムがありません</p>';
+        } else {
+            items.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'inventory-item';
+                itemDiv.innerHTML = `
+                    <div>
+                        <div class="inventory-item-name">${item.name}</div>
+                        <div class="inventory-item-desc">${item.description || ''}</div>
+                    </div>
+                `;
+                itemDiv.onclick = () => { 
+                    closeItemModal(); 
+                    onSelect(item); 
+                };
+                body.appendChild(itemDiv);
+            });
+        }
+        modal.style.display = 'block';
+    }
+    function closeItemModal() {
+        document.getElementById('item-modal').style.display = 'none';
+    }
+    // モーダル外クリックで閉じる
+    window.onclick = function(event) {
+        ['skill-modal','item-modal','game-modal'].forEach(id => {
+            const modal = document.getElementById(id);
+            if (event.target === modal) modal.style.display = 'none';
+        });
+    };
+    </script>
 </body>
 </html>

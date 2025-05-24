@@ -218,50 +218,373 @@ button:disabled {
     box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* メニューボタン */
-.menu-button {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 100;
+/* コマンド選択UI */
+.command-area {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 15px;
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #2a2a2a;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    position: relative; /* リトライボタンの位置指定のため */
 }
 
-.menu-button button {
-    padding: 12px 24px;
-    font-size: 1.2em;
-    background-color: #4a4a4a;
-    color: white;
+.command-area button {
+    padding: 15px;
+    font-size: 18px;
     border: none;
-    border-radius: 25px;
+    border-radius: 8px;
+    background: linear-gradient(to bottom, #4a4a4a, #333333);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.command-area button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(to bottom, #666666, #444444);
+}
+
+.command-area button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.command-area button:disabled {
+    background: linear-gradient(to bottom, #2a2a2a, #222222);
+    color: #555;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 戦闘通知 */
+.battle-notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.5);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px 40px;
+    border-radius: 10px;
+    font-size: 28px;
+    font-weight: bold;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    z-index: 1000;
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.battle-notification.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* アニメーション効果用クラス */
+.battle-notification.enemy-turn {
+    background-color: rgba(200, 50, 50, 0.8);
+    border: 2px solid #ff6666;
+}
+
+.battle-notification.player-turn {
+    background-color: rgba(50, 100, 200, 0.8);
+    border: 2px solid #6699ff;
+}
+
+.battle-notification.game-over {
+    background-color: rgba(0, 0, 0, 0.9);
+    color: #ff3333;
+    font-size: 36px;
+    border: 3px solid #ff0000;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(255, 0, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+}
+
+/* リトライボタン */
+.retry-button {
+    position: absolute !important;
+    bottom: -70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(to bottom, #ff5555, #cc3333) !important;
+    padding: 15px 40px !important;
+    font-size: 20px !important;
+    animation: fadeInUp 0.5s forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 20px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+/* 戦闘アニメーション */
+.attack-animation {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, #ff6b35 0%, #f7931e  50%, #ffcc02 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(255, 107, 53, 0.8);
+    pointer-events: none;
+    z-index: 1000;
+    animation: attackMove 0.5s forwards;
+}
+
+@keyframes attackMove {
+    0% {
+        transform: scale(0.5) rotate(-20deg);
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.5) rotate(20deg);
+        opacity: 0;
+    }
+}
+
+/* ダメージテキスト */
+.damage-text {
+    position: absolute;
+    color: #ff3333;
+    font-size: 24px;
+    font-weight: bold;
+    text-shadow: 2px 2px 0 #000;
+    pointer-events: none;
+    z-index: 1000;
+    animation: damageFloat 1s forwards;
+}
+
+@keyframes damageFloat {
+    0% {
+        transform: translateY(0) scale(0.8);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-50px) scale(1.2);
+        opacity: 0;
+    }
+}
+
+/* ステータスバー */
+.stat-bar {
+    margin: 8px 0;
+    position: relative;
+    height: 20px;
+    background-color: #333;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.stat-label {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    z-index: 1;
+}
+
+.health-bar, .mana-bar {
+    height: 100%;
+    transition: width 0.5s ease-out, background-color 0.3s ease;
+}
+
+.mana-bar-container {
+    margin-bottom: 10px;
+}
+
+.mana-bar {
+    background-color: #5555ff;
+}
+
+/* ステータス詳細 */
+.player-stats-details, .enemy-stats-details {
+    display: flex;
+    justify-content: space-around;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+/* ステータス効果 */
+.player-status-effects, .enemy-status-effects {
+    margin-top: 5px;
+    min-height: 20px;
+}
+
+.status-effect {
+    display: inline-block;
+    padding: 2px 6px;
+    margin: 0 3px;
+    border-radius: 12px;
+    font-size: 12px;
+    background-color: #444;
+    border: 1px solid #666;
+}
+
+/* ターンインジケーター */
+.turn-indicator {
+    margin: 20px auto;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.turn-indicator.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.turn-indicator.player-turn {
+    background-color: #335599;
+    color: white;
+    border: 2px solid #4477cc;
+    box-shadow: 0 0 10px rgba(68, 119, 204, 0.5);
+    animation: glow 2s infinite;
+}
+
+.turn-indicator.enemy-turn {
+    background-color: #993333;
+    color: white;
+    border: 2px solid #cc4444;
+    box-shadow: 0 0 10px rgba(204, 68, 68, 0.5);
+    animation: glow 2s infinite;
+    box-shadow: 0 0 10px rgba(204, 68, 68, 0.5);
+}
+
+.turn-indicator.enemy-turn {
+    animation-name: glowRed;
+}
+
+@keyframes glowRed {
+    0%, 100% { box-shadow: 0 0 5px rgba(204, 68, 68, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(204, 68, 68, 0.8); }
+}
+
+/* ゲームコンテナのターン状態表示 */
+.game-container.player-turn {
+    border-left: 4px solid #4477cc;
+}
+
+.game-container.enemy-turn {
+    border-left: 4px solid #cc4444;
+}
+
+.game-container.game-over {
+    border: 4px solid #ff0000;
+    opacity: 0.9;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+}
+
+/* スキル・アイテム選択モーダルの内容 */
+.modal-body {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+.skill-item, .inventory-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    background-color: #2a2a2a;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
-.menu-button button:hover {
-    background-color: #5a5a5a;
+.skill-item:hover, .inventory-item:hover {
+    background-color: #333333;
     transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* アニメーション */
-@keyframes damage {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
+.skill-item-name, .inventory-item-name {
+    font-weight: bold;
 }
 
-.damage-animation {
-    animation: damage 0.2s ease;
+.skill-item-cost {
+    color: #77aaff;
 }
 
-/* レベルアップエフェクト */
-@keyframes levelup {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.2); opacity: 0.8; }
-    100% { transform: scale(1); opacity: 1; }
+.skill-item-desc, .inventory-item-desc {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 5px;
 }
 
-.levelup {
-    animation: levelup 0.5s ease;
+/* レスポンシブデザイン */
+@media (max-width: 600px) {
+    .command-area {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-bar {
+        height: 15px;
+    }
+    
+    .player-stats-details, .enemy-stats-details {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+/* アニメーション効果の追加 */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.shake {
+    animation: shake 0.5s;
+}
+
+/* HPバーの滑らかなアニメーション */
+.health-bar, .mana-bar {
+    transition: width 0.5s ease-out, background-color 0.3s ease;
+}
+
+/* ボタンホバー効果の改善 */
+.command-area button:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(to bottom, #666666, #444444);
+}
+
+/* ゲームオーバー時のエフェクト */
+.game-container.game-over .status-container {
+    filter: grayscale(50%);
+    opacity: 0.8;
 }
