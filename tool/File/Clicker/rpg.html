@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クリッカーRPG</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/modal.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="stage-info">
+            ステージ <span id="current-stage">1</span>
+        </div>
+
+        <div class="status-container">
+            <div class="player-stats" id="player-stats">
+                <!-- プレイヤーステータス -->
+            </div>
+            <div class="enemy-stats">
+                <div id="enemy-stats">
+                    <!-- 敵ステータス -->
+                </div>
+                <div class="health-bar-container">
+                    <div class="health-bar" id="enemy-health-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="click-area" onclick="handleClick()">
+            クリックして攻撃！
+        </div>        <div class="menu-button">
+            <button onclick="openModal()">メニュー</button>
+        </div>
+    </div>    <!-- モーダル -->
+    <div id="game-modal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2 class="modal-title">メニュー</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="tab-container">            <div class="tab-buttons">
+                <button class="tab-button active" onclick="showTab('shop')">ショップ</button>
+                <button class="tab-button" onclick="showTab('inventory')">インベントリ</button>
+                <button class="tab-button" onclick="showTab('skills')">スキル</button>
+                <button class="tab-button" onclick="showTab('stats')">統計</button>
+                <button class="tab-button" onclick="showTab('settings')">設定</button>
+            </div>
+                <div id="shop-tab" class="tab-content active">
+                    <div class="shop-grid" id="shop-items"></div>
+                </div>
+                <div id="inventory-tab" class="tab-content">
+                    <div class="inventory-grid" id="inventory-items"></div>
+                </div>
+                <div id="skills-tab" class="tab-content">
+                    <div class="skill-tree" id="skill-tree"></div>
+                </div>                <div id="stats-tab" class="tab-content">
+                    <h3>プレイヤー統計</h3>
+                    <div class="stats-container"></div>
+                </div>
+                <div id="settings-tab" class="tab-content">
+                    <h3>ゲーム設定</h3>
+                    <button onclick="toggleSound()" id="sound-toggle">🔊 サウンドON</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/music.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

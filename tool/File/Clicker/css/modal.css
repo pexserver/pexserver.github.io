@@ -1,0 +1,206 @@
+/* モーダル基本スタイル */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+}
+
+.modal-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #2a2a2a;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 80%;
+    max-height: 80%;
+    overflow-y: auto;
+    z-index: 1001;
+    color: white;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #444;
+}
+
+.modal-title {
+    font-size: 1.5em;
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.modal-close:hover {
+    color: #fff;
+}
+
+.modal-body {
+    margin-bottom: 20px;
+}
+
+.tab-container {
+    margin-bottom: 20px;
+}
+
+.tab-buttons {
+    display: flex;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #444;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-button.active {
+    color: #fff;
+    border-bottom-color: #fff;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ショップアイテムスタイル */
+.shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    padding: 10px;
+}
+
+.shop-item-card {
+    background-color: #333;
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.shop-item-card h3 {
+    margin: 0;
+    color: #fff;
+}
+
+.shop-item-price {
+    color: #ffd700;
+}
+
+.item-description {
+    color: #999;
+    font-size: 0.9em;
+    margin: 5px 0;
+}
+
+/* インベントリスタイル */
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.inventory-item {
+    background-color: #333;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+}
+
+.item-count {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+/* スキルツリースタイル */
+.skill-tree {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+    padding: 15px;
+}
+
+.skill-card {
+    background-color: #333;
+    border-radius: 8px;
+    padding: 15px;
+    position: relative;
+}
+
+.skill-card h3 {
+    margin: 0 0 10px 0;
+}
+
+.skill-cost {
+    color: #ffd700;
+}
+
+/* 統計表示スタイル */
+.stats-container {
+    padding: 15px;
+    background-color: #333;
+    border-radius: 8px;
+    margin: 10px;
+}
+
+.stats-container p {
+    margin: 10px 0;
+    font-size: 1.1em;
+}
+
+.stats-container ul {
+    list-style: none;
+    padding-left: 20px;
+}
+
+.stats-container ul li {
+    margin: 5px 0;
+    color: #aaa;
+}
+
+/* PvPスタイル */
+.enemy-stats .pvp {
+    color: #4444ff;
+    font-weight: bold;
+}
+
+/* クリティカルヒット表示 */
+@keyframes critical {
+    0% { transform: scale(1.5); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+.critical-hit {
+    position: absolute;
+    color: #ff0000;
+    font-weight: bold;
+    animation: critical 0.5s ease-out forwards;
+    pointer-events: none;
+}
