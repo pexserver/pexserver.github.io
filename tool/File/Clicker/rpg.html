@@ -84,18 +84,21 @@
             </div>
             <div class="modal-body" id="item-modal-body"></div>
         </div>
-    </div>
-
+    </div>    <!-- Core modules -->
+    <script src="js/config.js"></script>
     <script src="js/music.js"></script>
+    <script src="js/sound.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/enemy.js"></script>
+    <script src="js/battle.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/save.js"></script>
     <script src="js/game.js"></script>
     <script>
-    // ターン制バトル用コマンドUIのイベント登録
-    document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('attack-btn').onclick = () => handleCommand('attack');
-        document.getElementById('skill-btn').onclick = () => handleCommand('skill');
-        document.getElementById('item-btn').onclick = () => handleCommand('item');
-        document.getElementById('defend-btn').onclick = () => handleCommand('defend');
-    });    // スキル・アイテム選択モーダルの制御
+    // ターン制バトル用コマンドUIのイベント登録はgame.jsで一元管理するため、ここでは不要
+    </script>
+    <!-- スキル・アイテム選択モーダルの制御 -->
+    <script>
     function openSkillModal(skills, onSelect) {
         const modal = document.getElementById('skill-modal');
         const body = document.getElementById('skill-modal-body');
