@@ -11,16 +11,14 @@ function updateUI() {
     if (playerStats) {
         playerStats.innerHTML = `
             <div class="stat-group">
-                <h3>${player.name}</h3>
-                <div class="stat-bar">
+                <h3>${player.name}</h3>                <div class="stat-bar">
                     <div class="stat-label">HP: ${player.health}/${player.maxHealth}</div>
-                    <div class="health-bar">
+                    <div class="player-health-bar">
                         <div class="health-fill" style="width: ${(player.health / player.maxHealth) * 100}%"></div>
                     </div>
-                </div>
-                <div class="stat-bar">
+                </div>                <div class="stat-bar">
                     <div class="stat-label">MP: ${player.mana}/${player.maxMana}</div>
-                    <div class="mana-bar">
+                    <div class="player-mana-bar">
                         <div class="mana-fill" style="width: ${(player.mana / player.maxMana) * 100}%"></div>
                     </div>
                 </div>
@@ -45,16 +43,7 @@ function updateUI() {
                 <div>HP: ${currentEnemy.health}/${currentEnemy.maxHealth}</div>
                 <div>攻撃力: ${currentEnemy.attack}</div>
                 <div>防御力: ${currentEnemy.defense}</div>
-            </div>
-        `;
-    }
-    
-    // 敵の体力バー更新
-    const enemyHealthBar = document.getElementById('enemy-health-bar');
-    if (enemyHealthBar) {
-        const healthPercentage = currentEnemy.getHealthPercentage();
-        enemyHealthBar.style.width = healthPercentage + '%';
-        enemyHealthBar.style.backgroundColor = getHealthBarColor(healthPercentage);
+            </div>        `;
     }
     
     // ステージ情報更新
@@ -177,11 +166,11 @@ function updateShopItems() {
         const canBuy = player.gold >= item.cost;
         itemDiv.innerHTML = `
             <div class="item-info">
-                <div class="item-name">${item.name}</div>
-                <div class="item-description">${item.description}</div>
-                <div class="item-cost">💰 ${item.cost}</div>
+                <h4>${item.name}</h4>
+                <p>${item.description}</p>
+                <p class="item-cost">💰 ${item.cost}ゴールド</p>
             </div>
-            <button class="buy-button ${canBuy ? '' : 'disabled'}" 
+            <button class="buy-btn ${canBuy ? '' : 'disabled'}" 
                     onclick="buyItem('${item.id}')" 
                     ${canBuy ? '' : 'disabled'}>
                 購入

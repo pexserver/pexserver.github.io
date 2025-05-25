@@ -1,7 +1,7 @@
 // 定数・設定値を管理
 // ゲーム設定とグローバル定数
 const gameConfig = {
-    initialGold: 0,
+    initialGold: 50, // ゲーム開始時のゴールド
     initialLevel: 1,
     initialHealth: 100,
     initialAttack: 10,

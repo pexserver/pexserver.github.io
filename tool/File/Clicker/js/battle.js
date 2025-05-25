@@ -12,20 +12,11 @@ let gameState = {
 
 // コマンド処理
 function handleCommand(commandType) {
-    console.log('handleCommand called:', commandType, {
-        inBattle: gameState.inBattle,
-        playerTurn: gameState.playerTurn,
-        playerExists: !!player,
-        enemyExists: !!currentEnemy
-    });
-    
     if (!gameState.inBattle || !gameState.playerTurn) {
-        console.log('handleCommand blocked:', {inBattle: gameState.inBattle, playerTurn: gameState.playerTurn});
         return;
     }
     
     playSound('click');
-    console.log('Executing command:', commandType);
     
     switch (commandType) {
         case 'attack':
@@ -46,21 +37,12 @@ window.handleCommand = handleCommand;
 
 // プレイヤーの攻撃
 function playerAttack() {
-    console.log('playerAttack called:', {
-        currentEnemyExists: !!currentEnemy,
-        enemyDead: currentEnemy ? currentEnemy.isDead() : 'no enemy',
-        playerAttack: player ? player.getEffectiveAttack() : 'no player'
-    });
-    
     if (!currentEnemy || currentEnemy.isDead()) {
-        console.log('playerAttack blocked: no enemy or dead enemy');
         return;
     }
 
     const damage = Math.floor(player.getEffectiveAttack() * (0.8 + Math.random() * 0.4));
     const actualDamage = currentEnemy.takeDamage(damage);
-    
-    console.log('Attack executed:', {damage, actualDamage});
 
     const isCritical = actualDamage > damage * 0.9;
     showBattleLog(`${player.name}の攻撃！${actualDamage}ダメージ！${isCritical ? ' クリティカル！' : ''}`);
@@ -149,38 +131,35 @@ function endPlayerTurn() {
 // 敵のターン
 function enemyTurn() {
     if (!currentEnemy || currentEnemy.isDead()) {
-        console.log('enemyTurn: no currentEnemy or already dead');
         return;
     }
-    console.log('enemyTurn start', {playerHealth: player.health, enemyHealth: currentEnemy.health, playerTurn: gameState.playerTurn, inBattle: gameState.inBattle});
+    
     // 敵のステータス異常処理
     currentEnemy.applyStatusEffects();
+    
     // スタン状態なら行動スキップ
     if (currentEnemy.statusEffects.some(effect => effect.name === 'スタン')) {
         showBattleLog(`${currentEnemy.name}はスタンして動けない！`);
         setTimeout(() => {
-            console.log('enemyTurn: stun skip, calling startPlayerTurn');
             startPlayerTurn();
             updateCommandButtons(false);
-            console.log('enemyTurn end (stun)', {playerHealth: player.health, enemyHealth: currentEnemy.health, playerTurn: gameState.playerTurn, inBattle: gameState.inBattle});
         }, 1000);
         return;
     }
+    
     // 敵の行動
     currentEnemy.performAction(player);
-    console.log('enemyTurn: after performAction', {playerHealth: player.health, enemyHealth: currentEnemy.health});
+    
     // プレイヤーの死亡チェック
     if (player.health <= 0) {
-        console.log('enemyTurn: player defeated');
         playerDefeated();
         return;
     }
+    
     updateUI();
     setTimeout(() => {
-        console.log('enemyTurn: calling startPlayerTurn');
         startPlayerTurn();
         updateCommandButtons(false);
-        console.log('enemyTurn end', {playerHealth: player.health, enemyHealth: currentEnemy.health, playerTurn: gameState.playerTurn, inBattle: gameState.inBattle});
     }, 1500);
 }
 
@@ -194,7 +173,6 @@ function startPlayerTurn() {
 
 // バトル開始
 function startBattle(enemy) {
-    console.log('startBattle called with enemy:', enemy.name);
     currentEnemy = enemy;
     gameState.inBattle = true;
     gameState.playerTurn = true;
@@ -202,12 +180,6 @@ function startBattle(enemy) {
     
     showBattleLog(`${enemy.name}が現れた！`);
     playSound('battle');
-    
-    console.log('startBattle completed:', {
-        inBattle: gameState.inBattle,
-        playerTurn: gameState.playerTurn,
-        enemyName: currentEnemy.name
-    });
     
     updateUI();
 }
@@ -231,7 +203,6 @@ function checkBattleEnd() {
 
 // 敵撃破時の処理
 function enemyDefeated() {
-    console.log('enemyDefeated: called');
     gameState.inBattle = false;
     
     const expGained = currentEnemy.exp;
@@ -281,7 +252,6 @@ function enemyDefeated() {
 
 // プレイヤー敗北時の処理
 function playerDefeated() {
-    console.log('playerDefeated: called');
     gameState.inBattle = false;
     
     showBattleLog('敗北しました...');
@@ -433,19 +403,12 @@ function handleEnemyDefeat() {
 
 // 敵生成
 function spawnEnemy() {
-    console.log('spawnEnemy called');
     const isBoss = currentStage % gameConfig.bossEvery === 0;
     const enemyLevel = Math.max(1, Math.floor(player.level * 0.8));
     currentEnemy = new Enemy(enemyLevel, isBoss);
     
     // 戦闘開始
     startBattle(currentEnemy);
-    
-    console.log('spawnEnemy completed:', {
-        enemy: currentEnemy.name,
-        inBattle: gameState.inBattle,
-        playerTurn: gameState.playerTurn
-    });
 }
 
 // 戦闘終了後の次の敵生成ロジックを追加

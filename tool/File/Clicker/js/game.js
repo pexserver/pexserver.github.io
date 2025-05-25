@@ -68,54 +68,9 @@ function updateInventoryUI() {
     }
 }
 
-// ショップUI更新
+// ショップUI更新（ui.jsのupdateShopItemsを使用）
 function updateShopUI() {
-    const shopContainer = document.getElementById('shop-items');
-    if (!shopContainer) return;
-    
-    shopContainer.innerHTML = '';
-    
-    Object.entries(items).forEach(([itemId, item]) => {
-        const itemElement = document.createElement('div');
-        itemElement.className = 'shop-item';
-        
-        const canAfford = player.gold >= item.cost;
-        const buttonClass = canAfford ? 'buy-btn' : 'buy-btn disabled';
-        
-        itemElement.innerHTML = `
-            <div class="item-info">
-                <h4>${item.name}</h4>
-                <p>${item.description}</p>
-                <p class="item-cost">コスト: ${item.cost}ゴールド</p>
-            </div>
-            <button onclick="buyItem('${itemId}')" class="${buttonClass}" ${!canAfford ? 'disabled' : ''}>
-                購入
-            </button>
-        `;
-        shopContainer.appendChild(itemElement);
-    });
-}
-
-// アイテム購入処理
-function buyItem(itemId) {
-    if (!items[itemId] || player.gold < items[itemId].cost) {
-        showBattleLog('ゴールドが不足しています！');
-        return;
-    }
-    
-    player.gold -= items[itemId].cost;
-    
-    if (!player.inventory[itemId]) {
-        player.inventory[itemId] = 0;
-    }
-    player.inventory[itemId]++;
-    
-    showBattleLog(`${items[itemId].name}を購入しました！`);
-    playSound('buy');
-    
-    updateUI();
-    updateShopUI();
-    updateInventoryUI();
+    updateShopItems();
 }
 
 // アイテム使用処理
