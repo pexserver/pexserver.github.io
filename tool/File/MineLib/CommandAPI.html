@@ -5,8 +5,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CommandAPI ドキュメント</title>
-    <link rel="icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon">
-    <link rel="shortcut icon" href="https://pexserver.github.io/lib/Assets/images/home.png" type="image/x-icon">
+    <link rel="icon" href="https://pexserver.github.io/libs/Assets/images/home.png" type="image/x-icon">
+    <link rel="shortcut icon" href="https://pexserver.github.io/libs/Assets/images/home.png" type="image/x-icon">
     <meta name="description" content="Minecraft Bedrock Edition用CommandAPIフレームワークのドキュメントです。">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,7 +15,7 @@
         rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="../../../lib/css/ScriptDocs.css"> 
+    <link rel="stylesheet" href="../../../libs/css/ScriptDocs.css"> 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-touch-fullscreen" content="yes">
@@ -175,9 +175,9 @@
     CustomCommandParamType, CommandPermissionLevel,
     CustomCommandOrigin, CustomCommandResult, Player, CustomCommandStatus
 } from "@minecraft/server";
-import { BaseCommand } from "../../lib/CommandAPI/BaseCommand"; // パスは実際のプロジェクト構造に合わせてください
-import { GlobalCommandRegistry } from "../../lib/CommandAPI/CommandRegistry"; // 同上
-import { CommandParameter } from "../../lib/CommandAPI/types"; // 同上
+import { BaseCommand } from "../../libs/CommandAPI/BaseCommand"; // パスは実際のプロジェクト構造に合わせてください
+import { GlobalCommandRegistry } from "../../libs/CommandAPI/CommandRegistry"; // 同上
+import { CommandParameter } from "../../libs/CommandAPI/types"; // 同上
 
 function getParamTypeName(type: CustomCommandParamType): string {
     switch (type) {

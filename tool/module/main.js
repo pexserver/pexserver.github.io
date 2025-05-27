@@ -292,7 +292,7 @@ function initializeToolModals() {
       if (toolData) {
         // モーダルにデータを設定
         modalTitle.textContent = toolData.title || "ツール詳細";
-        modalImage.src = toolData.imageLarge || toolData.image || "../lib/Assets/images/placeholder.png"; // 大きい画像があれば優先
+        modalImage.src = toolData.imageLarge || toolData.image || "../libs/Assets/images/placeholder.png"; // 大きい画像があれば優先
         modalImage.alt = toolData.title || "ツール画像";
         modalDescription.innerHTML = toolData.detailedDescription || toolData.description || "<p>詳細情報はありません。</p>";
 
@@ -784,7 +784,7 @@ function renderToolGridPage(pageNumber) {
     toolCard.innerHTML = `
             <div class="tool-image">
                 ${tool.category ? `<span class="tool-category">${tool.category}</span>` : ''}
-                <img src="${tool.image || '../lib/Assets/images/placeholder.png'}" alt="${tool.title || 'ツール画像'}" loading="lazy">
+                <img src="${tool.image || '../libs/Assets/images/placeholder.png'}" alt="${tool.title || 'ツール画像'}" loading="lazy">
             </div>
             <div class="tool-content">
                 <h3 class="tool-title">${tool.title || '無題のツール'}</h3>
