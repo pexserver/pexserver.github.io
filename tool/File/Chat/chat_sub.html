@@ -20,8 +20,25 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="canonical" href="https://pexserver.github.io/" />
-    <style>
+    <link rel="canonical" href="https://pexserver.github.io/" />    <style>
+        :root {
+            --primary-color: #4F46E5;
+            --primary-light: #6366F1;
+            --primary-dark: #4338CA;
+            --accent-color: #F43F5E;
+            --text-color: #1F2937;
+            --text-light: #6B7280;
+            --light-color: #F9FAFB;
+            --white: #FFFFFF;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --border-radius: 0.5rem;
+            --border-radius-lg: 1rem;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         html,
         body {
             margin: 0;
@@ -29,6 +46,7 @@
             height: 100%;
             overflow: hidden;
             background-color: #f0f0f0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         iframe {
@@ -37,14 +55,388 @@
             height: 100%;
             border: none;
         }
+
+        .iframe-fallback {
+            display: none;
+            padding: 2rem;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: var(--white);
+            overflow-y: auto;
+        }
+
+        .fallback-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--white);
+            border-radius: var(--border-radius-lg);
+            padding: 2rem;
+            color: var(--text-color);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .error-icon {
+            font-size: 3rem;
+            color: var(--accent-color);
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .error-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .error-description {
+            font-size: 1.125rem;
+            color: var(--text-light);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .solutions-section {
+            margin-bottom: 2rem;
+        }
+
+        .solutions-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .solution-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .solution-item {
+            background-color: var(--gray-100);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .solution-item h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        .solution-item p {
+            margin: 0;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .browser-support {
+            background-color: var(--light-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .browser-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .browser-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+        }
+
+        .browser-supported {
+            color: #10B981;
+        }
+
+        .browser-limited {
+            color: #F59E0B;
+        }
+
+        .browser-unsupported {
+            color: var(--accent-color);
+        }
+
+        .alternative-links {
+            text-align: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition);
+            font-size: 1rem;
+            margin: 0.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: var(--white);
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .fallback-container {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+
+            .error-title {
+                font-size: 1.5rem;
+            }
+
+            .browser-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
 <body>
     <iframe
-        src="https://script.google.com/macros/s/AKfycbz4IfCCvthP8iEurPNmk3JOUGvGX0MSb-mUGNijxQTa_parpN9QQH0w9HBcR0555QH1/exec">
-        お使いのブラウザは iframe をサポートしていません。
+        src="https://script.google.com/macros/s/AKfycbzZJ6xO4xSqzqxtgmtj4UObKoU1STxShmL3HL4gggnRsAQC4F7TdeGZ1Rf7R_XxklLm/exec"
+        onload="handleIframeLoad()"
+        onerror="showFallback()">
     </iframe>
+
+    <div class="iframe-fallback" id="iframeFallback">
+        <div class="fallback-container">
+            <div class="error-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            
+            <h1 class="error-title">iframeが利用できません</h1>
+            
+            <p class="error-description">
+                申し訳ございません。お使いのブラウザまたは設定により、埋め込みチャットサービスを表示できません。<br>
+                以下の解決方法をお試しください。
+            </p>            <div class="solutions-section">
+                <h3 class="solutions-title">
+                    <i class="fas fa-tools"></i>
+                    解決方法
+                </h3>
+                <ul class="solution-list">
+                    <li class="solution-item">
+                        <h4>1. ブラウザ設定の確認</h4>
+                        <p>ブラウザの設定で「iframe」や「埋め込みコンテンツ」がブロックされていないか確認してください。
+                        <br><strong>Chrome:</strong> chrome://settings/content → 詳細設定 → サイトの設定
+                        <br><strong>Firefox:</strong> about:preferences#privacy → セキュリティ
+                        <br><strong>Safari:</strong> 環境設定 → セキュリティ → インターネットプラグイン</p>
+                    </li>
+                    <li class="solution-item">
+                        <h4>2. 広告ブロッカーの無効化</h4>
+                        <p>AdBlock Plus、uBlock Origin、AdGuard などの拡張機能が iframe をブロックしている可能性があります。
+                        <br><strong>確認方法:</strong> 拡張機能を一時的に無効化してページを再読み込み
+                        <br><strong>除外設定:</strong> この特定のサイトを許可リストに追加</p>
+                    </li>
+                    <li class="solution-item">
+                        <h4>3. JavaScriptの有効化</h4>
+                        <p>JavaScriptが無効になっている場合、チャットサービスが正常に動作しません。
+                        <br><strong>確認方法:</strong> コンソールにエラーメッセージが表示されていないか確認
+                        <br><strong>有効化:</strong> ブラウザ設定でJavaScriptを有効にしてください</p>
+                    </li>
+                    <li class="solution-item">
+                        <h4>4. セキュリティソフトの設定</h4>
+                        <p>ウイルス対策ソフト、ファイアウォール、企業セキュリティポリシーが外部サイトへのアクセスを制限している可能性があります。
+                        <br><strong>対象:</strong> Norton、McAfee、Kaspersky、Windows Defender など
+                        <br><strong>解決策:</strong> 一時的にWebプロテクション機能を無効化またはサイトを例外追加</p>
+                    </li>
+                    <li class="solution-item">
+                        <h4>5. ネットワーク接続の確認</h4>
+                        <p>インターネット接続が安定しているか、プロキシ設定に問題がないか確認してください。
+                        <br><strong>企業/学校ネットワーク:</strong> 管理者がGoogle Scriptsをブロックしている可能性
+                        <br><strong>DNS問題:</strong> 8.8.8.8 や 1.1.1.1 のパブリックDNSを試してみてください</p>
+                    </li>
+                    <li class="solution-item">
+                        <h4>6. キャッシュとCookieのクリア</h4>
+                        <p>ブラウザのキャッシュやCookieが原因で正常に読み込まれない場合があります。
+                        <br><strong>Chrome:</strong> Ctrl+Shift+Delete → キャッシュと Cookie を削除
+                        <br><strong>Firefox:</strong> Ctrl+Shift+Delete → 履歴の消去
+                        <br><strong>Safari:</strong> 開発メニュー → キャッシュを空にする</p>
+                    </li>
+                    <li class="solution-item">
+                        <h4>7. プライベートモード/シークレットモードで試行</h4>
+                        <p>拡張機能や設定の影響を排除するため、プライベートブラウジングモードでアクセスしてください。
+                        <br><strong>Chrome:</strong> Ctrl+Shift+N (シークレットモード)
+                        <br><strong>Firefox:</strong> Ctrl+Shift+P (プライベートウィンドウ)
+                        <br><strong>Safari:</strong> Cmd+Shift+N (プライベートブラウズ)</p>
+                    </li>
+                    <li class="solution-item">
+                        <h4>8. Google Scripts の利用可能性確認</h4>
+                        <p>Google Apps Script サービスが利用可能かどうか確認してください。
+                        <br><strong>ステータス確認:</strong> <a href="https://www.google.com/appsstatus" target="_blank" style="color: var(--primary-color);">Google Workspace ステータス</a>
+                        <br><strong>地域制限:</strong> 一部地域でGoogle Servicesが制限されている場合があります</p>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="browser-support">
+                <h3 class="solutions-title">
+                    <i class="fas fa-globe"></i>
+                    ブラウザサポート状況
+                </h3>
+                <div class="browser-grid">
+                    <div class="browser-item">
+                        <i class="fab fa-chrome browser-supported"></i>
+                        <span>Google Chrome (推奨) - バージョン 80+</span>
+                    </div>
+                    <div class="browser-item">
+                        <i class="fab fa-firefox browser-supported"></i>
+                        <span>Mozilla Firefox - バージョン 75+</span>
+                    </div>
+                    <div class="browser-item">
+                        <i class="fab fa-safari browser-supported"></i>
+                        <span>Safari - macOS 10.15+, iOS 13+</span>
+                    </div>
+                    <div class="browser-item">
+                        <i class="fab fa-edge browser-supported"></i>
+                        <span>Microsoft Edge - Chromium版</span>
+                    </div>
+                    <div class="browser-item">
+                        <i class="fas fa-mobile-alt browser-limited"></i>
+                        <span>モバイルブラウザ (制限あり) - 画面サイズによる制限</span>
+                    </div>
+                    <div class="browser-item">
+                        <i class="fab fa-internet-explorer browser-unsupported"></i>
+                        <span>Internet Explorer (非対応) - 全バージョン</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="solutions-section">
+                <h3 class="solutions-title">
+                    <i class="fas fa-info-circle"></i>
+                    技術的詳細情報
+                </h3>
+                <div class="solution-item">
+                    <h4>iframe エラーの種類</h4>
+                    <p><strong>X-Frame-Options:</strong> サーバーがiframe埋め込みを拒否<br>
+                    <strong>Content Security Policy:</strong> CSPがiframe読み込みをブロック<br>
+                    <strong>Mixed Content:</strong> HTTPSページでHTTPコンテンツを読み込み<br>
+                    <strong>CORS Error:</strong> クロスオリジンリクエストが拒否</p>
+                </div>
+                <div class="solution-item">
+                    <h4>デバッグ方法</h4>
+                    <p><strong>開発者ツール:</strong> F12 キーを押してコンソールタブを確認<br>
+                    <strong>ネットワークタブ:</strong> リクエストが失敗している場合のエラーコード確認<br>
+                    <strong>セキュリティタブ:</strong> 証明書やMixed Contentの問題を確認</p>
+                </div>
+            </div>
+
+            <div class="alternative-links">
+                <h3 class="solutions-title">
+                    <i class="fas fa-external-link-alt"></i>
+                    代替アクセス方法
+                </h3>
+                <a href="https://script.google.com/macros/s/AKfycbzZJ6xO4xSqzqxtgmtj4UObKoU1STxShmL3HL4gggnRsAQC4F7TdeGZ1Rf7R_XxklLm/exec" target="_blank" class="btn btn-primary">
+                    <i class="fas fa-external-link-alt"></i>
+                    新しいタブでチャットを開く
+                </a>
+                <a href="../index.html" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    ツール一覧に戻る
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let iframeLoadTimeout;
+        let fallbackShown = false;
+
+        function showFallback() {
+            if (!fallbackShown) {
+                document.querySelector('iframe').style.display = 'none';
+                document.getElementById('iframeFallback').style.display = 'block';
+                fallbackShown = true;
+                console.log('iframe フォールバック表示: iframe の読み込みに失敗しました');
+            }
+        }
+
+        function handleIframeLoad() {
+            if (iframeLoadTimeout) {
+                clearTimeout(iframeLoadTimeout);
+            }
+            console.log('iframe が正常に読み込まれました');
+        }
+
+        // iframe の読み込みタイムアウト（10秒）
+        iframeLoadTimeout = setTimeout(() => {
+            console.warn('iframe の読み込みがタイムアウトしました');
+            showFallback();
+        }, 10000);
+
+        // ページ読み込み完了後のチェック
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const iframe = document.querySelector('iframe');
+                try {
+                    // iframe の内容にアクセスを試行（同一オリジンの場合のみ成功）
+                    iframe.contentDocument;
+                } catch (e) {
+                    // クロスオリジンの場合は正常（エラーが出るのは予想内）
+                    console.log('iframe はクロスオリジンで正常に動作中');
+                    return;
+                }
+                
+                // 何らかの問題がある場合の追加チェック
+                if (iframe.offsetHeight === 0 || iframe.offsetWidth === 0) {
+                    console.warn('iframe のサイズが 0 です');
+                    showFallback();
+                }
+            }, 2000);
+        });
+
+        // エラーイベントリスナー
+        window.addEventListener('error', (e) => {
+            if (e.target.tagName === 'IFRAME') {
+                console.error('iframe エラー:', e);
+                showFallback();
+            }
+        });
+
+        // Console メッセージ
+        console.log('🚀 マルチスレッドチャット v2.4');
+        console.log('📱 iframe が正常に読み込まれない場合、フォールバック画面が表示されます');
+        console.log('🔗 直接アクセス: https://script.google.com/macros/s/AKfycbzZJ6xO4xSqzqxtgmtj4UObKoU1STxShmL3HL4gggnRsAQC4F7TdeGZ1Rf7R_XxklLm/exec');
+    </script>
 </body>
 
 </html>
