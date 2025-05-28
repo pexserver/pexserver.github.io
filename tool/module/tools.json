@@ -263,7 +263,7 @@
     "title": "PEX Uninstaller",
     "image": "https://pexserver.github.io/lib/Image/pexUninstall-gui/icon.png",
     "imageLarge": "https://pexserver.github.io/lib/Image/pexUninstall-gui/icon.png",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "updated": "2025-05-27",
     "descriptionMarkdown": "PEX Uninstall Tool は、`PEXtool` フォルダ内にインストールされた関連アプリケーションを一覧表示し、アンインストールを支援する Electron ベースのデスクトップアプリケーションです。ユーザーフレンドリーなインターフェースを提供し、不要になった PEX 関連ツールを簡単に管理・削除できます。",
     "description": "<p>PEX Uninstall Tool は、<code>PEXtool</code> フォルダ内にインストールされた関連アプリケーションを一覧表示し、アンインストールを支援する Electron ベースのデスクトップアプリケーションです。ユーザーフレンドリーなインターフェースを提供し、不要になった PEX 関連ツールを簡単に管理・削除できます。</p>\n",
