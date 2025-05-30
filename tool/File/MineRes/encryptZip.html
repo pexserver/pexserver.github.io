@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>CDN ZIP暗号化ダウンローダー</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 2em; }
+    input, button { margin: 0.5em 0; }
+  </style>
+</head>
+<body>
+  <h1>CDN ZIP暗号化ダウンローダー</h1>
+  <label>ZIPファイルを選択: <input type="file" id="zipFile" accept=".zip"></label><br>
+  <label>暗号化パスワード: <input type="password" id="password"></label><br>
+  <button id="downloadBtn">暗号化してダウンロード</button>
+  <div id="status"></div>
+  <script src="./encryptZip.js"></script>
+</body>
+</html>
