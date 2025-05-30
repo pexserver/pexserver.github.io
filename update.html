@@ -23,92 +23,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="PEX Update">
     <link rel="apple-touch-icon" href="https://pexserver.github.io/libs/Assets/images/home.png">
-    <link rel="stylesheet" href="./libs/css/home.css">
-    <style>
-        /* 更新履歴ページ用のアニメーションとUX向上CSSを追加 */
-        body {
-            background: linear-gradient(120deg, #f8fafc 0%, #e0e7ef 100%);
-            animation: fadeInBg 1.2s;
-        }
-        @keyframes fadeInBg {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .container {
-            animation: slideUp 0.8s cubic-bezier(.4,2,.6,1) 0.1s both;
-        }
-        @keyframes slideUp {
-            from { transform: translateY(40px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        /* アニメーション: フェードイン */
-        .fade-in {
-            opacity: 0;
-            transform: translateY(30px);
-            animation: fadeInUp 0.8s ease-out forwards;
-        }
-        @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: none;
-            }
-        }
-        /* テーブル装飾 */
-        .update-history {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-            overflow: hidden;
-            margin-top: 1.5rem;
-        }
-        .update-history th, .update-history td {
-            padding: 1rem 1.2rem;
-            text-align: left;
-        }
-        .update-history thead {
-            background: #f5f7fa;
-        }
-        .update-history tbody tr {
-            transition: background 0.2s;
-        }
-        .update-history tbody tr:hover {
-            background: #f0f8ff;
-        }
-        /* セクションタイトル装飾 */
-        .section h2 {
-            font-size: 1.4rem;
-            margin-bottom: 0.5em;
-            border-left: 5px solid #4f8cff;
-            padding-left: 0.5em;
-            color: #2a2a2a;
-        }
-        /* レスポンシブ */
-        @media (max-width: 600px) {
-            .update-history th, .update-history td {
-                padding: 0.7rem 0.5rem;
-                font-size: 0.95em;
-            }
-        }
-        /* ヘッダー追加 */
-        header {
-            background:#1976d2;
-            color:#fff;
-            padding:1.2em 0 1em 0;
-            box-shadow:0 2px 8px #0001;
-        }
-        header .container {
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-        }
-        header a {
-            color:#fff;
-            text-decoration:none;
-        }
-        header a:hover {
-            text-decoration: underline;
-        }
-    </style>
+    <link rel="stylesheet" href="./libs/css/update.css">
 </head>
 <body>
     <header>
@@ -121,54 +36,128 @@
         </div>
     </header>
     <main>
-        <div class="container fade-in" style="margin-top:3rem;">
-            <section class="hero" style="margin-top:0;">
+        <div class="container fade-in">
+            <section class="hero">
                 <h1>PEX Server v4 更新履歴</h1>
                 <p>PEX Serverの主なアップデート履歴・バージョン情報を掲載しています。</p>
             </section>
-            <!-- ↓ここで動的に履歴を表示する -->
-            <div id="updates-dynamic" class="container" style="margin-top:2.5rem;"></div>
-            <!-- ↑ここにJSで挿入 -->
+            <!-- 動的に履歴を表示するセクション -->
+            <div id="updates-dynamic"></div>
         </div>
     </main>
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="copyright">
+                    &copy; 2025 PEX Server v4
+                </div>
+                <div class="footer-links">
+                    <a href="/index.html">ホーム</a>
+                    <a href="/about.html">About</a>
+                    <a href="/privacy.html">プライバシーポリシー</a>
+                </div>
+            </div>
+        </div>
+    </footer>
     <script>
     // updates.jsonを読み込んで動的に履歴を表示
     async function loadUpdates() {
-        const res = await fetch('./updates.json');
-        const data = await res.json();
-        const container = document.getElementById('updates-dynamic');
-        if (!container) return;
-        data.categories.forEach(category => {
-            // カテゴリタイトル
-            const section = document.createElement('section');
-            section.className = 'section fade-in';
-            const h2 = document.createElement('h2');
-            h2.textContent = category.name + ' の更新履歴';
-            section.appendChild(h2);
-            // テーブル
-            const table = document.createElement('table');
-            table.className = 'update-history';
-            table.style.width = '100%';
-            table.innerHTML = `
-                <thead><tr><th>日付</th><th>バージョン</th><th>主な変更点</th></tr></thead>
-                <tbody></tbody>
-            `;
-            const tbody = table.querySelector('tbody');
-            category.updates.forEach(update => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${update.date}</td><td>${update.version}</td><td>${update.description}</td>`;
-                tbody.appendChild(tr);
+        try {
+            const res = await fetch('./updates.json');
+            const data = await res.json();
+            const container = document.getElementById('updates-dynamic');
+            if (!container) return;
+            
+            // カテゴリ順に処理
+            data.categories.forEach((category, index) => {
+                // カテゴリタイトル
+                const section = document.createElement('section');
+                section.className = 'section fade-in';
+                section.style.animationDelay = (index * 0.2) + 's';
+                
+                const h2 = document.createElement('h2');
+                h2.textContent = category.name + ' の更新履歴';
+                section.appendChild(h2);
+                
+                // テーブル
+                const table = document.createElement('table');
+                table.className = 'update-history';
+                table.style.width = '100%';
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>日付</th>
+                            <th>バージョン</th>
+                            <th>主な変更点</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                `;
+                
+                const tbody = table.querySelector('tbody');
+                
+                // 各アップデートを処理
+                category.updates.forEach(update => {
+                    const tr = document.createElement('tr');
+                    
+                    // バージョンタイプに応じたバッジを追加
+                    let versionWithBadge = update.version;
+                    if (update.version.includes('beta')) {
+                        versionWithBadge = `${update.version} <span class="version-badge badge-beta">Beta</span>`;
+                    } else if (update.version.includes('alpha')) {
+                        versionWithBadge = `${update.version} <span class="version-badge badge-alpha">Alpha</span>`;
+                    } else {
+                        versionWithBadge = `${update.version} <span class="version-badge badge-stable">Stable</span>`;
+                    }
+                    
+                    tr.innerHTML = `
+                        <td>${update.date}</td>
+                        <td>${versionWithBadge}</td>
+                        <td>${update.description}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+                section.appendChild(table);
+                container.appendChild(section);
             });
-            section.appendChild(table);
-            container.appendChild(section);
-        });
+        } catch (error) {
+            console.error('更新履歴の読み込みに失敗しました:', error);
+            const container = document.getElementById('updates-dynamic');
+            if (container) {
+                container.innerHTML = '<div class="error-message">更新履歴の読み込みに失敗しました。後でもう一度お試しください。</div>';
+            }
+        }
     }
+    
     document.addEventListener('DOMContentLoaded', () => {
-        // 既存のfade-inアニメーション
-        document.querySelectorAll('.fade-in').forEach((el, i) => {
-            el.style.animationDelay = (i * 0.2) + 's';
+        // アニメーション用のスクロール検出
+        const observeElements = () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            document.querySelectorAll('.fade-in').forEach(el => {
+                observer.observe(el);
+            });
+        };
+        
+        // 更新履歴の読み込み
+        loadUpdates().then(() => {
+            // 動的に生成された要素にもアニメーションを適用
+            document.querySelectorAll('.fade-in').forEach(el => {
+                if (!el.style.animationDelay) {
+                    el.style.animationDelay = '0.2s';
+                }
+            });
+            
+            observeElements();
         });
-        loadUpdates();
     });
     </script>
 </body>

@@ -1,0 +1,293 @@
+/* 更新履歴ページ用CSS */
+
+/* 基本変数 */
+:root {
+  --primary-color: #4f46e5;
+  --primary-light: #6366f1;
+  --primary-dark: #4338ca;
+  --secondary-color: #10b981;
+  --accent-color: #f43f5e;
+  --warning-color: #f59e0b;
+  --text-color: #1f2937;
+  --text-light: #6b7280;
+  --light-color: #f9fafb;
+  --dark-color: #111827;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --white: #ffffff;
+  
+  /* 新しい更新履歴用の色 */
+  --update-bg: linear-gradient(120deg, #f8fafc 0%, #e0e7ef 100%);
+  --update-card-bg: #ffffff;
+  --update-header-bg: #1976d2;
+  --update-hover-bg: #f0f8ff;
+  --update-border: #eaeef3;
+  --update-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+  --update-accent: #4f8cff;
+  
+  /* アニメーション */
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* レイアウト */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --border-radius-sm: 0.375rem;
+  --border-radius: 0.5rem;
+  --border-radius-lg: 1rem;
+}
+
+/* ベース設定 */
+body {
+  background: var(--update-bg);
+  animation: fadeInBg 1.2s;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.6;
+  color: var(--text-color);
+}
+
+/* コンテナ */
+.container {
+  width: 90%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* ヘッダー */
+header {
+  background: var(--update-header-bg);
+  color: var(--white);
+  padding: 1.2em 0 1em 0;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header a {
+  color: var(--white);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+header a:hover {
+  text-decoration: underline;
+  opacity: 0.9;
+}
+
+/* メインコンテンツ */
+main {
+  padding: 2rem 0;
+}
+
+/* ヒーローセクション */
+.hero {
+  text-align: center;
+  margin: 2rem 0 3rem;
+}
+
+.hero h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(90deg, var(--update-header-bg), var(--update-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero p {
+  font-size: 1.1rem;
+  color: var(--text-light);
+  max-width: 36rem;
+  margin: 0 auto;
+}
+
+/* セクション */
+.section {
+  margin-bottom: 3rem;
+}
+
+.section h2 {
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+  border-left: 5px solid var(--update-accent);
+  padding-left: 0.8em;
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+/* 更新履歴テーブル */
+.update-history {
+  width: 100%;
+  background: var(--update-card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--update-shadow);
+  overflow: hidden;
+  border-collapse: collapse;
+  margin-top: 1.5rem;
+  border: 1px solid var(--update-border);
+}
+
+.update-history th, 
+.update-history td {
+  padding: 1.2rem;
+  text-align: left;
+  border-bottom: 1px solid var(--update-border);
+}
+
+.update-history th {
+  font-weight: 600;
+  background: var(--gray-100);
+  color: var(--text-color);
+}
+
+.update-history tr:last-child td {
+  border-bottom: none;
+}
+
+.update-history tbody tr {
+  transition: var(--transition);
+}
+
+.update-history tbody tr:hover {
+  background: var(--update-hover-bg);
+}
+
+/* バージョン列のスタイル */
+.update-history td:nth-child(2) {
+  font-family: "SF Mono", "Consolas", monospace;
+  color: var(--update-accent);
+  font-weight: 500;
+}
+
+/* アニメーション */
+@keyframes fadeInBg {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.container.fade-in {
+  animation: slideUp 0.8s cubic-bezier(.4, 0.2, .6, 1) 0.1s both;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.fade-in {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 更新ステータスバッジ */
+.version-badge {
+  display: inline-block;
+  padding: 0.2em 0.6em;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.8em;
+  font-weight: 500;
+  text-transform: uppercase;
+  margin-left: 0.5em;
+  vertical-align: middle;
+}
+
+.badge-stable {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.badge-beta {
+  background-color: var(--warning-color);
+  color: white;
+}
+
+.badge-alpha {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+/* フッター */
+footer {
+  background: var(--gray-100);
+  padding: 2rem 0;
+  margin-top: 3rem;
+  border-top: 1px solid var(--gray-200);
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-links a {
+  margin-left: 1.5em;
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+.footer-links a:hover {
+  color: var(--primary-color);
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+  .hero h1 {
+    font-size: 1.8rem;
+  }
+  
+  .hero p {
+    font-size: 1rem;
+  }
+  
+  .section h2 {
+    font-size: 1.2rem;
+  }
+  
+  .update-history th, 
+  .update-history td {
+    padding: 1rem 0.8rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .update-history th, 
+  .update-history td {
+    padding: 0.8rem 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .footer-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .footer-links {
+    margin-top: 1rem;
+  }
+  
+  .footer-links a {
+    margin: 0 0.75em;
+  }
+}
