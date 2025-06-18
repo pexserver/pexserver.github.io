@@ -273,5 +273,21 @@
     "platform": "windows",
     "categoryType": "other",
     "downloadUrl": "https://drive.google.com/file/d/1ZfeOE0b2hlESb0Ettqnfp5qumXDsTiCQ/view?usp=drive_link"
+  },
+  "tool19": {
+    "appID": "93fec98a-fda4-49da-9ca8-44d77020212e",
+    "title": "PEX Config manager",
+    "image": "https://pexserver.github.io/lib/Image/PEXConfigManager-gui/main.png",
+    "imageLarge": "https://pexserver.github.io/lib/Image/PEXConfigManager-gui/list.png",
+    "version": "1.0.0",
+    "updated": "2025-06-04",
+    "descriptionMarkdown": "PEXtool Config Managerは、Windows上でPEXtoolにインストールされているツールをスキャン・管理するためのTauriアプリケーションです。ElectronアプリやInno Setupアプリの情報を自動的に解析し、アンインストーラーの有無やアプリケーションファイルの詳細も取得できます。",
+    "description": "<p>PEXtool Config Managerは、Windows上でPEXtoolにインストールされているツールをスキャン・管理するためのTauriアプリケーションです。ElectronアプリやInno Setupアプリの情報を自動的に解析し、アンインストーラーの有無やアプリケーションファイルの詳細も取得できます。</p>\n",
+    "detailedDescriptionMarkdown": "## 主な機能\n- PEXtoolディレクトリの自動検出\n- 各ツールの詳細情報（名前、バージョン、説明、種別、アンインストーラー有無など）の取得\n- ディレクトリ内のアプリケーションファイル（exe, dll, sys, ocx）のスキャン\n- ElectronアプリやInno Setupアプリの自動判別\n- Next.js + Reactによるフロントエンド、Rust + Tauriによるバックエンド",
+    "detailedDescription": "<h2>主な機能</h2>\n<ul>\n<li>PEXtoolディレクトリの自動検出</li>\n<li>各ツールの詳細情報（名前、バージョン、説明、種別、アンインストーラー有無など）の取得</li>\n<li>ディレクトリ内のアプリケーションファイル（exe, dll, sys, ocx）のスキャン</li>\n<li>ElectronアプリやInno Setupアプリの自動判別</li>\n<li>Next.js + Reactによるフロントエンド、Rust + Tauriによるバックエンド</li>\n</ul>\n",
+    "docsUrl": "./File/NotFound/index.html",
+    "platform": "windows",
+    "categoryType": "minecraft",
+    "downloadUrl": "https://github.com/pexserver/pextool/raw/refs/heads/main/PEXConfig_Installer.exe"
   }
 }
