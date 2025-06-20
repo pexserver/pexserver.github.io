@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![PEXserver Logo](https://via.placeholder.com/200x80/4A90E2/FFFFFF?text=PEXserver)
+![PEXserver Logo](https://avatars.githubusercontent.com/u/208225366?s=200&v=4)
 
 **次世代のサーバー管理プラットフォーム**
 
