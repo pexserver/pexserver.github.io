@@ -27,7 +27,7 @@ export var YoutubeVideoType;
     YoutubeVideoType["Unknown"] = "unknown";
 })(YoutubeVideoType || (YoutubeVideoType = {}));
 function proxiedFetch(url, ...args) {
-    const proxiedUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    const proxiedUrl = `https://thingproxy.freeboard.io/fetch/${encodeURIComponent(url)}`;
     return fetch(proxiedUrl, ...args);
 }
 function getDirectChildText(entry, tag) {

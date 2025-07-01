@@ -44,7 +44,7 @@ export interface YoutubeVideoDetail extends YoutubeVideoInfo {
 }
 
 function proxiedFetch(url: string, ...args: any[]) {
-  const proxiedUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+  const proxiedUrl = `https://thingproxy.freeboard.io/fetch/${encodeURIComponent(url)}`;
   return fetch(proxiedUrl, ...args);
 }
 
