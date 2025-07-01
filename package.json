@@ -22,10 +22,15 @@
   },
   "homepage": "https://github.com/pexserver/.github#readme",
   "devDependencies": {
+    "@types/express": "^5.0.3",
     "@types/node": "^22.15.21",
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "bun": "^1.2.13"
+    "@types/node-fetch": "^2.6.12",
+    "bun": "^1.2.13",
+    "express": "^5.1.0",
+    "node-fetch": "^3.3.2",
+    "rss-parser": "^3.13.0"
   }
 }
