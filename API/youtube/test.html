@@ -1,54 +1,94 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YouTube RSS API Web版テスト</title>
-  <style>
-    body { font-family: sans-serif; margin: 2em; }
-    input, button { font-size: 1em; }
-    pre { background: #f4f4f4; padding: 1em; border-radius: 6px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube RSS API Web版テスト</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2em;
+        }
+
+        input,
+        button {
+            font-size: 1em;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 1em;
+            border-radius: 6px;
+        }
+    </style>
 </head>
+
 <body>
-  <h1>YouTube RSS API Web版テスト</h1>
-  <label>チャンネルURLまたはID: <input id="channelInput" size="40" value="UC_x5XG1OV2P6uZZ5FSM9Ttw"></label>
-  <button id="fetchBtn">取得</button>
-  <div id="result"></div>
-  <script type="module">
-    import { YoutubeRssApi, YoutubeVideoType } from './webVer.js';
-    const api = new YoutubeRssApi(true);
-    document.getElementById('fetchBtn').onclick = async () => {
-      const input = document.getElementById('channelInput').value.trim();
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = 'Loading...';
-      let channelId = input;
-      if (!/^UC[A-Za-z0-9_-]+$/.test(input)) {
-        channelId = await api.extractChannelId(input) || '';
-      }
-      if (!channelId) {
-        resultDiv.innerHTML = '<b>チャンネルID抽出失敗</b>';
-        return;
-      }
-      const channelName = await api.getChannelName(channelId);
-      const ownerImage = await api.getChannelOwnerImage(channelId);
-      const details = await api.getLatestVideosWithDetails(channelId);
-      const shorts = details.filter(v => v.type === YoutubeVideoType.Shorts);
-      const normal = details.filter(v => v.type === YoutubeVideoType.Normal);
-      const live = details.filter(v => v.type === YoutubeVideoType.IsLive);
-      const liveContents = details.filter(v => v.type === YoutubeVideoType.LiveContents);
-      resultDiv.innerHTML = `
+    <h1>YouTube RSS API Web版テスト</h1>
+    <label>チャンネルURLまたはID: <input id="channelInput" size="40" value="https://www.youtube.com/@PEXkoukunn"></label>
+    <button id="fetchBtn">取得</button>
+    <div id="result"></div>
+    <script type="module">
+        import { YoutubeRssApi, YoutubeVideoType } from './webVer.js';
+        const api = new YoutubeRssApi(true);
+        document.getElementById('fetchBtn').onclick = async () => {
+            const input = document.getElementById('channelInput').value.trim();
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Loading...';
+            let channelId = input;
+            if (!/^UC[A-Za-z0-9_-]+$/.test(input)) {
+                channelId = await api.extractChannelId(input) || '';
+            }
+            if (!channelId) {
+                resultDiv.innerHTML = '<b>チャンネルID抽出失敗</b>';
+                return;
+            }
+            const channelName = await api.getChannelName(channelId);
+            const ownerImage = await api.getChannelOwnerImage(channelId);
+            const details = await api.getLatestVideosWithDetails(channelId);
+            const shorts = details.filter(v => v.type === YoutubeVideoType.Shorts);
+            const normal = details.filter(v => v.type === YoutubeVideoType.Normal);
+            const live = details.filter(v => v.type === YoutubeVideoType.IsLive);
+            const liveContents = details.filter(v => v.type === YoutubeVideoType.LiveContents);
+
+            // 各カテゴリの最新動画（1件）を取得
+            const latestByType = [
+                { label: 'Shorts', arr: shorts },
+                { label: 'Normal', arr: normal },
+                { label: 'Live', arr: live },
+                { label: 'LiveContents', arr: liveContents },
+            ];
+            let latestHtml = '<div style="display:flex;gap:2em;flex-wrap:wrap;margin-bottom:1em;">';
+            for (const cat of latestByType) {
+                if (cat.arr.length > 0) {
+                    const v = cat.arr[0];
+                    latestHtml += `<div style="min-width:180px;max-width:220px;">
+                        <b>${cat.label} 最新</b><br>
+                        <a href="${v.url}" target="_blank">
+                            <img src="${v.imageUrl}" alt="thumb" style="width:100%;max-width:200px;border-radius:8px;">
+                        </a><br>
+                        <span style="font-size:0.95em;font-weight:bold;">${v.title || '(タイトルなし)'}</span><br>
+                        <span style="font-size:0.9em;color:#666;">${v.author || ''}</span>
+                    </div>`;
+                }
+            }
+            latestHtml += '</div>';
+
+            resultDiv.innerHTML = `
         <b>Channel ID:</b> ${channelId}<br>
         <b>Channel Name:</b> ${channelName || ''}<br>
         <b>Owner Image:</b> ${ownerImage ? `<img src="${ownerImage}" width="48">` : ''}<br>
         <b>API Version:</b> ${YoutubeRssApi.version}<br>
-        <b>Shorts:</b> ${shorts.length}<br>
-        <b>Normal:</b> ${normal.length}<br>
-        <b>Live:</b> ${live.length}<br>
+        <b>Shorts:</b> ${shorts.length}　
+        <b>Normal:</b> ${normal.length}　
+        <b>Live:</b> ${live.length}　
         <b>LiveContents:</b> ${liveContents.length}<br>
+        ${latestHtml}
         <details><summary>全動画詳細(JSON)</summary><pre>${JSON.stringify(details, null, 2)}</pre></details>
       `;
-    };
-  </script>
+        };
+    </script>
 </body>
+
 </html>

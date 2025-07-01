@@ -1,3 +1,17 @@
+/**
+ * YouTube RSS/HTML APIユーティリティ（Webブラウザ用ESModule版）
+ * 
+ * - CORS制限回避のため全リクエストをcorsproxy.io経由でfetch
+ * - Node依存なし（fetch/DOMParserのみ使用）
+ * - TypeScript/Python共通API設計・型・判定ロジックを踏襲
+ * - YouTube動画の分類（Shorts/通常/ライブ/ライブアーカイブ）・ライブ状態判定
+ * - サムネイル・チャンネルオーナー画像・バージョン情報も取得可能
+ * - ブラウザでの利用・テストHTMLに最適化
+ * 
+ * @module YoutubeRssApi (webVer.ts)
+ * @see https://github.com/pexserver/pexserver.github.io/tree/main/API/youtube
+ */
+
 export enum YoutubeLiveStatus {
   None = 'none',
   Upcoming = 'upcoming',
@@ -29,6 +43,64 @@ export interface YoutubeVideoDetail extends YoutubeVideoInfo {
   imageUrl?: string;
 }
 
+function proxiedFetch(url: string, ...args: any[]) {
+  const proxiedUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+  return fetch(proxiedUrl, ...args);
+}
+
+function getDirectChildText(entry: Element, tag: string): string {
+  for (const node of Array.from(entry.childNodes)) {
+    if (node.nodeType === 1 && (node as Element).tagName === tag) {
+      const text = (node as Element).textContent || '';
+      if ((window as any).debugMode) console.log(`[DEBUG] getDirectChildText(${tag}):`, text);
+      return text;
+    }
+  }
+  return '';
+}
+
+function parseYoutubeRssEntry(entry: Element): YoutubeVideoInfo {
+  // videoId取得（yt:videoId, videoId両対応）
+  const videoId = entry.getElementsByTagName('yt:videoId')[0]?.textContent
+    || entry.getElementsByTagName('videoId')[0]?.textContent
+    || '';
+  const title = getDirectChildText(entry, 'title');
+  const author = entry.getElementsByTagName('author')[0]?.getElementsByTagName('name')[0]?.textContent || '';
+  const published = getDirectChildText(entry, 'published');
+  const linkElem = Array.from(entry.childNodes).find(
+    n => n.nodeType === 1 && (n as Element).tagName === 'link'
+  ) as Element | undefined;
+  const url = linkElem?.getAttribute('href') || '';
+  // type判定（現状通り）
+  let type = YoutubeVideoType.Unknown;
+  if (url.includes('/shorts/')) {
+    type = YoutubeVideoType.Shorts;
+  } else {
+    // media:groupのdescriptionやtitleも参照
+    const mediaGroup = entry.getElementsByTagName('media:group')[0] || entry.getElementsByTagName('group')[0];
+    const mediaTitle = mediaGroup?.getElementsByTagName('media:title')[0]?.textContent
+      || mediaGroup?.getElementsByTagName('title')[0]?.textContent || '';
+    const mediaDescription = mediaGroup?.getElementsByTagName('media:description')[0]?.textContent
+      || mediaGroup?.getElementsByTagName('description')[0]?.textContent || '';
+    if (/ライブ|配信|生放送|live/i.test(title) || /ライブ|配信|生放送|live/i.test(mediaTitle) || /ライブ|配信|生放送|live/i.test(mediaDescription)) {
+      type = YoutubeVideoType.LiveContents;
+    } else {
+      type = YoutubeVideoType.Normal;
+    }
+  }
+  if ((window as any).debugMode) {
+    console.log('[DEBUG] parseYoutubeRssEntry', { videoId, title, author, published, url, type });
+  }
+  return {
+    videoId,
+    title,
+    author,
+    published,
+    url,
+    type,
+  };
+}
+
 export class YoutubeRssApi {
   static readonly version = '1.0.0';
   public debugMode: boolean;
@@ -56,7 +128,7 @@ export class YoutubeRssApi {
 
   async extractChannelIdFromHtml(url: string): Promise<string | null> {
     try {
-      const res = await fetch(url);
+      const res = await proxiedFetch(url);
       if (!res.ok) return null;
       const html = await res.text();
       const m1 = html.match(/"channelId":"(UC[^"]+)"/);
@@ -70,7 +142,7 @@ export class YoutubeRssApi {
   async getChannelName(channelId: string): Promise<string | null> {
     const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
     try {
-      const res = await fetch(feedUrl);
+      const res = await proxiedFetch(feedUrl);
       if (!res.ok) return null;
       const xml = await res.text();
       const doc = new DOMParser().parseFromString(xml, 'application/xml');
@@ -84,26 +156,13 @@ export class YoutubeRssApi {
   async getLatestVideos(channelId: string): Promise<YoutubeVideoInfo[] | null> {
     const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
     try {
-      const res = await fetch(feedUrl);
+      const res = await proxiedFetch(feedUrl);
       if (!res.ok) return null;
       const xml = await res.text();
       const doc = new DOMParser().parseFromString(xml, 'application/xml');
       const entries = Array.from(doc.querySelectorAll('entry'));
-      return entries.map(entry => {
-        const videoId = entry.querySelector('yt\\:videoId, videoId')?.textContent || '';
-        const url = entry.querySelector('link')?.getAttribute('href') || '';
-        let type = YoutubeVideoType.Unknown;
-        if (url.includes('/shorts/')) type = YoutubeVideoType.Shorts;
-        else type = YoutubeVideoType.Normal;
-        return {
-          videoId,
-          title: entry.querySelector('title')?.textContent || '',
-          author: entry.querySelector('author > name')?.textContent || '',
-          published: entry.querySelector('published')?.textContent || '',
-          url,
-          type,
-        };
-      });
+      // index.ts同等のtype判定を行う独自関数で解析
+      return entries.map(entry => parseYoutubeRssEntry(entry));
     } catch {
       return null;
     }
@@ -112,7 +171,7 @@ export class YoutubeRssApi {
   async getLiveStatus(videoId: string): Promise<YoutubeLiveStatus> {
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
     try {
-      const res = await fetch(videoUrl);
+      const res = await proxiedFetch(videoUrl);
       if (!res.ok) return YoutubeLiveStatus.None;
       const html = await res.text();
       if (html.includes('"isLive":true') || html.includes('"liveBroadcastContent":"live"')) return YoutubeLiveStatus.Live;
@@ -127,7 +186,7 @@ export class YoutubeRssApi {
   async getVideoDetail(videoId: string): Promise<YoutubeVideoDetail | null> {
     const url = `https://www.youtube.com/watch?v=${videoId}`;
     try {
-      const res = await fetch(url);
+      const res = await proxiedFetch(url);
       if (!res.ok) return null;
       const html = await res.text();
       const title = html.match(/<title>(.*?)<\/title>/)?.[1]?.replace(' - YouTube', '') || '';
@@ -225,7 +284,7 @@ export class YoutubeRssApi {
   async getChannelOwnerImage(channelId: string): Promise<string | null> {
     const url = `https://www.youtube.com/channel/${channelId}`;
     try {
-      const res = await fetch(url);
+      const res = await proxiedFetch(url);
       if (!res.ok) return null;
       const html = await res.text();
       const m = html.match(/<meta property="og:image" content="([^"]+)"/);

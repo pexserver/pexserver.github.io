@@ -1,3 +1,17 @@
+/**
+ * YouTube RSS/HTML APIユーティリティ（Node.js用TypeScript版）
+ *
+ * - Node.js環境向け（rss-parser, node-fetch利用）
+ * - TypeScript/Python共通API設計・型・判定ロジックを踏襲
+ * - YouTube動画の分類（Shorts/通常/ライブ/ライブアーカイブ）・ライブ状態判定
+ * - サムネイル・チャンネルオーナー画像・バージョン情報も取得可能
+ * - 強力な型定義・拡張性・デバッグモード対応
+ * - Web/ブラウザ用ESModule版（webVer.ts）とも仕様互換
+ *
+ * @module YoutubeRssApi (index.ts)
+ * @see https://github.com/pexserver/pexserver.github.io/tree/main/API/youtube
+ */
+
 import Parser from 'rss-parser';
 import fetch from 'node-fetch';
 
