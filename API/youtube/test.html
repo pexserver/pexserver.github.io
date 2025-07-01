@@ -37,56 +37,77 @@
             const resultDiv = document.getElementById('result');
             resultDiv.innerHTML = 'Loading...';
             let channelId = input;
-            if (!/^UC[A-Za-z0-9_-]+$/.test(input)) {
-                channelId = await api.extractChannelId(input) || '';
-            }
-            if (!channelId) {
-                resultDiv.innerHTML = '<b>チャンネルID抽出失敗</b>';
-                return;
-            }
-            const channelName = await api.getChannelName(channelId);
-            const ownerImage = await api.getChannelOwnerImage(channelId);
-            const details = await api.getLatestVideosWithDetails(channelId);
-            const shorts = details.filter(v => v.type === YoutubeVideoType.Shorts);
-            const normal = details.filter(v => v.type === YoutubeVideoType.Normal);
-            const live = details.filter(v => v.type === YoutubeVideoType.IsLive);
-            const liveContents = details.filter(v => v.type === YoutubeVideoType.LiveContents);
-
-            // 各カテゴリの最新動画（1件）を取得
-            const latestByType = [
-                { label: 'Shorts', arr: shorts },
-                { label: 'Normal', arr: normal },
-                { label: 'Live', arr: live },
-                { label: 'LiveContents', arr: liveContents },
-            ];
-            let latestHtml = '<div style="display:flex;gap:2em;flex-wrap:wrap;margin-bottom:1em;">';
-            for (const cat of latestByType) {
-                if (cat.arr.length > 0) {
-                    const v = cat.arr[0];
-                    latestHtml += `<div style="min-width:180px;max-width:220px;">
-                        <b>${cat.label} 最新</b><br>
-                        <a href="${v.url}" target="_blank">
-                            <img src="${v.imageUrl}" alt="thumb" style="width:100%;max-width:200px;border-radius:8px;">
-                        </a><br>
-                        <span style="font-size:0.95em;font-weight:bold;">${v.title || '(タイトルなし)'}</span><br>
-                        <span style="font-size:0.9em;color:#666;">${v.author || ''}</span>
-                    </div>`;
+            let errorMsg = '';
+            try {
+                console.log('[DEBUG] 入力値:', input);
+                if (!/^UC[A-Za-z0-9_-]+$/.test(input)) {
+                    channelId = await api.extractChannelId(input) || '';
+                    console.log('[DEBUG] extractChannelId結果:', channelId);
                 }
-            }
-            latestHtml += '</div>';
+                if (!channelId) {
+                    errorMsg = 'チャンネルID抽出失敗';
+                    throw new Error(errorMsg);
+                }
+                const channelName = await api.getChannelName(channelId);
+                console.log('[DEBUG] getChannelName:', channelName);
+                const ownerImage = await api.getChannelOwnerImage(channelId);
+                console.log('[DEBUG] getChannelOwnerImage:', ownerImage);
+                const details = await api.getLatestVideosWithDetails(channelId);
+                console.log('[DEBUG] getLatestVideosWithDetails:', details);
+                const shorts = details.filter(v => v.type === YoutubeVideoType.Shorts);
+                const normal = details.filter(v => v.type === YoutubeVideoType.Normal);
+                const live = details.filter(v => v.type === YoutubeVideoType.IsLive);
+                const liveContents = details.filter(v => v.type === YoutubeVideoType.LiveContents);
+                console.log('[DEBUG] shorts:', shorts);
+                console.log('[DEBUG] normal:', normal);
+                console.log('[DEBUG] live:', live);
+                console.log('[DEBUG] liveContents:', liveContents);
 
-            resultDiv.innerHTML = `
-        <b>Channel ID:</b> ${channelId}<br>
-        <b>Channel Name:</b> ${channelName || ''}<br>
-        <b>Owner Image:</b> ${ownerImage ? `<img src="${ownerImage}" width="48">` : ''}<br>
-        <b>API Version:</b> ${YoutubeRssApi.version}<br>
-        <b>Shorts:</b> ${shorts.length}　
-        <b>Normal:</b> ${normal.length}　
-        <b>Live:</b> ${live.length}　
-        <b>LiveContents:</b> ${liveContents.length}<br>
-        ${latestHtml}
-        <details><summary>全動画詳細(JSON)</summary><pre>${JSON.stringify(details, null, 2)}</pre></details>
-      `;
+                // 各カテゴリの最新動画（1件）を取得
+                const latestByType = [
+                    { label: 'Shorts', arr: shorts },
+                    { label: 'Normal', arr: normal },
+                    { label: 'Live', arr: live },
+                    { label: 'LiveContents', arr: liveContents },
+                ];
+                let latestHtml = '<div style="display:flex;gap:2em;flex-wrap:wrap;margin-bottom:1em;">';
+                for (const cat of latestByType) {
+                    if (cat.arr.length > 0) {
+                        const v = cat.arr[0];
+                        latestHtml += `<div style="min-width:180px;max-width:220px;">
+                            <b>${cat.label} 最新</b><br>
+                            <a href="${v.url}" target="_blank">
+                                <img src="${v.imageUrl}" alt="thumb" style="width:100%;max-width:200px;border-radius:8px;">
+                            </a><br>
+                            <span style="font-size:0.95em;font-weight:bold;">${v.title || '(タイトルなし)'}</span><br>
+                            <span style="font-size:0.9em;color:#666;">${v.author || ''}</span>
+                        </div>`;
+                    }
+                }
+                latestHtml += '</div>';
+
+                let videoSummary = '';
+                if (shorts.length + normal.length + live.length + liveContents.length === 0) {
+                    videoSummary = '<span style="color:#c00;font-weight:bold;">動画が見つかりませんでした。</span><br>';
+                }
+
+                resultDiv.innerHTML = `
+            <b>Channel ID:</b> ${channelId}<br>
+            <b>Channel Name:</b> ${channelName || '<span style=\'color:#c00\'>(取得失敗)</span>'}<br>
+            <b>Owner Image:</b> ${ownerImage ? `<img src="${ownerImage}" width="48">` : '<span style=\'color:#c00\'>(取得失敗)</span>'}<br>
+            <b>API Version:</b> ${YoutubeRssApi.version}<br>
+            <b>Shorts:</b> ${shorts.length}　
+            <b>Normal:</b> ${normal.length}　
+            <b>Live:</b> ${live.length}　
+            <b>LiveContents:</b> ${liveContents.length}<br>
+            ${videoSummary}
+            ${latestHtml}
+            <details><summary>全動画詳細(JSON)</summary><pre>${JSON.stringify(details, null, 2)}</pre></details>
+          `;
+            } catch (e) {
+                resultDiv.innerHTML = `<span style="color:#c00;font-weight:bold;">エラー: ${errorMsg || e.message}</span>`;
+                console.error(e);
+            }
         };
     </script>
 </body>

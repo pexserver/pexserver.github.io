@@ -27,7 +27,7 @@ export var YoutubeVideoType;
     YoutubeVideoType["Unknown"] = "unknown";
 })(YoutubeVideoType || (YoutubeVideoType = {}));
 function proxiedFetch(url, ...args) {
-    const proxiedUrl = `https://thingproxy.freeboard.io/fetch/${encodeURIComponent(url)}`;
+    const proxiedUrl = `https://script.google.com/macros/s/AKfycbzX-Cl7PlS23kE8SeUp2Ya3CwV-VS_-XyDOoj4vpIT38nolAb_8OXV-HD7NpThb3d1P0g/exec?url=${encodeURIComponent(url)}`;
     return fetch(proxiedUrl, ...args);
 }
 function getDirectChildText(entry, tag) {
@@ -41,37 +41,84 @@ function getDirectChildText(entry, tag) {
     }
     return '';
 }
+// 名前空間対応の直下テキスト取得
+function getDirectChildTextNS(entry, ns, tag) {
+    for (const node of Array.from(entry.childNodes)) {
+        if (node.nodeType === 1 && node.localName === tag && node.namespaceURI === ns) {
+            const text = node.textContent || '';
+            if (window.debugMode)
+                console.log(`[DEBUG] getDirectChildTextNS(${tag}):`, text);
+            return text;
+        }
+    }
+    return '';
+}
 function parseYoutubeRssEntry(entry) {
-    // videoId取得（yt:videoId, videoId両対応）
-    const videoId = entry.getElementsByTagName('yt:videoId')[0]?.textContent
-        || entry.getElementsByTagName('videoId')[0]?.textContent
-        || '';
-    const title = getDirectChildText(entry, 'title');
-    const author = entry.getElementsByTagName('author')[0]?.getElementsByTagName('name')[0]?.textContent || '';
-    const published = getDirectChildText(entry, 'published');
-    const linkElem = Array.from(entry.childNodes).find(n => n.nodeType === 1 && n.tagName === 'link');
-    const url = linkElem?.getAttribute('href') || '';
-    // type判定（現状通り）
-    let type = YoutubeVideoType.Unknown;
-    if (url.includes('/shorts/')) {
-        type = YoutubeVideoType.Shorts;
+    // title: entry直下の<title>
+    let title = '';
+    for (const node of Array.from(entry.childNodes)) {
+        if (node.nodeType === 1 && node.tagName === 'title') {
+            title = node.textContent || '';
+            break;
+        }
+    }
+    // author: entry直下の<author><name>
+    let author = '';
+    for (const node of Array.from(entry.childNodes)) {
+        if (node.nodeType === 1 && node.tagName === 'author') {
+            for (const n2 of Array.from(node.childNodes)) {
+                if (n2.nodeType === 1 && n2.tagName === 'name') {
+                    author = n2.textContent || '';
+                    break;
+                }
+            }
+            break;
+        }
+    }
+    // published: entry直下の<published>
+    let published = '';
+    for (const node of Array.from(entry.childNodes)) {
+        if (node.nodeType === 1 && node.tagName === 'published') {
+            published = node.textContent || '';
+            break;
+        }
+    }
+    // videoId: <yt:videoId>または<videoId>
+    let videoId = '';
+    const videoIdElem = entry.getElementsByTagName('yt:videoId')[0] || entry.getElementsByTagName('videoId')[0];
+    if (videoIdElem) {
+        videoId = WebPaser.getDirectText(videoIdElem);
     }
     else {
-        // media:groupのdescriptionやtitleも参照
-        const mediaGroup = entry.getElementsByTagName('media:group')[0] || entry.getElementsByTagName('group')[0];
-        const mediaTitle = mediaGroup?.getElementsByTagName('media:title')[0]?.textContent
-            || mediaGroup?.getElementsByTagName('title')[0]?.textContent || '';
-        const mediaDescription = mediaGroup?.getElementsByTagName('media:description')[0]?.textContent
-            || mediaGroup?.getElementsByTagName('description')[0]?.textContent || '';
-        if (/ライブ|配信|生放送|live/i.test(title) || /ライブ|配信|生放送|live/i.test(mediaTitle) || /ライブ|配信|生放送|live/i.test(mediaDescription)) {
-            type = YoutubeVideoType.LiveContents;
-        }
-        else {
-            type = YoutubeVideoType.Normal;
+        // Atomのidからyt:video:を除去
+        const idElem = entry.getElementsByTagName('id')[0];
+        if (idElem) {
+            const idText = WebPaser.getDirectText(idElem);
+            if (idText.startsWith('yt:video:'))
+                videoId = idText.replace('yt:video:', '');
+            else
+                videoId = idText;
         }
     }
+    // url: entry直下の<link rel="alternate" href="...">
+    let url = '';
+    for (const node of Array.from(entry.childNodes)) {
+        if (node.nodeType === 1 && node.tagName === 'link') {
+            const rel = node.getAttribute('rel');
+            if (rel === 'alternate') {
+                url = node.getAttribute('href') || '';
+                break;
+            }
+        }
+    }
+    // type: urlに'/shorts/'が含まれていればShorts、そうでなければNormal
+    let type = YoutubeVideoType.Unknown;
+    if (url.includes('/shorts/'))
+        type = YoutubeVideoType.Shorts;
+    else
+        type = YoutubeVideoType.Normal;
     if (window.debugMode) {
-        console.log('[DEBUG] parseYoutubeRssEntry', { videoId, title, author, published, url, type });
+        console.log('[DEBUG] parseYoutubeRssEntry(index.ts compatible)', { videoId, title, author, published, url, type });
     }
     return {
         videoId,
@@ -81,6 +128,48 @@ function parseYoutubeRssEntry(entry) {
         url,
         type,
     };
+}
+// --- WebPaserクラスを統合 ---
+class WebPaser {
+    constructor(xmlOrHtml, type = 'xml') {
+        if (window.debugMode)
+            console.log('[WebPaser] parse start', { type, xmlOrHtml });
+        this.doc = new DOMParser().parseFromString(xmlOrHtml, type === 'xml' ? 'application/xml' : 'text/html');
+        if (window.debugMode)
+            console.log('[WebPaser] parse done', this.doc);
+    }
+    getFirstElement(tag) {
+        const elem = this.doc.getElementsByTagName(tag)[0] || null;
+        if (window.debugMode)
+            console.log(`[WebPaser] getFirstElement(${tag}):`, elem);
+        return elem;
+    }
+    getAllElements(tag) {
+        const elems = Array.from(this.doc.getElementsByTagName(tag));
+        if (window.debugMode)
+            console.log(`[WebPaser] getAllElements(${tag}):`, elems);
+        return elems;
+    }
+    static getDirectText(elem) {
+        const text = Array.from(elem.childNodes)
+            .filter(n => n.nodeType === 3)
+            .map(n => n.textContent || '')
+            .join('').trim();
+        if (window.debugMode)
+            console.log('[WebPaser] getDirectText:', text, elem);
+        return text;
+    }
+    static getAttr(elem, attr) {
+        const val = elem.getAttribute(attr);
+        if (window.debugMode)
+            console.log(`[WebPaser] getAttr(${attr}):`, val, elem);
+        return val;
+    }
+    getRootElement() {
+        if (window.debugMode)
+            console.log('[WebPaser] getRootElement:', this.doc.documentElement);
+        return this.doc.documentElement;
+    }
 }
 export class YoutubeRssApi {
     constructor(debugMode = false) {
@@ -126,9 +215,9 @@ export class YoutubeRssApi {
             if (!res.ok)
                 return null;
             const xml = await res.text();
-            const doc = new DOMParser().parseFromString(xml, 'application/xml');
-            const title = doc.querySelector('feed > title');
-            return title ? title.textContent : null;
+            const parser = new WebPaser(xml, 'xml');
+            const titleElem = parser.getFirstElement('title');
+            return titleElem ? WebPaser.getDirectText(titleElem) : null;
         }
         catch {
             return null;
@@ -141,10 +230,12 @@ export class YoutubeRssApi {
             if (!res.ok)
                 return null;
             const xml = await res.text();
-            const doc = new DOMParser().parseFromString(xml, 'application/xml');
-            const entries = Array.from(doc.querySelectorAll('entry'));
-            // index.ts同等のtype判定を行う独自関数で解析
-            return entries.map(entry => parseYoutubeRssEntry(entry));
+            if (window.debugMode)
+                console.log('[DEBUG] RSS xml:', xml);
+            const parser = new WebPaser(xml, 'xml');
+            const entryElems = parser.getAllElements('entry');
+            const videos = entryElems.map(entry => parseYoutubeRssEntry(entry));
+            return videos;
         }
         catch {
             return null;
