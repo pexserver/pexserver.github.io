@@ -30,6 +30,9 @@ async function main() {
   console.log('Normal:', normal.map(v => ({ id: v.videoId, title: v.title, type: v.type, liveStatus: v.liveStatus, imageUrl: v.imageUrl })));
   console.log('LiveContents:', liveContents.map(v => ({ id: v.videoId, title: v.title, type: v.type, liveStatus: v.liveStatus, imageUrl: v.imageUrl })));
   console.log('IsLive:', isLive.map(v => ({ id: v.videoId, title: v.title, type: v.type, liveStatus: v.liveStatus, imageUrl: v.imageUrl })));
+  
+  // APIバージョン表示
+  console.log('API Version:', YoutubeRssApi.version);
 }
 
 main().catch(console.error);
