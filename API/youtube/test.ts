@@ -1,7 +1,7 @@
 import { YoutubeRssApi, YoutubeVideoType } from './index';
 
 async function main() {
-  const api = new YoutubeRssApi(false); // debugModeをtrueに
+  const api = new YoutubeRssApi(true); // debugModeをtrueに
   const channelUrl = 'https://www.youtube.com/channel/UCue_c1nQyNwfZa2cLR4fo7g';
   const channelId = await api.extractChannelId(channelUrl);
   console.log('ChannelId:', channelId);

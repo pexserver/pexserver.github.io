@@ -44,8 +44,92 @@ export interface YoutubeVideoDetail extends YoutubeVideoInfo {
 }
 
 function proxiedFetch(url: string, ...args: any[]) {
+  // Google Apps Scriptプロキシ（メイン）
   const proxiedUrl = `https://script.google.com/macros/s/AKfycbzX-Cl7PlS23kE8SeUp2Ya3CwV-VS_-XyDOoj4vpIT38nolAb_8OXV-HD7NpThb3d1P0g/exec?url=${encodeURIComponent(url)}`;
-  return fetch(proxiedUrl, ...args);
+  
+  if ((window as any).debugMode) {
+    console.log('[DEBUG] Using proxy for URL:', url);
+    console.log('[DEBUG] Proxied URL:', proxiedUrl);
+  }
+  
+  return fetch(proxiedUrl, {
+    method: 'GET',
+    cache: 'no-cache',
+    ...args
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const text = await response.text();      if ((window as any).debugMode) {
+        console.log(`[DEBUG] Proxy response for ${url} - length:`, text.length);
+        // YouTubeページでライブ関連キーワードの存在をチェック
+        if (url.includes('youtube.com/watch')) {
+          const liveKeywords = [
+            'isLiveContent', 
+            'liveBroadcastDetails', 
+            'isLiveNow',
+            'liveBroadcastContent',
+            '"style":"LIVE"',
+            '"iconType":"LIVE"',
+            '人が視聴中',
+            'ライブ配信開始'
+          ];
+          liveKeywords.forEach(keyword => {
+            const found = text.includes(keyword);
+            console.log(`[DEBUG] Proxy response contains "${keyword}":`, found);
+          });
+        }
+      }
+    
+    return {
+      ok: true,
+      text: () => Promise.resolve(text),
+      json: () => Promise.resolve(JSON.parse(text))
+    } as Response;
+  }).catch(async (error) => {
+    if ((window as any).debugMode) {
+      console.log('[DEBUG] Primary proxy failed, trying fallback...', error);
+    }
+    
+    try {
+      // フォールバック1: allorigins.win
+      const fallbackUrl1 = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+      const fallbackRes1 = await fetch(fallbackUrl1, ...args);
+      if (fallbackRes1.ok) {
+        const data = await fallbackRes1.json();
+        return {
+          ok: true,
+          text: () => Promise.resolve(data.contents),
+          json: () => Promise.resolve(JSON.parse(data.contents))
+        } as Response;
+      }
+    } catch (fallbackError1) {
+      if ((window as any).debugMode) {
+        console.log('[DEBUG] Fallback 1 failed:', fallbackError1);
+      }
+    }
+    
+    try {
+      // フォールバック2: corsproxy.io
+      const fallbackUrl2 = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+      const fallbackRes2 = await fetch(fallbackUrl2, ...args);
+      if (fallbackRes2.ok) {
+        const text = await fallbackRes2.text();
+        return {
+          ok: true,
+          text: () => Promise.resolve(text),
+          json: () => Promise.resolve(JSON.parse(text))
+        } as Response;
+      }
+    } catch (fallbackError2) {
+      if ((window as any).debugMode) {
+        console.log('[DEBUG] Fallback 2 failed:', fallbackError2);
+      }
+    }
+    
+    throw error;
+  });
 }
 
 function getDirectChildText(entry: Element, tag: string): string {
@@ -76,7 +160,7 @@ function parseYoutubeRssEntry(entry: Element): YoutubeVideoInfo {
   let title = '';
   for (const node of Array.from(entry.childNodes)) {
     if (node.nodeType === 1 && (node as Element).tagName === 'title') {
-      title = (node as Element).textContent || '';
+      title = (node as Element).textContent?.trim() || '';
       break;
     }
   }
@@ -86,7 +170,7 @@ function parseYoutubeRssEntry(entry: Element): YoutubeVideoInfo {
     if (node.nodeType === 1 && (node as Element).tagName === 'author') {
       for (const n2 of Array.from(node.childNodes)) {
         if (n2.nodeType === 1 && (n2 as Element).tagName === 'name') {
-          author = (n2 as Element).textContent || '';
+          author = (n2 as Element).textContent?.trim() || '';
           break;
         }
       }
@@ -97,22 +181,25 @@ function parseYoutubeRssEntry(entry: Element): YoutubeVideoInfo {
   let published = '';
   for (const node of Array.from(entry.childNodes)) {
     if (node.nodeType === 1 && (node as Element).tagName === 'published') {
-      published = (node as Element).textContent || '';
+      published = (node as Element).textContent?.trim() || '';
       break;
     }
   }
-  // videoId: <yt:videoId>または<videoId>
+  // videoId: <yt:videoId>
   let videoId = '';
-  const videoIdElem = entry.getElementsByTagName('yt:videoId')[0] || entry.getElementsByTagName('videoId')[0];
+  const videoIdElem = entry.getElementsByTagName('yt:videoId')[0];
   if (videoIdElem) {
-    videoId = WebPaser.getDirectText(videoIdElem);
+    videoId = videoIdElem.textContent?.trim() || '';
   } else {
-    // Atomのidからyt:video:を除去
+    // フォールバック: <id>からyt:video:を除去
     const idElem = entry.getElementsByTagName('id')[0];
     if (idElem) {
-      const idText = WebPaser.getDirectText(idElem);
-      if (idText.startsWith('yt:video:')) videoId = idText.replace('yt:video:', '');
-      else videoId = idText;
+      const idText = idElem.textContent?.trim() || '';
+      if (idText.startsWith('yt:video:')) {
+        videoId = idText.replace('yt:video:', '');
+      } else {
+        videoId = idText;
+      }
     }
   }
   // url: entry直下の<link rel="alternate" href="...">
@@ -166,10 +253,7 @@ class WebPaser {
   }
 
   static getDirectText(elem: Element): string {
-    const text = Array.from(elem.childNodes)
-      .filter(n => n.nodeType === 3)
-      .map(n => n.textContent || '')
-      .join('').trim();
+    const text = (elem.textContent || '').trim();
     if ((window as any).debugMode) console.log('[WebPaser] getDirectText:', text, elem);
     return text;
   }
@@ -260,9 +344,64 @@ export class YoutubeRssApi {
       const res = await proxiedFetch(videoUrl);
       if (!res.ok) return YoutubeLiveStatus.None;
       const html = await res.text();
-      if (html.includes('"isLive":true') || html.includes('"liveBroadcastContent":"live"')) return YoutubeLiveStatus.Live;
-      if (html.includes('"liveBroadcastContent":"upcoming"') || html.includes('"isUpcoming":true')) return YoutubeLiveStatus.Upcoming;
-      if (html.includes('"ended":true')) return YoutubeLiveStatus.Ended;
+      
+      // より詳細なライブ配信検知パターン
+      const liveIndicators = [
+        // 基本的なライブ配信ステータス
+        '"isLive":true',
+        '"liveBroadcastContent":"live"',
+        '"isLiveNow":true',
+        // ライブ配信UI要素
+        '"style":"LIVE"',
+        '"iconType":"LIVE"',
+        // 同時視聴者数の表示
+        '人が視聴中',
+        // ライブ配信の開始時刻表示
+        'ライブ配信開始',
+        'にライブ配信開始',
+      ];
+      
+      const upcomingIndicators = [
+        '"liveBroadcastContent":"upcoming"',
+        '"isUpcoming":true',
+        '配信予定',
+        'ライブ予定',
+        '生放送予定',
+        'プレミア公開',
+        'premiere'
+      ];
+      
+      const endedIndicators = [
+        '"ended":true',
+        '"liveBroadcastContent":"none"',
+        '配信済み',
+        'に配信済み'
+      ];
+      
+      // ライブ配信中の判定
+      if (liveIndicators.some(indicator => html.includes(indicator))) {
+        if (this.debugMode) {
+          console.log(`[DEBUG] Live status detected for ${videoId}`);
+        }
+        return YoutubeLiveStatus.Live;
+      }
+      
+      // 配信予定の判定
+      if (upcomingIndicators.some(indicator => html.includes(indicator))) {
+        if (this.debugMode) {
+          console.log(`[DEBUG] Upcoming status detected for ${videoId}`);
+        }
+        return YoutubeLiveStatus.Upcoming;
+      }
+      
+      // 配信終了の判定
+      if (endedIndicators.some(indicator => html.includes(indicator))) {
+        if (this.debugMode) {
+          console.log(`[DEBUG] Ended status detected for ${videoId}`);
+        }
+        return YoutubeLiveStatus.Ended;
+      }
+      
       return YoutubeLiveStatus.None;
     } catch {
       return YoutubeLiveStatus.None;
@@ -275,25 +414,120 @@ export class YoutubeRssApi {
       const res = await proxiedFetch(url);
       if (!res.ok) return null;
       const html = await res.text();
+      
+      if (this.debugMode) {
+        console.log(`[DEBUG] getVideoDetail for ${videoId} - HTML length:`, html.length);
+        // ライブ関連のキーワードをチェック
+        const liveKeywords = [
+          'isLiveContent', 
+          'liveBroadcastDetails', 
+          'isLiveNow', 
+          'liveBroadcastContent',
+          '"style":"LIVE"',
+          '"iconType":"LIVE"',
+          '人が視聴中',
+          'ライブ配信開始',
+          '配信済み'
+        ];
+        for (const keyword of liveKeywords) {
+          const found = html.includes(keyword);
+          console.log(`[DEBUG] HTML contains "${keyword}":`, found);
+          if (found) {
+            // キーワード周辺のコンテキストを表示
+            const index = html.indexOf(keyword);
+            const context = html.substring(Math.max(0, index - 50), index + 150);
+            console.log(`[DEBUG] Context for "${keyword}":`, context);
+          }
+        }
+      }
+      
       const title = html.match(/<title>(.*?)<\/title>/)?.[1]?.replace(' - YouTube', '') || '';
       const author = html.match(/"author":"([^"]+)"/)?.[1] || '';
       const description = html.match(/"shortDescription":"([^"]+)"/)?.[1]?.replace(/\\n/g, '\n') || '';
       const thumbnailMatches = Array.from(html.matchAll(/"thumbnailUrl":"(https:\/\/i\.ytimg\.com[^"]+)"/g));
-      const thumbnails = thumbnailMatches.map(m => m[1].replace(/\\\//g, '/'));
+      const thumbnails = thumbnailMatches.map((m: any) => m[1].replace(/\\\//g, '/'));
       const imageUrl = thumbnails.length > 0 ? thumbnails[0] : `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-      // Shorts判定
+      // --- Shorts判定強化（index.tsと同じロジック） ---
       let isShorts = false;
+      // 1. URLパターン
       if (url.includes('/shorts/') || /"canonicalUrl":"https:\/\/www.youtube.com\/shorts\//.test(html)) {
         isShorts = true;
       }
+      // 2. HTML内のshortsリンクや構造
       if (!isShorts && /"shortsUrl":"https:\/\/www.youtube.com\/shorts\//.test(html)) {
         isShorts = true;
       }
-      // ライブ判定
+      // --- ライブ判定ロジック強化（index.tsと同じロジック） ---
       let isLiveContent: boolean | undefined = undefined;
       const isLiveContentMatch = html.match(/"isLiveContent"\s*:\s*(true|false)/);
       if (isLiveContentMatch) {
         isLiveContent = isLiveContentMatch[1] === 'true';
+      }
+      
+      // プロキシ経由でライブ情報が取得できない場合の代替判定
+      if (isLiveContent === undefined) {
+        // より詳細なライブ情報の検索パターンを追加
+        const liveContentPatterns = [
+          /"isLiveContent"\s*:\s*true/i,
+          /"liveBroadcastContent"\s*:\s*"live"/i,
+          /"liveBroadcastContent"\s*:\s*"upcoming"/i,
+          /"isLive"\s*:\s*true/i,
+          /"isUpcoming"\s*:\s*true/i,
+          /"ended"\s*:\s*true/i,
+          // 新しいライブ配信検知パターン
+          /"style"\s*:\s*"LIVE"/i,
+          /"iconType"\s*:\s*"LIVE"/i,
+        ];
+        
+        const hasLiveIndicators = liveContentPatterns.some(pattern => pattern.test(html));
+        
+        // UI要素からのライブ配信検知
+        const liveUIPatterns = [
+          /人が視聴中/,
+          /ライブ配信開始/,
+          /にライブ配信開始/,
+          /配信済み/,
+          /に配信済み/,
+        ];
+        
+        const hasLiveUI = liveUIPatterns.some(pattern => pattern.test(html));
+        
+        // タイトルや説明文からライブ判定を行う
+        const livePatterns = [
+          /【?ライブ配信?】?/i,
+          /【?生放送?】?/i,
+          /【?LIVE】?/i,
+          /\[LIVE\]/i,
+          /配信中/i,
+          /生配信/i,
+          /ライブ中/i,
+          /配信予定/i,
+          /ライブ予定/i,
+          /生放送予定/i,
+          /プレミア公開/i,
+          /premiere/i
+        ];
+        
+        const isLikelyLive = livePatterns.some(pattern => 
+          pattern.test(title) || pattern.test(description)
+        );
+        
+        if (hasLiveIndicators || hasLiveUI || isLikelyLive) {
+          isLiveContent = true;
+          if (this.debugMode) {
+            console.log('[DEBUG] Live content detected from patterns:', {
+              hasLiveIndicators,
+              hasLiveUI,
+              isLikelyLive,
+              title,
+              description: description.substring(0, 100)
+            });
+          }
+        }
+      }
+      
+      if (this.debugMode) {
+        console.log('[DEBUG] isLiveContent:', isLiveContent);
       }
       let liveBroadcastDetails: { isLiveNow?: boolean; startTimestamp?: string; endTimestamp?: string } = {};
       const liveBroadcastMatch = html.match(/"liveBroadcastDetails"\s*:\s*\{([^}]*)\}/);
@@ -310,7 +544,10 @@ export class YoutubeRssApi {
           };
         } catch {}
       }
-      // type判定
+      if (this.debugMode) {
+        console.log('[DEBUG] liveBroadcastDetails:', liveBroadcastDetails);
+      }
+      // type判定: shorts, isLive, liveContents, normal（index.tsと同じロジック）
       let type = YoutubeVideoType.Unknown;
       if (isShorts) {
         type = YoutubeVideoType.Shorts;
@@ -335,6 +572,9 @@ export class YoutubeRssApi {
           type = YoutubeVideoType.Normal;
         }
       }
+      if (this.debugMode) {
+        console.log('[DEBUG] type:', type);
+      }
       let liveStatus: YoutubeLiveStatus | undefined = undefined;
       if (liveBroadcastDetails.isLiveNow === true) {
         liveStatus = YoutubeLiveStatus.Live;
@@ -345,10 +585,39 @@ export class YoutubeRssApi {
           liveStatus = YoutubeLiveStatus.Upcoming;
         }
       } else if (type === YoutubeVideoType.LiveContents) {
-        liveStatus = YoutubeLiveStatus.Upcoming;
+        // LiveContentsの場合、より詳細にステータスを判定
+        
+        // ライブ配信中の判定（新しいパターンを追加）
+        const isCurrentlyLive = [
+          '"style":"LIVE"',
+          '"iconType":"LIVE"',
+          '人が視聴中',
+          'ライブ配信開始',
+          'にライブ配信開始'
+        ].some(pattern => html.includes(pattern));
+        
+        if (isCurrentlyLive) {
+          liveStatus = YoutubeLiveStatus.Live;
+        } else if (html.includes('"ended":true') || 
+                   liveBroadcastDetails.endTimestamp || 
+                   html.includes('配信済み') || 
+                   html.includes('に配信済み')) {
+          liveStatus = YoutubeLiveStatus.Ended;
+        } else if (html.includes('"isUpcoming":true') || 
+                   html.includes('"liveBroadcastContent":"upcoming"') ||
+                   html.includes('配信予定') ||
+                   html.includes('ライブ予定')) {
+          liveStatus = YoutubeLiveStatus.Upcoming;
+        } else {
+          liveStatus = YoutubeLiveStatus.Upcoming; // デフォルト
+        }
       }
+      // ライブでない場合はnoneをセット
       if (liveStatus === undefined) {
         liveStatus = YoutubeLiveStatus.None;
+      }
+      if (this.debugMode) {
+        console.log('[DEBUG] liveStatus:', liveStatus);
       }
       return {
         videoId,
@@ -379,7 +648,10 @@ export class YoutubeRssApi {
     return null;
   }
 
-  async getLatestVideosWithDetails(channelId: string, options?: { concurrency?: number }): Promise<YoutubeVideoDetail[]> {
+  async getLatestVideosWithDetails(
+    channelId: string,
+    options?: { concurrency?: number }
+  ): Promise<YoutubeVideoDetail[]> {
     const videos = await this.getLatestVideos(channelId);
     if (!videos) return [];
     const concurrency = options?.concurrency ?? 3;
@@ -387,8 +659,33 @@ export class YoutubeRssApi {
     for (let i = 0; i < videos.length; i += concurrency) {
       const chunk = videos.slice(i, i + concurrency);
       const details = await Promise.all(chunk.map(v => this.getVideoDetail(v.videoId)));
-      for (const d of details) {
-        if (d) results.push(d);
+      for (let j = 0; j < details.length; j++) {
+        const d = details[j];
+        if (d) {
+          const rssVideo = chunk[j];
+          // HTMLから詳細なtype判定を取得し、RSSのtype情報と組み合わせ（index.tsと同じ動作）
+          let finalType = d.type; // HTMLからの詳細判定を優先
+          if (rssVideo.type === YoutubeVideoType.Shorts) {
+            // RSSでShortsと判定された場合は確実にShorts
+            finalType = YoutubeVideoType.Shorts;
+          }
+          const mergedVideo: YoutubeVideoDetail = {
+            videoId: rssVideo.videoId,
+            title: rssVideo.title,
+            author: rssVideo.author,
+            published: rssVideo.published,
+            url: rssVideo.url,
+            type: finalType, // より正確なtype判定を使用
+            liveStatus: d.liveStatus, // HTMLからライブ状態を取得
+            description: d.description, // HTMLからの補完情報
+            thumbnails: d.thumbnails,
+            imageUrl: d.imageUrl,
+          };
+          results.push(mergedVideo);
+          if (this.debugMode) {
+            console.log('[DETAIL]', mergedVideo.videoId, mergedVideo.title, mergedVideo.type, mergedVideo.liveStatus);
+          }
+        }
       }
     }
     return results;

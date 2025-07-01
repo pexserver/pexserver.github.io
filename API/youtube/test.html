@@ -31,6 +31,7 @@
     <div id="result"></div>
     <script type="module">
         import { YoutubeRssApi, YoutubeVideoType } from './webVer.js';
+        window.debugMode = true; // デバッグモード有効化
         const api = new YoutubeRssApi(true);
         document.getElementById('fetchBtn').onclick = async () => {
             const input = document.getElementById('channelInput').value.trim();
