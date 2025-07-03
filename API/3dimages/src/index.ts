@@ -18,6 +18,7 @@ class SpatialSceneConverter {
     private deviceMotionEnabled: boolean = false;
     private isMobile: boolean = false;
     private baseOrientation: { beta: number; gamma: number } | null = null;
+    private deviceOrientationHandler: ((event: DeviceOrientationEvent) => void) | null = null;
 
     constructor() {
         this.originalCanvas = document.getElementById('originalCanvas') as HTMLCanvasElement;
@@ -46,11 +47,15 @@ class SpatialSceneConverter {
             if (btn) {
                 btn.style.display = 'block';
                 btn.addEventListener('click', async () => {
+                    this.logDebug('[setupDeviceMotion] enableDeviceMotion button clicked');
                     try {
                         const permission = await (DeviceOrientationEvent as any).requestPermission();
+                        this.logDebug('[setupDeviceMotion] requestPermission result:', permission);
                         if (permission === 'granted') {
                             this.startDeviceMotion();
                             btn.style.display = 'none';
+                        } else {
+                            this.logDebug('[setupDeviceMotion] Permission denied:', permission);
                         }
                     } catch (error) {
                         this.logDebug('[setupDeviceMotion] Permission error:', error);
@@ -64,9 +69,13 @@ class SpatialSceneConverter {
     }
 
     private startDeviceMotion(): void {
+        if (this.deviceOrientationHandler) {
+            window.removeEventListener('deviceorientation', this.deviceOrientationHandler);
+            this.logDebug('[startDeviceMotion] Previous deviceorientation handler removed');
+        }
         this.deviceMotionEnabled = true;
         let lastUpdate = 0;
-        window.addEventListener('deviceorientation', (event) => {
+        this.deviceOrientationHandler = (event: DeviceOrientationEvent) => {
             if (!this.spatialModeEnabled || !this.deviceMotionEnabled) return;
             // 高速連続イベントを間引き（16ms=約60fps）
             const now = Date.now();
@@ -82,6 +91,7 @@ class SpatialSceneConverter {
             // 初回時はベース値として記録
             if (!this.baseOrientation) {
                 this.baseOrientation = { beta, gamma };
+                this.logDebug('[deviceorientation] baseOrientation set:', this.baseOrientation);
                 return;
             }
             // ベース値からの差分を計算（斜め方向も含む）
@@ -96,9 +106,21 @@ class SpatialSceneConverter {
             // 慣性効果（前回値との補間で滑らかに）
             this.tiltX = this.tiltX * 0.7 + (this.tiltX || 0) * 0.3;
             this.tiltY = this.tiltY * 0.7 + (this.tiltY || 0) * 0.3;
+            this.logDebug('[deviceorientation] tiltX:', this.tiltX, 'tiltY:', this.tiltY);
             this.updateSpatialDisplay();
-        });
-        this.logDebug('[startDeviceMotion] Device motion enabled (リアル/効率化)');
+        };
+        window.addEventListener('deviceorientation', this.deviceOrientationHandler);
+        this.logDebug('[startDeviceMotion] Device motion enabled (リアル/効率化), handler registered');
+    }
+
+    private stopDeviceMotion(): void {
+        if (this.deviceOrientationHandler) {
+            window.removeEventListener('deviceorientation', this.deviceOrientationHandler);
+            this.logDebug('[stopDeviceMotion] deviceorientation handler removed');
+            this.deviceOrientationHandler = null;
+        }
+        this.deviceMotionEnabled = false;
+        this.logDebug('[stopDeviceMotion] Device motion disabled');
     }
 
     private initializeEventListeners(): void {
@@ -134,6 +156,7 @@ class SpatialSceneConverter {
         this.baseOrientation = null;
         this.updateSpatialDisplay();
         this.logDebug('[resetTilt] Tilt reset');
+        // this.stopDeviceMotion(); // ←イベント解除はしない
     }
 
     private handleMouseDown(event: MouseEvent): void {

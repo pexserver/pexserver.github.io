@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import * as url from 'node:url';
 import * as os from 'node:os';
 
-const DEFAULT_PORT = 8080;
+const DEFAULT_PORT = 80;
 const DEFAULT_ROOT_DIR = path.resolve('');
 const INDEX_FILE = 'index.html';
 
@@ -98,7 +98,7 @@ const rootDir = process.env.ROOT_DIR ? path.resolve(process.env.ROOT_DIR) : DEFA
 fs.access(rootDir, fs.constants.R_OK)
     .then(() => {
         // IPv4, IPv6両方でリッスン
-        server.listen(port, '::', () => {
+        server.listen(port, '0.0.0.0', () => {
             console.log(`\nServing directory "${rootDir}"`);
             console.log(`Server listening on:`);
             console.log(`  http://localhost:${port}`);
