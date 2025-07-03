@@ -23,14 +23,13 @@ class SpatialSceneConverter {
     constructor() {
         this.originalCanvas = document.getElementById('originalCanvas') as HTMLCanvasElement;
         this.resultCanvas = document.getElementById('resultCanvas') as HTMLCanvasElement;
-        
         this.originalCtx = this.originalCanvas.getContext('2d')!;
         this.resultCtx = this.resultCanvas.getContext('2d')!;
-        
         this.detectMobileDevice();
         this.initializeEventListeners();
         this.setupDeviceMotion();
         this.loadSampleImage();
+        this.setupFullscreen();
     }
 
     private detectMobileDevice(): void {
@@ -40,7 +39,7 @@ class SpatialSceneConverter {
 
     private setupDeviceMotion(): void {
         if (!this.isMobile) return;
-        
+
         // iOS 13+でpermission必要
         if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
             const btn = document.getElementById('enableDeviceMotion');
@@ -77,9 +76,9 @@ class SpatialSceneConverter {
         let lastUpdate = 0;
         this.deviceOrientationHandler = (event: DeviceOrientationEvent) => {
             if (!this.spatialModeEnabled || !this.deviceMotionEnabled) return;
-            // 高速連続イベントを間引き（16ms=約60fps）
+            // 10fps（100ms間隔）で間引き
             const now = Date.now();
-            if (now - lastUpdate < 16) return;
+            if (now - lastUpdate < 100) return;
             lastUpdate = now;
             // iOS/Android両対応で値を安定化
             let beta = typeof event.beta === 'number' ? event.beta : 0;
@@ -143,6 +142,9 @@ class SpatialSceneConverter {
         document.getElementById('loadSample')?.addEventListener('click', () => this.loadSampleImage());
         document.getElementById('saveResult')?.addEventListener('click', () => this.saveResult());
         document.getElementById('resetTilt')?.addEventListener('click', () => this.resetTilt());
+        document.getElementById('fullscreenSpatial')?.addEventListener('click', () => {
+            // setupFullscreenで処理
+        });
 
         // 値の更新表示
         spatialIntensity.addEventListener('input', () => {
@@ -161,7 +163,7 @@ class SpatialSceneConverter {
 
     private handleMouseDown(event: MouseEvent): void {
         if (!this.spatialModeEnabled) return;
-        
+
         this.isDragging = true;
         this.lastMousePos = { x: event.clientX, y: event.clientY };
         this.resultCanvas.style.cursor = 'grabbing';
@@ -192,11 +194,11 @@ class SpatialSceneConverter {
 
     private toggleSpatialMode(): void {
         this.spatialModeEnabled = !this.spatialModeEnabled;
-        
+
         if (this.spatialModeEnabled && this.currentImage) {
             this.generateDepthMapSpatial();
         }
-        
+
         // UI更新
         this.updateSpatialModeUI();
         this.updateSpatialDisplay();
@@ -205,7 +207,7 @@ class SpatialSceneConverter {
     private updateSpatialModeUI(): void {
         const btn = document.getElementById('enableSpatialMode');
         const indicator = document.querySelector('.spatial-indicator') as HTMLElement;
-        
+
         if (btn) {
             if (this.spatialModeEnabled) {
                 btn.textContent = '🔮 空間シーンOFF';
@@ -242,7 +244,7 @@ class SpatialSceneConverter {
         if (!this.currentImage) return;
 
         this.originalCtx.clearRect(0, 0, this.originalCanvas.width, this.originalCanvas.height);
-        
+
         // 画像を描画
         this.originalCtx.drawImage(
             this.currentImage,
@@ -255,7 +257,7 @@ class SpatialSceneConverter {
     private updateSpatialDisplay(): void {
         this.logDebug('[updateSpatialDisplay] called, spatialMode:', this.spatialModeEnabled);
         if (!this.currentImage) return;
-        
+
         if (this.spatialModeEnabled) {
             this.renderSpatialScene();
         } else {
@@ -276,7 +278,7 @@ class SpatialSceneConverter {
         if (!this.currentImage) return;
 
         this.showProgressBar();
-        
+
         const canvas = document.createElement('canvas');
         canvas.width = this.currentImage.width;
         canvas.height = this.currentImage.height;
@@ -285,11 +287,11 @@ class SpatialSceneConverter {
 
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const depthData = this.analyzeDepthFromImage(imageData);
-        
+
         this.depthMap = depthData;
         this.updateProgressBar(100);
         setTimeout(() => this.hideProgressBar(), 500);
-        
+
         this.logDebug('[generateDepthMapSpatial] completed');
     }
 
@@ -403,35 +405,35 @@ class SpatialSceneConverter {
         const height = imageData.height;
         const data = imageData.data;
         const mask = new Array(width * height).fill(false);
-        
+
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const idx = (y * width + x) * 4;
                 const linearIdx = y * width + x;
-                
+
                 const r = data[idx];
                 const g = data[idx + 1];
                 const b = data[idx + 2];
-                
+
                 // 肌色検出（人物被写体）
                 const isSkinTone = this.isSkinColor(r, g, b);
-                
+
                 // 鮮やかな色検出（物体被写体）
                 const saturation = this.getColorSaturation(r, g, b);
                 const isVividColor = saturation > 50;
-                
+
                 // 中央重要度
                 const centerX = width / 2;
                 const centerY = height / 2;
                 const distFromCenter = Math.sqrt((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY));
                 const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
                 const isCentral = (distFromCenter / maxDist) < 0.6;
-                
+
                 // 被写体判定
                 mask[linearIdx] = (isSkinTone || (isVividColor && isCentral));
             }
         }
-        
+
         // モルフォロジー処理で雑音除去
         return this.morphologyClose(mask, width, height);
     }
@@ -442,9 +444,9 @@ class SpatialSceneConverter {
         const max = Math.max(r, g, b);
         const min = Math.min(r, g, b);
         const delta = max - min;
-        
+
         if (max === 0) return false;
-        
+
         let hue = 0;
         if (delta !== 0) {
             if (max === r) {
@@ -457,14 +459,14 @@ class SpatialSceneConverter {
             hue *= 60;
             if (hue < 0) hue += 360;
         }
-        
+
         const saturation = max === 0 ? 0 : (delta / max) * 100;
         const value = (max / 255) * 100;
-        
+
         // 肌色の範囲：色相10-40度、彩度20-80%、明度30-90%
-        return (hue >= 10 && hue <= 40) && 
-               (saturation >= 20 && saturation <= 80) && 
-               (value >= 30 && value <= 90);
+        return (hue >= 10 && hue <= 40) &&
+            (saturation >= 20 && saturation <= 80) &&
+            (value >= 30 && value <= 90);
     }
 
     // 色彩度計算
@@ -486,9 +488,9 @@ class SpatialSceneConverter {
         for (let y = 1; y < height - 1; y++) {
             for (let x = 1; x < width - 1; x++) {
                 const idx = y * width + x;
-                result[idx] = mask[idx] || 
-                             mask[idx - 1] || mask[idx + 1] ||
-                             mask[idx - width] || mask[idx + width];
+                result[idx] = mask[idx] ||
+                    mask[idx - 1] || mask[idx + 1] ||
+                    mask[idx - width] || mask[idx + width];
             }
         }
         return result;
@@ -499,9 +501,9 @@ class SpatialSceneConverter {
         for (let y = 1; y < height - 1; y++) {
             for (let x = 1; x < width - 1; x++) {
                 const idx = y * width + x;
-                result[idx] = mask[idx] && 
-                             mask[idx - 1] && mask[idx + 1] &&
-                             mask[idx - width] && mask[idx + width];
+                result[idx] = mask[idx] &&
+                    mask[idx - 1] && mask[idx + 1] &&
+                    mask[idx - width] && mask[idx + width];
             }
         }
         return result;
@@ -512,42 +514,42 @@ class SpatialSceneConverter {
         const radius = Math.ceil(sigma * 3);
         const kernel = this.generateGaussianKernel(sigma);
         const result = new Float32Array(width * height);
-        
+
         // 水平方向
         const temp = new Float32Array(width * height);
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 let sum = 0;
                 let weightSum = 0;
-                
+
                 for (let i = -radius; i <= radius; i++) {
                     const xi = Math.max(0, Math.min(width - 1, x + i));
                     const weight = kernel[i + radius];
                     sum += data[y * width + xi] * weight;
                     weightSum += weight;
                 }
-                
+
                 temp[y * width + x] = sum / weightSum;
             }
         }
-        
+
         // 垂直方向
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 let sum = 0;
                 let weightSum = 0;
-                
+
                 for (let i = -radius; i <= radius; i++) {
                     const yi = Math.max(0, Math.min(height - 1, y + i));
                     const weight = kernel[i + radius];
                     sum += temp[yi * width + x] * weight;
                     weightSum += weight;
                 }
-                
+
                 result[y * width + x] = sum / weightSum;
             }
         }
-        
+
         return result;
     }
 
@@ -556,19 +558,19 @@ class SpatialSceneConverter {
         const size = radius * 2 + 1;
         const kernel = new Array(size);
         const sigma2 = sigma * sigma;
-        
+
         let sum = 0;
         for (let i = 0; i < size; i++) {
             const x = i - radius;
             kernel[i] = Math.exp(-(x * x) / (2 * sigma2));
             sum += kernel[i];
         }
-        
+
         // 正規化
         for (let i = 0; i < size; i++) {
             kernel[i] /= sum;
         }
-        
+
         return kernel;
     }
 
@@ -578,7 +580,7 @@ class SpatialSceneConverter {
             const idx = (y * width + x) * 4;
             return (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
         };
-        
+
         return getGray(x + 1, y) - getGray(x - 1, y);
     }
 
@@ -587,7 +589,7 @@ class SpatialSceneConverter {
             const idx = (y * width + x) * 4;
             return (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
         };
-        
+
         return getGray(x, y + 1) - getGray(x, y - 1);
     }
 
@@ -598,24 +600,27 @@ class SpatialSceneConverter {
 
         this.resultCtx.clearRect(0, 0, this.resultCanvas.width, this.resultCanvas.height);
 
-        const intensity = (document.getElementById('spatialIntensity') as HTMLInputElement).valueAsNumber;
-        
-        // 元画像データを取得
+        const intensity = (document.getElementById('spatialIntensity') as HTMLInputElement)?.valueAsNumber ?? 50;
+        // 端切れ防止：画像を自動拡大（パララックス最大シフト量の1.15倍）
+        const scaleMargin = 1.15;
         const sourceCanvas = document.createElement('canvas');
-        sourceCanvas.width = this.currentImage.width;
-        sourceCanvas.height = this.currentImage.height;
+        sourceCanvas.width = Math.round(this.currentImage.width * scaleMargin);
+        sourceCanvas.height = Math.round(this.currentImage.height * scaleMargin);
         const sourceCtx = sourceCanvas.getContext('2d')!;
-        sourceCtx.drawImage(this.currentImage, 0, 0);
+        sourceCtx.drawImage(
+            this.currentImage,
+            (sourceCanvas.width - this.currentImage.width) / 2,
+            (sourceCanvas.height - this.currentImage.height) / 2,
+            this.currentImage.width,
+            this.currentImage.height
+        );
         const sourceImageData = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
-        
         const scaleX = this.resultCanvas.width / sourceCanvas.width;
         const scaleY = this.resultCanvas.height / sourceCanvas.height;
-        
-        // iOS26風：視差効果で2Dから3D風に
         this.renderParallaxEffect(sourceImageData, this.depthMap, scaleX, scaleY, intensity);
     }
 
-    // iOS26風：視差効果レンダリング（逆写像・高画質）
+    // iOS26風：視差効果レンダリング（逆写像・高画質・イージング強化）
     private renderParallaxEffect(sourceImageData: ImageData, depthMap: ImageData, scaleX: number, scaleY: number, intensity: number): void {
         const width = sourceImageData.width;
         const height = sourceImageData.height;
@@ -625,13 +630,14 @@ class SpatialSceneConverter {
         const outData = outImage.data;
         const tiltX = this.tiltX;
         const tiltY = this.tiltY;
-        // Step1: 強度の推奨上限を設ける
         const recommendedMax = 40;
-        const maxIntensity = 60; // 破綻しない現実的な最大値
+        const maxIntensity = 60;
         const safeIntensity = Math.min(intensity, maxIntensity);
-        // Step2: 深度値のイージングを強化（sigmoid）
-        const sigmoid = (v: number) => 1 / (1 + Math.exp(-6 * (v - 0.5)));
-        // Step3: シフト量の最大値を画像サイズの5%に制限
+        // sigmoidイージング+三次イージングで奥行き感を強調
+        const ease = (v: number) => {
+            const s = 1 / (1 + Math.exp(-6 * (v - 0.5)));
+            return s * s * (3 - 2 * s); // sigmoid × cubic
+        };
         const maxShiftX = width * 0.05;
         const maxShiftY = height * 0.05;
         for (let outY = 0; outY < outH; outY++) {
@@ -645,20 +651,16 @@ class SpatialSceneConverter {
                     const centerY = height / 2;
                     const ix = Math.round(srcX);
                     const iy = Math.round(srcY);
-                    // 範囲外参照時は端の色で埋める
                     const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
                     const safeIx = clamp(ix, 0, width - 1);
                     const safeIy = clamp(iy, 0, height - 1);
                     const depthIndex = (safeIy * width + safeIx) * 4;
                     let depth = depthMap.data[depthIndex] / 255;
-                    // Step2: sigmoidイージング
-                    depth = sigmoid(depth);
+                    depth = ease(depth);
                     const normalizedDepth = (depth - 0.5) * 2;
-                    // Step3: パースペクティブ変形とシフト量制限
                     const persp = 1 + normalizedDepth * safeIntensity * 0.008;
                     const parallaxX = clamp(normalizedDepth * safeIntensity * 0.18 * (tiltY / 45), -maxShiftX, maxShiftX);
                     const parallaxY = clamp(normalizedDepth * safeIntensity * 0.13 * (tiltX / 45), -maxShiftY, maxShiftY);
-                    // 斜め方向の遠近感も加味
                     const diagonalEffect = Math.sqrt(tiltX * tiltX + tiltY * tiltY) / 45;
                     const extraDepthShift = clamp(normalizedDepth * diagonalEffect * safeIntensity * 0.05, -maxShiftX, maxShiftX);
                     srcX = ((xNorm - parallaxX) - centerX) / persp + centerX;
@@ -666,12 +668,10 @@ class SpatialSceneConverter {
                     srcX += extraDepthShift * (tiltY / 45) * 0.5;
                     srcY += extraDepthShift * (tiltX / 45) * 0.3;
                 }
-                // Step4: 範囲外参照時は端の色で埋める
                 const sx = Math.round(Math.max(0, Math.min(width - 1, srcX)));
                 const sy = Math.round(Math.max(0, Math.min(height - 1, srcY)));
                 const srcIdx = (sy * width + sx) * 4;
                 const outIdx = (outY * outW + outX) * 4;
-                // シャドウ効果：深度が奥ほど暗く
                 let shadow = 1.0 - (depthMap.data[(sy * width + sx) * 4] / 255) * 0.13;
                 outData[outIdx] = Math.max(0, Math.min(255, sourceImageData.data[srcIdx] * shadow));
                 outData[outIdx + 1] = Math.max(0, Math.min(255, sourceImageData.data[srcIdx + 1] * shadow));
@@ -680,7 +680,6 @@ class SpatialSceneConverter {
             }
         }
         this.resultCtx.putImageData(outImage, 0, 0);
-        // Step5: 強度が推奨上限を超えた場合は警告を表示
         if (intensity > recommendedMax) {
             const warn = document.getElementById('spatialWarning');
             if (warn) {
@@ -693,43 +692,26 @@ class SpatialSceneConverter {
         }
     }
 
-    private saveResult(): void {
-        if (!this.currentImage) return;
-
-        // 結果キャンバスをダウンロード
-        const link = document.createElement('a');
-        link.download = 'spatial_scene_result.png';
-        link.href = this.resultCanvas.toDataURL();
-        link.click();
-        
-        this.logDebug('[saveResult] 空間シーン結果を保存しました');
-    }
-
+    // サンプル画像を生成して表示
     private loadSampleImage(): void {
-        // サンプル画像を生成（グラデーション）
         const canvas = document.createElement('canvas');
         canvas.width = 400;
         canvas.height = 300;
         const ctx = canvas.getContext('2d')!;
-
         // グラデーション背景
         const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
         gradient.addColorStop(0, '#ff6b6b');
         gradient.addColorStop(0.5, '#4ecdc4');
         gradient.addColorStop(1, '#45b7d1');
-        
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // 幾何学的図形を描画
+        // 幾何学的図形
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(canvas.width * 0.3, canvas.height * 0.3, 50, 0, Math.PI * 2);
         ctx.fill();
-
         ctx.fillStyle = '#ff9f43';
         ctx.fillRect(canvas.width * 0.6, canvas.height * 0.2, 80, 80);
-
         ctx.fillStyle = '#00d2d3';
         ctx.beginPath();
         ctx.moveTo(canvas.width * 0.2, canvas.height * 0.8);
@@ -737,8 +719,7 @@ class SpatialSceneConverter {
         ctx.lineTo(canvas.width * 0.35, canvas.height * 0.9);
         ctx.closePath();
         ctx.fill();
-
-        // キャンバスから画像を作成
+        // 画像化
         const img = new Image();
         img.onload = () => {
             this.currentImage = img;
@@ -746,6 +727,69 @@ class SpatialSceneConverter {
             this.updateSpatialDisplay();
         };
         img.src = canvas.toDataURL();
+    }
+
+    // 結果キャンバスを画像として保存
+    private saveResult(): void {
+        if (!this.currentImage) return;
+        const link = document.createElement('a');
+        link.download = 'spatial_scene_result.png';
+        link.href = this.resultCanvas.toDataURL();
+        link.click();
+        this.logDebug('[saveResult] 空間シーン結果を保存しました');
+    }
+
+    // フルスクリーン切替（test.html対応）
+    private setupFullscreen(): void {
+        const btn = document.getElementById('fullscreenSpatial');
+        if (!btn && document.getElementById('resultCanvas')) {
+            // test.html用にボタンを動的追加
+            const testBtn = document.createElement('button');
+            testBtn.id = 'fullscreenSpatial';
+            testBtn.textContent = '🖥️ フルスクリーン';
+            testBtn.className = 'ios-button';
+            testBtn.style.margin = '8px 0';
+            document.getElementById('resultCanvas')!.parentElement?.insertBefore(testBtn, document.getElementById('resultCanvas'));
+        }
+        const fsBtn = document.getElementById('fullscreenSpatial');
+        if (!fsBtn) return;
+        fsBtn.addEventListener('click', () => {
+            const elem = this.resultCanvas as any;
+            const isWebkitFs = (document as any).webkitFullscreenElement;
+            if (!document.fullscreenElement && !isWebkitFs) {
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen(); // iOS Safari
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if ((document as any).webkitExitFullscreen) {
+                    (document as any).webkitExitFullscreen(); // iOS Safari
+                }
+            }
+        });
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement === this.resultCanvas) {
+                fsBtn.textContent = '⏹️ フルスクリーン解除';
+                fsBtn.classList.add('spatial-active');
+            } else {
+                fsBtn.textContent = '🖥️ フルスクリーン';
+                fsBtn.classList.remove('spatial-active');
+            }
+        });
+        // iOS Safari用: webkitfullscreenchangeイベントも監視
+        document.addEventListener('webkitfullscreenchange', () => {
+            const isFs = document.fullscreenElement === this.resultCanvas || (document as any).webkitFullscreenElement === this.resultCanvas;
+            if (isFs) {
+                fsBtn.textContent = '⏹️ フルスクリーン解除';
+                fsBtn.classList.add('spatial-active');
+            } else {
+                fsBtn.textContent = '🖥️ フルスクリーン';
+                fsBtn.classList.remove('spatial-active');
+            }
+        });
     }
 
     // 進捗バー表示

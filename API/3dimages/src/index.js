@@ -20,6 +20,7 @@ class SpatialSceneConverter {
         this.initializeEventListeners();
         this.setupDeviceMotion();
         this.loadSampleImage();
+        this.setupFullscreen();
     }
     detectMobileDevice() {
         this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -67,9 +68,9 @@ class SpatialSceneConverter {
         this.deviceOrientationHandler = (event) => {
             if (!this.spatialModeEnabled || !this.deviceMotionEnabled)
                 return;
-            // 高速連続イベントを間引き（16ms=約60fps）
+            // 10fps（100ms間隔）で間引き
             const now = Date.now();
-            if (now - lastUpdate < 16)
+            if (now - lastUpdate < 100)
                 return;
             lastUpdate = now;
             // iOS/Android両対応で値を安定化
@@ -131,6 +132,9 @@ class SpatialSceneConverter {
         document.getElementById('loadSample')?.addEventListener('click', () => this.loadSampleImage());
         document.getElementById('saveResult')?.addEventListener('click', () => this.saveResult());
         document.getElementById('resetTilt')?.addEventListener('click', () => this.resetTilt());
+        document.getElementById('fullscreenSpatial')?.addEventListener('click', () => {
+            // setupFullscreenで処理
+        });
         // 値の更新表示
         spatialIntensity.addEventListener('input', () => {
             document.getElementById('spatialValue').textContent = spatialIntensity.value;
@@ -532,20 +536,20 @@ class SpatialSceneConverter {
         if (!this.currentImage || !this.depthMap)
             return;
         this.resultCtx.clearRect(0, 0, this.resultCanvas.width, this.resultCanvas.height);
-        const intensity = document.getElementById('spatialIntensity').valueAsNumber;
-        // 元画像データを取得
+        const intensity = document.getElementById('spatialIntensity')?.valueAsNumber ?? 50;
+        // 端切れ防止：画像を自動拡大（パララックス最大シフト量の1.15倍）
+        const scaleMargin = 1.15;
         const sourceCanvas = document.createElement('canvas');
-        sourceCanvas.width = this.currentImage.width;
-        sourceCanvas.height = this.currentImage.height;
+        sourceCanvas.width = Math.round(this.currentImage.width * scaleMargin);
+        sourceCanvas.height = Math.round(this.currentImage.height * scaleMargin);
         const sourceCtx = sourceCanvas.getContext('2d');
-        sourceCtx.drawImage(this.currentImage, 0, 0);
+        sourceCtx.drawImage(this.currentImage, (sourceCanvas.width - this.currentImage.width) / 2, (sourceCanvas.height - this.currentImage.height) / 2, this.currentImage.width, this.currentImage.height);
         const sourceImageData = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
         const scaleX = this.resultCanvas.width / sourceCanvas.width;
         const scaleY = this.resultCanvas.height / sourceCanvas.height;
-        // iOS26風：視差効果で2Dから3D風に
         this.renderParallaxEffect(sourceImageData, this.depthMap, scaleX, scaleY, intensity);
     }
-    // iOS26風：視差効果レンダリング（逆写像・高画質）
+    // iOS26風：視差効果レンダリング（逆写像・高画質・イージング強化）
     renderParallaxEffect(sourceImageData, depthMap, scaleX, scaleY, intensity) {
         const width = sourceImageData.width;
         const height = sourceImageData.height;
@@ -555,13 +559,14 @@ class SpatialSceneConverter {
         const outData = outImage.data;
         const tiltX = this.tiltX;
         const tiltY = this.tiltY;
-        // Step1: 強度の推奨上限を設ける
         const recommendedMax = 40;
-        const maxIntensity = 60; // 破綻しない現実的な最大値
+        const maxIntensity = 60;
         const safeIntensity = Math.min(intensity, maxIntensity);
-        // Step2: 深度値のイージングを強化（sigmoid）
-        const sigmoid = (v) => 1 / (1 + Math.exp(-6 * (v - 0.5)));
-        // Step3: シフト量の最大値を画像サイズの5%に制限
+        // sigmoidイージング+三次イージングで奥行き感を強調
+        const ease = (v) => {
+            const s = 1 / (1 + Math.exp(-6 * (v - 0.5)));
+            return s * s * (3 - 2 * s); // sigmoid × cubic
+        };
         const maxShiftX = width * 0.05;
         const maxShiftY = height * 0.05;
         for (let outY = 0; outY < outH; outY++) {
@@ -575,20 +580,16 @@ class SpatialSceneConverter {
                     const centerY = height / 2;
                     const ix = Math.round(srcX);
                     const iy = Math.round(srcY);
-                    // 範囲外参照時は端の色で埋める
                     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
                     const safeIx = clamp(ix, 0, width - 1);
                     const safeIy = clamp(iy, 0, height - 1);
                     const depthIndex = (safeIy * width + safeIx) * 4;
                     let depth = depthMap.data[depthIndex] / 255;
-                    // Step2: sigmoidイージング
-                    depth = sigmoid(depth);
+                    depth = ease(depth);
                     const normalizedDepth = (depth - 0.5) * 2;
-                    // Step3: パースペクティブ変形とシフト量制限
                     const persp = 1 + normalizedDepth * safeIntensity * 0.008;
                     const parallaxX = clamp(normalizedDepth * safeIntensity * 0.18 * (tiltY / 45), -maxShiftX, maxShiftX);
                     const parallaxY = clamp(normalizedDepth * safeIntensity * 0.13 * (tiltX / 45), -maxShiftY, maxShiftY);
-                    // 斜め方向の遠近感も加味
                     const diagonalEffect = Math.sqrt(tiltX * tiltX + tiltY * tiltY) / 45;
                     const extraDepthShift = clamp(normalizedDepth * diagonalEffect * safeIntensity * 0.05, -maxShiftX, maxShiftX);
                     srcX = ((xNorm - parallaxX) - centerX) / persp + centerX;
@@ -596,12 +597,10 @@ class SpatialSceneConverter {
                     srcX += extraDepthShift * (tiltY / 45) * 0.5;
                     srcY += extraDepthShift * (tiltX / 45) * 0.3;
                 }
-                // Step4: 範囲外参照時は端の色で埋める
                 const sx = Math.round(Math.max(0, Math.min(width - 1, srcX)));
                 const sy = Math.round(Math.max(0, Math.min(height - 1, srcY)));
                 const srcIdx = (sy * width + sx) * 4;
                 const outIdx = (outY * outW + outX) * 4;
-                // シャドウ効果：深度が奥ほど暗く
                 let shadow = 1.0 - (depthMap.data[(sy * width + sx) * 4] / 255) * 0.13;
                 outData[outIdx] = Math.max(0, Math.min(255, sourceImageData.data[srcIdx] * shadow));
                 outData[outIdx + 1] = Math.max(0, Math.min(255, sourceImageData.data[srcIdx + 1] * shadow));
@@ -610,7 +609,6 @@ class SpatialSceneConverter {
             }
         }
         this.resultCtx.putImageData(outImage, 0, 0);
-        // Step5: 強度が推奨上限を超えた場合は警告を表示
         if (intensity > recommendedMax) {
             const warn = document.getElementById('spatialWarning');
             if (warn) {
@@ -624,18 +622,8 @@ class SpatialSceneConverter {
                 warn.style.display = 'none';
         }
     }
-    saveResult() {
-        if (!this.currentImage)
-            return;
-        // 結果キャンバスをダウンロード
-        const link = document.createElement('a');
-        link.download = 'spatial_scene_result.png';
-        link.href = this.resultCanvas.toDataURL();
-        link.click();
-        this.logDebug('[saveResult] 空間シーン結果を保存しました');
-    }
+    // サンプル画像を生成して表示
     loadSampleImage() {
-        // サンプル画像を生成（グラデーション）
         const canvas = document.createElement('canvas');
         canvas.width = 400;
         canvas.height = 300;
@@ -647,7 +635,7 @@ class SpatialSceneConverter {
         gradient.addColorStop(1, '#45b7d1');
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        // 幾何学的図形を描画
+        // 幾何学的図形
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(canvas.width * 0.3, canvas.height * 0.3, 50, 0, Math.PI * 2);
@@ -661,7 +649,7 @@ class SpatialSceneConverter {
         ctx.lineTo(canvas.width * 0.35, canvas.height * 0.9);
         ctx.closePath();
         ctx.fill();
-        // キャンバスから画像を作成
+        // 画像化
         const img = new Image();
         img.onload = () => {
             this.currentImage = img;
@@ -669,6 +657,74 @@ class SpatialSceneConverter {
             this.updateSpatialDisplay();
         };
         img.src = canvas.toDataURL();
+    }
+    // 結果キャンバスを画像として保存
+    saveResult() {
+        if (!this.currentImage)
+            return;
+        const link = document.createElement('a');
+        link.download = 'spatial_scene_result.png';
+        link.href = this.resultCanvas.toDataURL();
+        link.click();
+        this.logDebug('[saveResult] 空間シーン結果を保存しました');
+    }
+    // フルスクリーン切替（test.html対応）
+    setupFullscreen() {
+        const btn = document.getElementById('fullscreenSpatial');
+        if (!btn && document.getElementById('resultCanvas')) {
+            // test.html用にボタンを動的追加
+            const testBtn = document.createElement('button');
+            testBtn.id = 'fullscreenSpatial';
+            testBtn.textContent = '🖥️ フルスクリーン';
+            testBtn.className = 'ios-button';
+            testBtn.style.margin = '8px 0';
+            document.getElementById('resultCanvas').parentElement?.insertBefore(testBtn, document.getElementById('resultCanvas'));
+        }
+        const fsBtn = document.getElementById('fullscreenSpatial');
+        if (!fsBtn)
+            return;
+        fsBtn.addEventListener('click', () => {
+            const elem = this.resultCanvas;
+            const isWebkitFs = document.webkitFullscreenElement;
+            if (!document.fullscreenElement && !isWebkitFs) {
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                }
+                else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen(); // iOS Safari
+                }
+            }
+            else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+                else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen(); // iOS Safari
+                }
+            }
+        });
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement === this.resultCanvas) {
+                fsBtn.textContent = '⏹️ フルスクリーン解除';
+                fsBtn.classList.add('spatial-active');
+            }
+            else {
+                fsBtn.textContent = '🖥️ フルスクリーン';
+                fsBtn.classList.remove('spatial-active');
+            }
+        });
+        // iOS Safari用: webkitfullscreenchangeイベントも監視
+        document.addEventListener('webkitfullscreenchange', () => {
+            const isFs = document.fullscreenElement === this.resultCanvas || document.webkitFullscreenElement === this.resultCanvas;
+            if (isFs) {
+                fsBtn.textContent = '⏹️ フルスクリーン解除';
+                fsBtn.classList.add('spatial-active');
+            }
+            else {
+                fsBtn.textContent = '🖥️ フルスクリーン';
+                fsBtn.classList.remove('spatial-active');
+            }
+        });
     }
     // 進捗バー表示
     showProgressBar() {
