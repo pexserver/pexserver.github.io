@@ -2,6 +2,7 @@ import * as http from 'node:http';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as url from 'node:url';
+import * as os from 'node:os';
 
 const DEFAULT_PORT = 8080;
 const DEFAULT_ROOT_DIR = path.resolve('');
@@ -96,9 +97,24 @@ const rootDir = process.env.ROOT_DIR ? path.resolve(process.env.ROOT_DIR) : DEFA
 
 fs.access(rootDir, fs.constants.R_OK)
     .then(() => {
-        server.listen(port, () => {
+        // IPv4, IPv6両方でリッスン
+        server.listen(port, '::', () => {
             console.log(`\nServing directory "${rootDir}"`);
-            console.log(`Server listening on http://localhost:${port}`);
+            console.log(`Server listening on:`);
+            console.log(`  http://localhost:${port}`);
+            // ローカルIPv4アドレスも案内
+            const interfaces = os.networkInterfaces();
+            Object.values(interfaces).forEach(ifaces => {
+                ifaces?.forEach(iface => {
+                    if (iface.family === 'IPv4' && !iface.internal) {
+                        console.log(`  http://${iface.address}:${port}`);
+                    }
+                    if (iface.family === 'IPv6' && !iface.internal) {
+                        // IPv6アドレスは[]で囲む
+                        console.log(`  http://[${iface.address}]:${port}`);
+                    }
+                });
+            });
             console.log('Press Ctrl+C to stop the server.');
         });
     })

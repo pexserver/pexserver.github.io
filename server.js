@@ -46,6 +46,7 @@ const http = __importStar(require("node:http"));
 const fs = __importStar(require("node:fs/promises"));
 const path = __importStar(require("node:path"));
 const url = __importStar(require("node:url"));
+const os = __importStar(require("node:os"));
 const DEFAULT_PORT = 8080;
 const DEFAULT_ROOT_DIR = path.resolve('');
 const INDEX_FILE = 'index.html';
@@ -133,9 +134,19 @@ const port = process.env.PORT ? parseInt(process.env.PORT, 10) : DEFAULT_PORT;
 const rootDir = process.env.ROOT_DIR ? path.resolve(process.env.ROOT_DIR) : DEFAULT_ROOT_DIR;
 fs.access(rootDir, fs.constants.R_OK)
     .then(() => {
-    server.listen(port, () => {
+    server.listen(port, '0.0.0.0', () => {
         console.log(`\nServing directory "${rootDir}"`);
-        console.log(`Server listening on http://localhost:${port}`);
+        console.log(`Server listening on:`);
+        console.log(`  http://localhost:${port}`);
+        // ローカルIPアドレスも案内
+        const interfaces = os.networkInterfaces();
+        Object.values(interfaces).forEach(ifaces => {
+            ifaces === null || ifaces === void 0 ? void 0 : ifaces.forEach(iface => {
+                if (iface.family === 'IPv4' && !iface.internal) {
+                    console.log(`  http://${iface.address}:${port}`);
+                }
+            });
+        });
         console.log('Press Ctrl+C to stop the server.');
     });
 })
