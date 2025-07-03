@@ -84,6 +84,7 @@
             background: rgba(255, 255, 255, 0.1);
             -webkit-backdrop-filter: blur(20px);
             backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
             border-radius: 24px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 24px;
@@ -485,8 +486,9 @@
         @supports (-webkit-backdrop-filter: blur(20px)) {
             .canvas-container,
             .controls-panel,
-            .ios-button {
+            .debug-panel {
                 -webkit-backdrop-filter: blur(20px);
+                backdrop-filter: blur(20px);
             }
         }
     </style>

@@ -265,82 +265,102 @@ class SpatialSceneConverter {
         const width = imageData.width;
         const height = imageData.height;
         const data = imageData.data;
-        
         // 第1段階：被写体検出（簡易セグメンテーション）
         const subjectMask = this.detectSubjectRegions(imageData);
-        
         // 第2段階：深度マップ生成
         const depthData = new ImageData(width, height);
         const depth = depthData.data;
         const tempDepth = new Float32Array(width * height);
-
         for (let y = 1; y < height - 1; y++) {
             for (let x = 1; x < width - 1; x++) {
                 const idx = (y * width + x) * 4;
                 const linearIdx = y * width + x;
-                
-                // 現在のピクセルの明度
+                // 現在のピクセルの明度・色相・コントラスト
                 const r = data[idx];
                 const g = data[idx + 1];
                 const b = data[idx + 2];
                 const brightness = (r + g + b) / 3;
-                
-                // エッジ検出（簡易Sobel）
+                // 色相（HSV変換）
+                const max = Math.max(r, g, b);
+                const min = Math.min(r, g, b);
+                const delta = max - min;
+                let hue = 0;
+                if (delta !== 0) {
+                    if (max === r) hue = ((g - b) / delta) % 6;
+                    else if (max === g) hue = (b - r) / delta + 2;
+                    else hue = (r - g) / delta + 4;
+                    hue *= 60;
+                    if (hue < 0) hue += 360;
+                }
+                // コントラスト（近傍との明度差）
+                const getGray = (xx: number, yy: number) => {
+                    const i = (yy * width + xx) * 4;
+                    return (data[i] + data[i + 1] + data[i + 2]) / 3;
+                };
+                let localContrast = 0;
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        if (dx === 0 && dy === 0) continue;
+                        localContrast += Math.abs(brightness - getGray(x + dx, y + dy));
+                    }
+                }
+                localContrast /= 8;
+                // テクスチャ変化（Sobelエッジ）
                 const edgeX = this.getSimpleEdgeX(data, x, y, width);
                 const edgeY = this.getSimpleEdgeY(data, x, y, width);
                 const edgeMagnitude = Math.sqrt(edgeX * edgeX + edgeY * edgeY);
-                
-                // 色彩分析（暖色=手前、寒色=奥）
-                const warmth = (r + g * 0.5) - b;
-                
-                // 中央重要度（画像中央は被写体の可能性が高い）
+                // 中央重要度
                 const centerX = width / 2;
                 const centerY = height / 2;
                 const distFromCenter = Math.sqrt((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY));
                 const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
                 const centralityScore = 1 - (distFromCenter / maxDist);
-                
                 // 被写体マスクの影響
                 const isSubject = subjectMask[linearIdx];
-                
-                // 深度計算：iOS26風のアルゴリズム
-                let depthValue = 128; // 基準値（中間の深度）
-                
-                // 被写体領域は手前に
+                // 深度計算：よりリアルな3D効果
+                let depthValue = 128; // 基準値
                 if (isSubject) {
-                    depthValue = 200; // 手前（明るい値）
-                    // 被写体内でもエッジや明度で微調整
-                    depthValue += (brightness - 128) * 0.2;
-                    depthValue += Math.min(30, edgeMagnitude * 0.15);
+                    depthValue = 210; // 手前
+                    // 被写体内でも明度・コントラスト・テクスチャで微調整
+                    depthValue += (brightness - 128) * 0.18;
+                    depthValue += Math.min(40, edgeMagnitude * 0.18);
+                    depthValue += localContrast * 0.25;
                 } else {
-                    // 背景は奥に
-                    depthValue = 80; // 奥（暗い値）
-                    // 背景でも距離感を演出
-                    depthValue += warmth * 0.05;
-                    depthValue += centralityScore * 20; // 中央寄りの背景は少し手前
+                    depthValue = 70; // 奥
+                    // 背景でも色相・明度・テクスチャで距離感
+                    depthValue += (hue > 180 ? (hue - 180) : 0) * 0.08; // 青系は奥
+                    depthValue += (128 - brightness) * 0.08;
+                    depthValue += centralityScore * 18;
+                    depthValue += localContrast * 0.12;
                 }
-                
+                // 境界付近で深度の急変を強調
+                if (edgeMagnitude > 30) {
+                    depthValue += isSubject ? 10 : -10;
+                }
                 // 中央重要度で全体調整
-                depthValue += centralityScore * 15;
-                
+                depthValue += centralityScore * 12;
                 // 0-255の範囲にクランプ
                 tempDepth[linearIdx] = Math.max(0, Math.min(255, depthValue));
             }
         }
-        
-        // 第3段階：ガウシアンブラーで滑らかに
-        const blurredDepth = this.applyGaussianBlur(tempDepth, width, height, 2.0);
-        
-        // 最終的なImageDataに変換
+        // 第3段階：ガウシアンブラーで滑らかに（境界はやや強め）
+        const blurredDepth = this.applyGaussianBlur(tempDepth, width, height, 2.2);
+        // 境界ブレンド
         for (let i = 0; i < width * height; i++) {
             const pixelIdx = i * 4;
-            const depthVal = Math.round(blurredDepth[i]);
+            let depthVal = Math.round(blurredDepth[i]);
+            // 境界付近は深度を滑らかに補間
+            if (i > width && i < width * (height - 1)) {
+                const diff = Math.abs(blurredDepth[i] - blurredDepth[i - 1]) + Math.abs(blurredDepth[i] - blurredDepth[i + 1]);
+                if (diff > 20) {
+                    depthVal = Math.round((blurredDepth[i] + blurredDepth[i - 1] + blurredDepth[i + 1]) / 3);
+                }
+            }
             depth[pixelIdx] = depthVal;
             depth[pixelIdx + 1] = depthVal;
             depth[pixelIdx + 2] = depthVal;
             depth[pixelIdx + 3] = 255;
         }
-        
         return depthData;
     }
 
@@ -572,53 +592,72 @@ class SpatialSceneConverter {
         const outData = outImage.data;
         const tiltX = this.tiltX;
         const tiltY = this.tiltY;
+        // Step1: 強度の推奨上限を設ける
+        const recommendedMax = 40;
+        const maxIntensity = 60; // 破綻しない現実的な最大値
+        const safeIntensity = Math.min(intensity, maxIntensity);
+        // Step2: 深度値のイージングを強化（sigmoid）
+        const sigmoid = (v: number) => 1 / (1 + Math.exp(-6 * (v - 0.5)));
+        // Step3: シフト量の最大値を画像サイズの5%に制限
+        const maxShiftX = width * 0.05;
+        const maxShiftY = height * 0.05;
         for (let outY = 0; outY < outH; outY++) {
             for (let outX = 0; outX < outW; outX++) {
-                // 出力→元画像座標へ逆変換
                 const xNorm = outX / scaleX;
                 const yNorm = outY / scaleY;
                 let srcX = xNorm;
                 let srcY = yNorm;
-                if (intensity !== 0 || tiltX !== 0 || tiltY !== 0) {
-                    // 中心基準
+                if (safeIntensity !== 0 || tiltX !== 0 || tiltY !== 0) {
                     const centerX = width / 2;
                     const centerY = height / 2;
-                    // 深度値取得
                     const ix = Math.round(srcX);
                     const iy = Math.round(srcY);
-                    if (ix < 0 || iy < 0 || ix >= width || iy >= height) continue;
-                    const depthIndex = (iy * width + ix) * 4;
-                    const depth = depthMap.data[depthIndex] / 255;
+                    // 範囲外参照時は端の色で埋める
+                    const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+                    const safeIx = clamp(ix, 0, width - 1);
+                    const safeIy = clamp(iy, 0, height - 1);
+                    const depthIndex = (safeIy * width + safeIx) * 4;
+                    let depth = depthMap.data[depthIndex] / 255;
+                    // Step2: sigmoidイージング
+                    depth = sigmoid(depth);
                     const normalizedDepth = (depth - 0.5) * 2;
-                    // 斜め方向対応：XY両軸の視差効果を同時適用
-                    const scale = 1 + normalizedDepth * intensity * 0.015;
-                    const parallaxX = normalizedDepth * intensity * 0.4 * (tiltY / 45);
-                    const parallaxY = normalizedDepth * intensity * 0.25 * (tiltX / 45);
-                    
+                    // Step3: パースペクティブ変形とシフト量制限
+                    const persp = 1 + normalizedDepth * safeIntensity * 0.008;
+                    const parallaxX = clamp(normalizedDepth * safeIntensity * 0.18 * (tiltY / 45), -maxShiftX, maxShiftX);
+                    const parallaxY = clamp(normalizedDepth * safeIntensity * 0.13 * (tiltX / 45), -maxShiftY, maxShiftY);
                     // 斜め方向の遠近感も加味
                     const diagonalEffect = Math.sqrt(tiltX * tiltX + tiltY * tiltY) / 45;
-                    const extraDepthShift = normalizedDepth * diagonalEffect * intensity * 0.1;
-                    
-                    // 逆変換（斜め方向対応）
-                    srcX = ((xNorm - parallaxX) - centerX) / scale + centerX;
-                    srcY = ((yNorm - parallaxY) - centerY) / scale + centerY;
-                    
-                    // 斜め方向の微調整
+                    const extraDepthShift = clamp(normalizedDepth * diagonalEffect * safeIntensity * 0.05, -maxShiftX, maxShiftX);
+                    srcX = ((xNorm - parallaxX) - centerX) / persp + centerX;
+                    srcY = ((yNorm - parallaxY) - centerY) / persp + centerY;
                     srcX += extraDepthShift * (tiltY / 45) * 0.5;
                     srcY += extraDepthShift * (tiltX / 45) * 0.3;
                 }
-                const sx = Math.round(srcX);
-                const sy = Math.round(srcY);
-                if (sx < 0 || sy < 0 || sx >= width || sy >= height) continue;
+                // Step4: 範囲外参照時は端の色で埋める
+                const sx = Math.round(Math.max(0, Math.min(width - 1, srcX)));
+                const sy = Math.round(Math.max(0, Math.min(height - 1, srcY)));
                 const srcIdx = (sy * width + sx) * 4;
                 const outIdx = (outY * outW + outX) * 4;
-                outData[outIdx] = sourceImageData.data[srcIdx];
-                outData[outIdx + 1] = sourceImageData.data[srcIdx + 1];
-                outData[outIdx + 2] = sourceImageData.data[srcIdx + 2];
+                // シャドウ効果：深度が奥ほど暗く
+                let shadow = 1.0 - (depthMap.data[(sy * width + sx) * 4] / 255) * 0.13;
+                outData[outIdx] = Math.max(0, Math.min(255, sourceImageData.data[srcIdx] * shadow));
+                outData[outIdx + 1] = Math.max(0, Math.min(255, sourceImageData.data[srcIdx + 1] * shadow));
+                outData[outIdx + 2] = Math.max(0, Math.min(255, sourceImageData.data[srcIdx + 2] * shadow));
                 outData[outIdx + 3] = sourceImageData.data[srcIdx + 3];
             }
         }
         this.resultCtx.putImageData(outImage, 0, 0);
+        // Step5: 強度が推奨上限を超えた場合は警告を表示
+        if (intensity > recommendedMax) {
+            const warn = document.getElementById('spatialWarning');
+            if (warn) {
+                warn.style.display = 'block';
+                warn.textContent = '※強度が高すぎると破綻する場合があります（推奨上限: ' + recommendedMax + '）';
+            }
+        } else {
+            const warn = document.getElementById('spatialWarning');
+            if (warn) warn.style.display = 'none';
+        }
     }
 
     private saveResult(): void {
