@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アナグリフ3Dメガネ用 立体視</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="main-container">
+    <header class="main-header">
+      <h1>アナグリフ3Dメガネ用 立体視</h1>
+      <p>PNG/JPG画像または動画(MP4/WebM/MOV)をアップロードし、<br>赤青3Dメガネで立体視を体験！</p>
+    </header>
+    <section class="upload-area">
+      <label class="file-upload">
+        <input type="file" id="mediaInput" accept="image/png,image/jpg,image/jpeg,video/mp4,video/webm,video/quicktime" aria-label="画像または動画アップロード">
+        <span>画像または動画を選択</span>
+      </label>
+      <div class="media-type-switch">
+        <button id="showImageBtn" class="mode-btn active" type="button">画像モード</button>
+        <button id="showVideoBtn" class="mode-btn" type="button">動画モード</button>
+      </div>
+    </section>
+    <section class="viewer-area">
+      <div id="stereoscopicViewer" class="canvas-area">
+        <canvas id="anaglyphCanvas"></canvas>
+        <video id="anaglyphVideo" style="display:none; width:100%; height:100%; background:#000; border-radius:8px;" controls muted></video>
+        <!-- 動画コントロールバーはJSで自動追加 -->
+      </div>
+      <div class="instructions">
+        <h3>立体視のコツ（赤青3Dメガネ推奨）</h3>
+        <ol>
+          <li>赤青3Dメガネ（左:赤 右:青）を装着</li>
+          <li>画面から適度な距離をとる</li>
+          <li>中央に立体像が見えたら成功！</li>
+        </ol>
+        <p>※目の疲れに注意し、無理せずご利用ください。</p>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="index.js"></script>
+</body>
+</html>
