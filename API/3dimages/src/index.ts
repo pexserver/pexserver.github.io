@@ -65,30 +65,40 @@ class SpatialSceneConverter {
 
     private startDeviceMotion(): void {
         this.deviceMotionEnabled = true;
+        let lastUpdate = 0;
         window.addEventListener('deviceorientation', (event) => {
             if (!this.spatialModeEnabled || !this.deviceMotionEnabled) return;
-            
-            const beta = event.beta || 0;  // X軸回転 (-180 to 180)
-            const gamma = event.gamma || 0; // Y軸回転 (-90 to 90)
-            
+            // 高速連続イベントを間引き（16ms=約60fps）
+            const now = Date.now();
+            if (now - lastUpdate < 16) return;
+            lastUpdate = now;
+            // iOS/Android両対応で値を安定化
+            let beta = typeof event.beta === 'number' ? event.beta : 0;
+            let gamma = typeof event.gamma === 'number' ? event.gamma : 0;
+            // iOSのLandscape時の値補正
+            if (window.orientation === 90 || window.orientation === -90) {
+                [beta, gamma] = [gamma, beta];
+            }
             // 初回時はベース値として記録
             if (!this.baseOrientation) {
                 this.baseOrientation = { beta, gamma };
                 return;
             }
-            
             // ベース値からの差分を計算（斜め方向も含む）
-            const deltaX = (beta - this.baseOrientation.beta) * 0.5;
-            const deltaY = (gamma - this.baseOrientation.gamma) * 0.8;
-            
-            // 斜め方向対応：XY両方向の傾きを同時に処理
-            this.tiltX = Math.max(-30, Math.min(30, deltaX));
-            this.tiltY = Math.max(-30, Math.min(30, deltaY));
-            
+            let deltaX = (beta - this.baseOrientation.beta);
+            let deltaY = (gamma - this.baseOrientation.gamma);
+            // ノイズ除去（小さい揺れは無視）
+            if (Math.abs(deltaX) < 0.5) deltaX = 0;
+            if (Math.abs(deltaY) < 0.5) deltaY = 0;
+            // 端末傾きの物理的な最大値を考慮し、よりリアルなスケーリング
+            this.tiltX = Math.max(-30, Math.min(30, deltaX * 0.7));
+            this.tiltY = Math.max(-30, Math.min(30, deltaY * 1.1));
+            // 慣性効果（前回値との補間で滑らかに）
+            this.tiltX = this.tiltX * 0.7 + (this.tiltX || 0) * 0.3;
+            this.tiltY = this.tiltY * 0.7 + (this.tiltY || 0) * 0.3;
             this.updateSpatialDisplay();
         });
-        
-        this.logDebug('[startDeviceMotion] Device motion enabled');
+        this.logDebug('[startDeviceMotion] Device motion enabled (リアル/効率化)');
     }
 
     private initializeEventListeners(): void {

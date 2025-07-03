@@ -531,6 +531,8 @@
                         <div id="progressBar" class="progress-bar"></div>
                     </div>
                 </div>
+                <!-- 3D強度警告表示 -->
+                <div id="spatialWarning" style="display:none;color:#fffa; font-weight:bold; margin-top:10px; text-align:center; background:rgba(255,0,0,0.15); border-radius:8px; padding:6px 0;"></div>
             </section>
 
             <!-- コントロールパネル -->
@@ -596,5 +598,20 @@
     </div>
 
     <script src="index.js"></script>
+    <script>
+    // iOS/PCで色合いを統一するためのCSS変数を設定
+    (function() {
+        const root = document.documentElement;
+        // PCと同じ色合いを強制
+        root.style.setProperty('--canvas-bg', 'rgba(0,0,0,0.3)');
+        root.style.setProperty('--canvas-border', 'rgba(255,255,255,0.1)');
+        root.style.setProperty('--canvas-label-bg', 'rgba(0,0,0,0.6)');
+        root.style.setProperty('--spatial-indicator', '#34c759');
+        // iOSの色再現性対策（sRGB強制）
+        document.querySelectorAll('canvas').forEach(c => {
+            c.style.colorSpace = 'srgb';
+        });
+    })();
+    </script>
 </body>
 </html>
