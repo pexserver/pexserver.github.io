@@ -1,0 +1,139 @@
+{
+  "categories": [
+    {
+      "id": "tools",
+      "name": "ツール",
+      "description": "便利なWEBツール集",
+      "icon": "🛠️",
+      "items": [
+        {
+          "name": "ファイル編集",
+          "description": "オンラインファイルエディタ",
+          "thumbnail": "/libs/Assets/images/Markdown/markdown.png",
+          "url": "/tool/File/edit.html",
+          "category": "tools",
+          "tags": ["editor", "file", "markdown"]
+        },
+        {
+          "name": "チャット",
+          "description": "リアルタイムチャット",
+          "thumbnail": "/libs/Assets/images/Chat/image0.png",
+          "url": "/tool/File/Chat/index.html",
+          "category": "tools",
+          "tags": ["chat", "communication"]
+        },
+        {
+          "name": "RPGクリッカー",
+          "description": "シンプルなRPGゲーム",
+          "thumbnail": "/libs/Assets/images/None.jpg",
+          "url": "/tool/File/Clicker/rpg.html",
+          "category": "tools",
+          "tags": ["game", "rpg", "clicker"]
+        },
+        {
+          "name": "コードコンバーター",
+          "description": "コード変換ツール",
+          "thumbnail": "/libs/Assets/images/Conver/image.png",
+          "url": "/tool/File/Conver/index.html",
+          "category": "tools",
+          "tags": ["converter", "code"]
+        },
+        {
+          "name": "ファイル共有",
+          "description": "ファイル共有システム",
+          "thumbnail": "/libs/Assets/images/Share/image0.png",
+          "url": "/tool/File/Share/index.html",
+          "category": "tools",
+          "tags": ["share", "file"]
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "name": "API",
+      "description": "各種API・サービス",
+      "icon": "🔧",
+      "items": [
+        {
+          "name": "YouTube API",
+          "description": "YouTube動画情報取得",
+          "thumbnail": "/libs/Assets/images/None.jpg",
+          "url": "/API/youtube/test.html",
+          "category": "api",
+          "tags": ["youtube", "api", "video"]
+        },
+        {
+          "name": "3D画像API",
+          "description": "3D画像処理サービス",
+          "thumbnail": "/libs/Assets/images/None.jpg",
+          "url": "/API/3dimages/src/test.html",
+          "category": "api",
+          "tags": ["3d", "image", "api"]
+        }
+      ]
+    },
+    {
+      "id": "games",
+      "name": "ゲーム",
+      "description": "ゲーム・エンターテイメント",
+      "icon": "🎮",
+      "items": [
+        {
+          "name": "マインクラフト",
+          "description": "Mine関連ツール",
+          "thumbnail": "/libs/Assets/images/None.jpg",
+          "url": "/tool/File/Mine/index.html",
+          "category": "games",
+          "tags": ["minecraft", "game"]
+        },
+        {
+          "name": "MineLib",
+          "description": "Minecraft ライブラリ",
+          "thumbnail": "/libs/Assets/images/None.jpg",
+          "url": "/tool/File/MineLib/index.html",
+          "category": "games",
+          "tags": ["minecraft", "library"]
+        }
+      ]
+    },
+    {
+      "id": "admin",
+      "name": "管理",
+      "description": "管理者向けツール",
+      "icon": "⚙️",
+      "items": [
+        {
+          "name": "更新編集",
+          "description": "更新情報の編集",
+          "thumbnail": "/libs/Assets/images/None.jpg",
+          "url": "/Admin/edit_update.html",
+          "category": "admin",
+          "tags": ["admin", "update", "edit"]
+        }
+      ]
+    }
+  ],
+  "featured": [
+    {
+      "name": "チャット",
+      "description": "リアルタイムチャット",
+      "thumbnail": "/libs/Assets/images/Chat/image0.png",
+      "url": "/tool/File/Chat/index.html",
+      "category": "tools"
+    },
+    {
+      "name": "RPGクリッカー",
+      "description": "シンプルなRPGゲーム",
+      "thumbnail": "/libs/Assets/images/None.jpg",
+      "url": "/tool/File/Clicker/rpg.html",
+      "category": "tools"
+    },
+    {
+      "name": "ファイル編集",
+      "description": "オンラインファイルエディタ",
+      "thumbnail": "/libs/Assets/images/Markdown/markdown.png",
+      "url": "/tool/File/edit.html",
+      "category": "tools"
+    }
+  ]
+}
