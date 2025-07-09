@@ -44,6 +44,17 @@ async function requestHandler(req: http.IncomingMessage, res: http.ServerRespons
         const stats = await fs.stat(filePath);
 
         if (stats.isDirectory()) {
+            // ディレクトリアクセス時にトレーリングスラッシュがない場合はリダイレクト
+            if (!decodedPathname.endsWith('/')) {
+                const redirectUrl = decodedPathname + '/';
+                res.writeHead(301, {
+                    'Location': redirectUrl,
+                    'Content-Type': 'text/plain'
+                });
+                res.end(`Redirecting to ${redirectUrl}`);
+                return;
+            }
+
             const indexPath = path.join(filePath, INDEX_FILE);
             try {
                 const indexStats = await fs.stat(indexPath);
