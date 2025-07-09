@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ProCon2 - 音楽ハプティック再生</title>
+    
+    <!-- ProCon2 モジュラーAPI -->
+    <script src="ProCon2Core.js"></script>
+    <script src="ProCon2Haptic.js"></script>
+    <script src="ProCon2Audio.js"></script>
+    <script src="Music.js"></script>
+    <script src="ProCon2Config.js"></script>
+    <script src="ProCon2UI.js"></script>
+    <script src="ProCon2Main.js"></script>
+    
+    <style>
+      body {
+        margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        background: #1e1e2f;
+        color: #ffffff;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: #29293f;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        border: 1px solid #3a3a50;
+      }
+
+      h1 {
+        margin: 0 0 30px 0;
+        font-size: 2rem;
+        color: #6b6ff7;
+        text-align: center;
+      }
+
+      .section {
+        margin-bottom: 25px;
+        padding: 20px;
+        background: #1e1e2f;
+        border-radius: 8px;
+        border: 1px solid #3a3a50;
+      }
+
+      .section h2 {
+        margin: 0 0 15px 0;
+        font-size: 1.2rem;
+        color: #ffffff;
+        border-bottom: 2px solid #6b6ff7;
+        padding-bottom: 5px;
+      }
+
+      .control-group {
+        margin-bottom: 15px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #ddd;
+      }
+
+      input[type="file"] {
+        width: 100%;
+        padding: 10px;
+        border: 2px dashed #6b6ff7;
+        border-radius: 8px;
+        background: #2a2a40;
+        color: #fff;
+        font-size: 14px;
+      }
+
+      input[type="range"] {
+        width: 100%;
+        margin: 10px 0;
+      }
+
+      .range-value {
+        font-size: 14px;
+        color: #6b6ff7;
+        font-weight: 600;
+      }
+
+      .toggle-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .toggle {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+      }
+
+      .toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #666;
+        transition: 0.3s;
+        border-radius: 24px;
+      }
+
+      .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+      }
+
+      input:checked + .toggle-slider {
+        background-color: #6b6ff7;
+      }
+
+      input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+      }
+
+      .button-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      button {
+        flex: 1;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 8px;
+        background: #6b6ff7;
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      button:hover {
+        background: #5a5ee6;
+      }
+
+      button:disabled {
+        background: #555;
+        cursor: not-allowed;
+      }
+
+      button.secondary {
+        background: #444;
+      }
+
+      button.secondary:hover {
+        background: #555;
+      }
+
+      .status {
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-weight: 600;
+      }
+
+      .status.connected {
+        background: #0f5132;
+        color: #d1e7dd;
+        border: 1px solid #146c43;
+      }
+
+      .status.disconnected {
+        background: #721c24;
+        color: #f8d7da;
+        border: 1px solid #842029;
+      }
+
+      #log {
+        background: #1a1a2e;
+        color: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        height: 200px;
+        overflow-y: auto;
+        font-family: "Consolas", monospace;
+        font-size: 12px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        border: 1px solid #3a3a50;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>ProCon2 音楽ハプティック再生</h1>
+
+      <!-- デバイス接続セクション -->
+      <div class="section">
+        <h2>デバイス接続</h2>
+        <div id="connectionStatus" class="status disconnected">
+          未接続
+        </div>
+        <button id="connectBtn">コントローラーに接続</button>
+      </div>
+
+      <!-- ファイル入力セクション -->
+      <div class="section">
+        <h2>音楽ファイル</h2>
+        <div class="control-group">
+          <label for="audioFile">MP4/音楽ファイルを選択</label>
+          <input type="file" id="audioFile" accept="audio/*,video/*" />
+        </div>
+      </div>
+
+      <!-- 再生設定セクション -->
+      <div class="section">
+        <h2>再生設定</h2>
+        <div class="control-group">
+          <label for="intensitySlider">ハプティック強度: <span id="intensityValue" class="range-value">70%</span></label>
+          <input type="range" id="intensitySlider" min="0" max="100" value="70" />
+        </div>
+        <div class="control-group">
+          <div class="toggle-container">
+            <label for="headphoneToggle">ヘッドフォン出力:</label>
+            <div class="toggle">
+              <input type="checkbox" id="headphoneToggle" />
+              <span class="toggle-slider"></span>
+            </div>
+            <span id="headphoneStatus">無効</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 再生コントロールセクション -->
+      <div class="section">
+        <h2>再生コントロール</h2>
+        <div class="button-group">
+          <button id="playBtn" disabled>再生</button>
+          <button id="stopBtn" disabled>停止</button>
+          <button id="demoBtn" class="secondary">デモ再生</button>
+        </div>
+      </div>
+
+      <!-- ログセクション -->
+      <div class="section">
+        <h2>ログ</h2>
+        <div id="log">ProCon2 ハプティック再生システム初期化中...\n</div>
+        <button id="clearLogBtn" class="secondary">ログクリア</button>
+      </div>
+    </div>
+
+    <script>
+      let proCon2 = null;
+      let currentAudioFile = null;
+      let isPlaying = false;
+
+      // DOM要素の取得
+      const connectBtn = document.getElementById('connectBtn');
+      const connectionStatus = document.getElementById('connectionStatus');
+      const audioFileInput = document.getElementById('audioFile');
+      const intensitySlider = document.getElementById('intensitySlider');
+      const intensityValue = document.getElementById('intensityValue');
+      const headphoneToggle = document.getElementById('headphoneToggle');
+      const headphoneStatus = document.getElementById('headphoneStatus');
+      const playBtn = document.getElementById('playBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      const demoBtn = document.getElementById('demoBtn');
+      const logElement = document.getElementById('log');
+      const clearLogBtn = document.getElementById('clearLogBtn');
+
+      // ログ出力関数
+      function log(message, type = 'info', details = null) {
+        const timestamp = new Date().toLocaleTimeString();
+        const prefix = type === 'error' ? '[ERROR]' : type === 'warn' ? '[WARN]' : type === 'debug' ? '[DEBUG]' : '[INFO]';
+        let logMessage = `${timestamp} ${prefix} ${message}`;
+        
+        // Always include debug details since developer mode is now default
+        if (details) {
+          if (typeof details === 'string') {
+            logMessage += `\n詳細: ${details}`;
+          } else {
+            try {
+              logMessage += `\n詳細: ${JSON.stringify(details, null, 2)}`;
+            } catch (err) {
+              logMessage += `\n詳細: [データの文字列化に失敗しました]`;
+            }
+          }
+        }
+        
+        logElement.textContent += logMessage + '\n';
+        logElement.scrollTop = logElement.scrollHeight;
+        
+        // Also log to console for better debugging
+        switch (type) {
+          case 'error':
+            console.error(message, details || '');
+            break;
+          case 'warn':
+            console.warn(message, details || '');
+            break;
+          case 'debug':
+            console.debug(message, details || '');
+            break;
+          default:
+            console.log(message, details || '');
+        }
+      }
+
+      // ProCon2初期化
+      document.addEventListener('DOMContentLoaded', async function() {
+        try {
+          log('ProCon2システム初期化開始...');
+          
+          // ProCon2APIの初期化を待つ
+          if (typeof window.proCon2API !== 'undefined') {
+            proCon2 = window.proCon2API;
+            log('ProCon2 API 初期化完了');
+          } else {
+            // APIが読み込まれるまで待機
+            let retries = 0;
+            const maxRetries = 50;
+            while (!window.proCon2API && retries < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 100));
+              retries++;
+            }
+            
+            if (window.proCon2API) {
+              proCon2 = window.proCon2API;
+              log('ProCon2 API 初期化完了（遅延読み込み）');
+            } else {
+              throw new Error('ProCon2 API の初期化に失敗しました');
+            }
+          }
+          
+          setupEventListeners();
+          log('イベントリスナー設定完了');
+          log('システム準備完了 - コントローラーを接続してください');
+          
+        } catch (error) {
+          log(`初期化エラー: ${error.message}`, 'error');
+        }
+      });
+
+      // イベントリスナーの設定
+      function setupEventListeners() {
+        // 接続ボタン
+        connectBtn.addEventListener('click', async function() {
+          try {
+            log('コントローラー接続中...');
+            connectBtn.disabled = true;
+            
+            // 統一接続メソッドを使用
+            const status = await proCon2.core.connect();
+            if (status && (status.usbConnected || status.hidConnected)) {
+              connectionStatus.textContent = '接続済み';
+              connectionStatus.className = 'status connected';
+              connectBtn.textContent = '接続済み';
+              log('コントローラー接続成功');
+              
+              // 接続状態の詳細をログ出力
+              log(`USB: ${status.usbConnected ? '接続' : '未接続'}, HID: ${status.hidConnected ? '接続' : '未接続'}`);
+            } else {
+              throw new Error('接続に失敗しました');
+            }
+          } catch (error) {
+            log(`接続エラー: ${error.message}`, 'error');
+            connectBtn.disabled = false;
+          }
+        });
+
+        // ファイル選択
+        audioFileInput.addEventListener('change', async function(e) {
+          const file = e.target.files[0];
+          if (!file) return;
+          
+          try {
+            log(`音楽ファイル読み込み中: ${file.name}`);
+            
+            // 正しいAPIメソッド呼び出し
+            const result = await proCon2.loadAudioFile(file);
+            if (result && result.success) {
+              currentAudioFile = file;
+              playBtn.disabled = false;
+              stopBtn.disabled = false;
+              log(`ファイル読み込み完了: ${file.name} (${result.duration.toFixed(2)}秒)`);
+            } else {
+              throw new Error('ファイルの読み込みに失敗しました');
+            }
+          } catch (error) {
+            log(`ファイル読み込みエラー: ${error.message}`, 'error');
+          }
+        });
+
+        // 強度スライダー
+        intensitySlider.addEventListener('input', function(e) {
+          const value = e.target.value;
+          intensityValue.textContent = `${value}%`;
+          
+          if (proCon2 && proCon2.settings) {
+            proCon2.settings.setIntensity(value);
+            log(`ハプティック強度: ${value}%`);
+          }
+        });
+
+        // ヘッドフォントグル
+        headphoneToggle.addEventListener('change', function(e) {
+          const enabled = e.target.checked;
+          headphoneStatus.textContent = enabled ? '有効' : '無効';
+          
+          if (proCon2 && proCon2.settings) {
+            proCon2.settings.setHeadphoneOutput(enabled);
+            log(`ヘッドフォン出力: ${enabled ? '有効' : '無効'}`);
+          }
+        });
+
+        // 再生ボタン
+        playBtn.addEventListener('click', async function() {
+          if (!currentAudioFile) {
+            log('音楽ファイルが選択されていません', 'warn');
+            return;
+          }
+          
+          try {
+            log('再生開始...');
+            playBtn.disabled = true;
+            
+            // 正しいAPIメソッド呼び出し
+            const result = await proCon2.playMusic();
+            if (result && result.success) {
+              isPlaying = true;
+              playBtn.textContent = '再生中';
+              log('再生開始');
+            } else {
+              throw new Error('再生開始に失敗しました');
+            }
+          } catch (error) {
+            log(`再生エラー: ${error.message}`, 'error');
+            playBtn.disabled = false;
+          }
+        });
+
+        // 停止ボタン
+        stopBtn.addEventListener('click', function() {
+          try {
+            // 正しいAPIメソッド呼び出し
+            proCon2.stopMusic();
+            isPlaying = false;
+            playBtn.disabled = false;
+            playBtn.textContent = '再生';
+            log('再生停止');
+          } catch (error) {
+            log(`停止エラー: ${error.message}`, 'error');
+          }
+        });
+
+        // デモボタン
+        demoBtn.addEventListener('click', async function() {
+          try {
+            log('デモ再生開始...');
+            demoBtn.disabled = true;
+            
+            // 正しいAPIメソッド呼び出し
+            const result = await proCon2.playDemo();
+            if (result && result.success) {
+              log('デモ再生中...');
+              // デモ再生時間後にボタンを再有効化
+              setTimeout(() => {
+                demoBtn.disabled = false;
+                log('デモ再生完了');
+              }, 5000);
+            } else {
+              throw new Error('デモ再生に失敗しました');
+            }
+          } catch (error) {
+            log(`デモ再生エラー: ${error.message}`, 'error');
+            demoBtn.disabled = false;
+          }
+        });
+
+        // ログクリアボタン
+        clearLogBtn.addEventListener('click', function() {
+          logElement.textContent = 'ログクリア完了\n';
+        });
+      }
+    </script>
+  </body>
+</html>

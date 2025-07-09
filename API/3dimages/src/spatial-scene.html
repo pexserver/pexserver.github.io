@@ -13,9 +13,9 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #667eea 100%);
+            background: linear-gradient(135deg, #232946 0%, #394867 50%, #6d8cff 100%);
             min-height: 100vh;
-            color: white;
+            color: #f4f4f4;
             overflow-x: hidden;
             position: relative;
         }
@@ -81,15 +81,15 @@
 
         /* キャンバスコンテナ - iOS風カード */
         .canvas-container {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(36, 40, 59, 0.13);
             -webkit-backdrop-filter: blur(20px);
             backdrop-filter: blur(20px);
             border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1.5px solid rgba(120, 140, 255, 0.18);
             padding: 24px;
             box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                0 8px 32px rgba(0, 0, 0, 0.13),
+                inset 0 1px 0 rgba(120, 140, 255, 0.10);
         }
 
         .canvas-header {
@@ -130,8 +130,8 @@
             aspect-ratio: 4/3;
             border-radius: 16px;
             overflow: hidden;
-            background: rgba(0, 0, 0, 0.3);
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(35, 41, 70, 0.38);
+            border: 2px solid rgba(120, 140, 255, 0.13);
         }
 
         canvas {
@@ -149,13 +149,14 @@
             position: absolute;
             top: 12px;
             left: 12px;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(35, 41, 70, 0.7);
             -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
             padding: 6px 12px;
             border-radius: 12px;
             font-size: 12px;
             font-weight: 500;
+            color: #e0e6ff;
         }
 
         .spatial-indicator {
@@ -165,8 +166,8 @@
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            background: #34c759;
-            box-shadow: 0 0 8px rgba(52, 199, 89, 0.5);
+            background: #6d8cff;
+            box-shadow: 0 0 8px rgba(109, 140, 255, 0.5);
             animation: pulse 2s infinite;
             display: none;
         }
@@ -178,11 +179,11 @@
 
         /* コントロールパネル - iOS風 */
         .controls-panel {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(36, 40, 59, 0.10);
             -webkit-backdrop-filter: blur(20px);
             backdrop-filter: blur(20px);
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(120, 140, 255, 0.13);
             padding: 20px;
         }
 
@@ -281,12 +282,13 @@
         }
 
         .slider-value {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(120, 140, 255, 0.13);
             padding: 4px 8px;
             border-radius: 8px;
             font-weight: 600;
             min-width: 32px;
             text-align: center;
+            color: #e0e6ff;
         }
 
         .ios-slider {
@@ -382,7 +384,7 @@
 
         .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, #007AFF, #34C759);
+            background: linear-gradient(90deg, #6d8cff, #34C759);
             border-radius: 4px;
             width: 0%;
             transition: width 0.3s ease;
@@ -390,13 +392,13 @@
 
         /* デバッグパネル */
         .debug-panel {
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(35, 41, 70, 0.33);
             -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
             border-radius: 12px;
             padding: 16px;
             margin-top: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(120, 140, 255, 0.13);
         }
 
         .debug-title {
@@ -479,16 +481,7 @@
                 animation: none !important;
                 transition: none !important;
             }
-        }
-
-        /* Safari対応 */
-        @supports (-webkit-backdrop-filter: blur(20px)) {
-            .canvas-container,
-            .controls-panel,
-            .ios-button {
-                -webkit-backdrop-filter: blur(20px);
-            }
-        }
+        }       
     </style>
 </head>
 <body>
@@ -504,10 +497,12 @@
             <!-- キャンバスエリア -->
             <section class="canvas-container">
                 <div class="canvas-header">
-                    <h2 class="canvas-title">
-                        <div class="canvas-icon">📸</div>
-                        プレビュー
-                    </h2>
+                    <div class="canvas-title">
+                        <span class="canvas-icon">🖼️</span>空間シーン
+                    </div>
+                    <button id="fullscreenSpatial" class="ios-button" style="margin-left:12px;">
+                        🖥️ フルスクリーン
+                    </button>
                 </div>
 
                 <div class="canvas-grid">
@@ -529,6 +524,8 @@
                         <div id="progressBar" class="progress-bar"></div>
                     </div>
                 </div>
+                <!-- 3D強度警告表示 -->
+                <div id="spatialWarning" style="display:none;color:#fffa; font-weight:bold; margin-top:10px; text-align:center; background:rgba(255,0,0,0.15); border-radius:8px; padding:6px 0;"></div>
             </section>
 
             <!-- コントロールパネル -->
@@ -594,5 +591,20 @@
     </div>
 
     <script src="index.js"></script>
+    <script>
+    // iOS/PCで色合いを統一するためのCSS変数を設定
+    (function() {
+        const root = document.documentElement;
+        // PCと同じ色合いを強制
+        root.style.setProperty('--canvas-bg', 'rgba(0,0,0,0.3)');
+        root.style.setProperty('--canvas-border', 'rgba(255,255,255,0.1)');
+        root.style.setProperty('--canvas-label-bg', 'rgba(0,0,0,0.6)');
+        root.style.setProperty('--spatial-indicator', '#34c759');
+        // iOSの色再現性対策（sRGB強制）
+        document.querySelectorAll('canvas').forEach(c => {
+            c.style.colorSpace = 'srgb';
+        });
+    })();
+    </script>
 </body>
 </html>

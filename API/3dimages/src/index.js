@@ -11,6 +11,8 @@ class SpatialSceneConverter {
         this.deviceMotionEnabled = false;
         this.isMobile = false;
         this.baseOrientation = null;
+        this.deviceOrientationHandler = null;
+        this._lastRenderTime = 0;
         this.originalCanvas = document.getElementById('originalCanvas');
         this.resultCanvas = document.getElementById('resultCanvas');
         this.originalCtx = this.originalCanvas.getContext('2d');
@@ -33,11 +35,16 @@ class SpatialSceneConverter {
             if (btn) {
                 btn.style.display = 'block';
                 btn.addEventListener('click', async () => {
+                    this.logDebug('[setupDeviceMotion] enableDeviceMotion button clicked');
                     try {
                         const permission = await DeviceOrientationEvent.requestPermission();
+                        this.logDebug('[setupDeviceMotion] requestPermission result:', permission);
                         if (permission === 'granted') {
                             this.startDeviceMotion();
                             btn.style.display = 'none';
+                        }
+                        else {
+                            this.logDebug('[setupDeviceMotion] Permission denied:', permission);
                         }
                     }
                     catch (error) {
@@ -52,26 +59,76 @@ class SpatialSceneConverter {
         }
     }
     startDeviceMotion() {
+        if (this.deviceOrientationHandler) {
+            window.removeEventListener('deviceorientation', this.deviceOrientationHandler);
+            this.logDebug('[startDeviceMotion] Previous deviceorientation handler removed');
+        }
         this.deviceMotionEnabled = true;
-        window.addEventListener('deviceorientation', (event) => {
+        let lastUpdate = 0;
+        this.deviceOrientationHandler = (event) => {
             if (!this.spatialModeEnabled || !this.deviceMotionEnabled)
                 return;
-            const beta = event.beta || 0; // X軸回転 (-180 to 180)
-            const gamma = event.gamma || 0; // Y軸回転 (-90 to 90)
+            // 高速連続イベントを間引き（16ms=約60fps）
+            const now = Date.now();
+            if (now - lastUpdate < 16)
+                return;
+            lastUpdate = now;
+            // iOS/Android両対応で値を安定化
+            let beta = typeof event.beta === 'number' ? event.beta : 0;
+            let gamma = typeof event.gamma === 'number' ? event.gamma : 0;
+            // iOSのLandscape時の値補正
+            if (window.orientation === 90 || window.orientation === -90) {
+                [beta, gamma] = [gamma, beta];
+            }
             // 初回時はベース値として記録
             if (!this.baseOrientation) {
                 this.baseOrientation = { beta, gamma };
+                this.logDebug('[deviceorientation] baseOrientation set:', this.baseOrientation);
                 return;
             }
             // ベース値からの差分を計算（斜め方向も含む）
-            const deltaX = (beta - this.baseOrientation.beta) * 0.5;
-            const deltaY = (gamma - this.baseOrientation.gamma) * 0.8;
-            // 斜め方向対応：XY両方向の傾きを同時に処理
-            this.tiltX = Math.max(-30, Math.min(30, deltaX));
-            this.tiltY = Math.max(-30, Math.min(30, deltaY));
+            let deltaX = (beta - this.baseOrientation.beta);
+            let deltaY = (gamma - this.baseOrientation.gamma);
+            // ノイズ除去（小さい揺れは無視）- 閾値を大きく
+            if (Math.abs(deltaX) < 1.0)
+                deltaX = 0;
+            if (Math.abs(deltaY) < 1.0)
+                deltaY = 0;
+            // 急激な変化を防止（前回値からの変化量を制限）
+            const prevTiltX = this.tiltX;
+            const prevTiltY = this.tiltY;
+            // 端末傾きの物理的な最大値を考慮し、よりリアルなスケーリング
+            // 係数を小さくして、より穏やかな動きに
+            let newTiltX = Math.max(-30, Math.min(30, deltaX * 0.5));
+            let newTiltY = Math.max(-30, Math.min(30, deltaY * 0.9));
+            // 急激な変化を制限（最大変化量）
+            const maxChange = 3.0; // 1フレームあたりの最大変化量
+            if (Math.abs(newTiltX - prevTiltX) > maxChange) {
+                newTiltX = prevTiltX + (maxChange * Math.sign(newTiltX - prevTiltX));
+            }
+            if (Math.abs(newTiltY - prevTiltY) > maxChange) {
+                newTiltY = prevTiltY + (maxChange * Math.sign(newTiltY - prevTiltY));
+            }
+            // 慣性効果（前回値との補間で滑らかに）- より強いスムージング
+            this.tiltX = newTiltX * 0.3 + (prevTiltX || 0) * 0.7;
+            this.tiltY = newTiltY * 0.3 + (prevTiltY || 0) * 0.7;
+            // 小数点以下を丸めて安定化
+            this.tiltX = Math.round(this.tiltX * 10) / 10;
+            this.tiltY = Math.round(this.tiltY * 10) / 10;
+            this.logDebug('[deviceorientation] tiltX:', this.tiltX, 'tiltY:', this.tiltY);
             this.updateSpatialDisplay();
-        });
-        this.logDebug('[startDeviceMotion] Device motion enabled');
+        };
+        window.addEventListener('deviceorientation', this.deviceOrientationHandler);
+        this.logDebug('[startDeviceMotion] Device motion enabled (リアル/効率化), handler registered');
+    }
+    stopDeviceMotion() {
+        if (this.deviceOrientationHandler) {
+            window.removeEventListener('deviceorientation', this.deviceOrientationHandler);
+            this.logDebug('[stopDeviceMotion] deviceorientation handler removed');
+            this.deviceOrientationHandler = null;
+        }
+        this.deviceMotionEnabled = false;
+        this.logDebug('[stopDeviceMotion] Device motion disabled');
     }
     initializeEventListeners() {
         // 画像アップロード
@@ -101,6 +158,7 @@ class SpatialSceneConverter {
         this.baseOrientation = null;
         this.updateSpatialDisplay();
         this.logDebug('[resetTilt] Tilt reset');
+        this.stopDeviceMotion();
     }
     handleMouseDown(event) {
         if (!this.spatialModeEnabled)
@@ -114,12 +172,20 @@ class SpatialSceneConverter {
             return;
         const deltaX = event.clientX - this.lastMousePos.x;
         const deltaY = event.clientY - this.lastMousePos.y;
-        // iOS26風：マウス操作を端末の傾きに変換（斜め方向対応）
-        this.tiltX += deltaY * 0.3;
-        this.tiltY += deltaX * 0.3;
+        // 急激な変化を防ぐために、大きな動きを制限
+        const maxDelta = 20;
+        const clampedDeltaX = Math.max(-maxDelta, Math.min(maxDelta, deltaX));
+        const clampedDeltaY = Math.max(-maxDelta, Math.min(maxDelta, deltaY));
+        // iOS26風：マウス操作を端末の傾きに変換（スムージング強化）
+        // 係数を小さくして、より穏やかな動きに
+        this.tiltX += clampedDeltaY * 0.2;
+        this.tiltY += clampedDeltaX * 0.2;
         // 傾き制限（斜め方向も自然な範囲内）
         this.tiltX = Math.max(-45, Math.min(45, this.tiltX));
         this.tiltY = Math.max(-45, Math.min(45, this.tiltY));
+        // 小数点以下を丸めて安定化
+        this.tiltX = Math.round(this.tiltX * 10) / 10;
+        this.tiltY = Math.round(this.tiltY * 10) / 10;
         this.lastMousePos = { x: event.clientX, y: event.clientY };
         this.updateSpatialDisplay();
     }
@@ -183,6 +249,24 @@ class SpatialSceneConverter {
         this.logDebug('[updateSpatialDisplay] called, spatialMode:', this.spatialModeEnabled);
         if (!this.currentImage)
             return;
+        // パフォーマンス最適化：レンダリングを間引く
+        if (this._lastRenderTime && Date.now() - this._lastRenderTime < 50) { // 50ms（約20fps）で制限
+            return;
+        }
+        this._lastRenderTime = Date.now();
+        // メモリリーク防止：キャンバスサイズ上限
+        const maxCanvasSize = 2000; // 2000x2000以上にはしない
+        if (this.resultCanvas.width > maxCanvasSize || this.resultCanvas.height > maxCanvasSize) {
+            const aspectRatio = this.currentImage.width / this.currentImage.height;
+            if (aspectRatio >= 1) {
+                this.resultCanvas.width = maxCanvasSize;
+                this.resultCanvas.height = maxCanvasSize / aspectRatio;
+            }
+            else {
+                this.resultCanvas.height = maxCanvasSize;
+                this.resultCanvas.width = maxCanvasSize * aspectRatio;
+            }
+        }
         if (this.spatialModeEnabled) {
             this.renderSpatialScene();
         }
@@ -210,68 +294,136 @@ class SpatialSceneConverter {
         setTimeout(() => this.hideProgressBar(), 500);
         this.logDebug('[generateDepthMapSpatial] completed');
     }
-    // iOS26風：AI解析による深度推定（被写体セグメンテーション+高度な深度推定）
+    // iOS26風：AI解析による深度推定（高度なセグメンテーションと深度推定）
     analyzeDepthFromImage(imageData) {
         const width = imageData.width;
         const height = imageData.height;
         const data = imageData.data;
-        // 第1段階：被写体検出（簡易セグメンテーション）
+        // 第1段階：高度な被写体検出
         const subjectMask = this.detectSubjectRegions(imageData);
-        // 第2段階：深度マップ生成
+        // 第2段階：深度マップ生成（複数特徴量の統合）
         const depthData = new ImageData(width, height);
         const depth = depthData.data;
         const tempDepth = new Float32Array(width * height);
+        // 深度に寄与する特徴量を計算
+        const edgeMap = new Float32Array(width * height);
+        const blurMap = new Float32Array(width * height);
+        const focusMap = new Float32Array(width * height);
+        // エッジマップ計算
         for (let y = 1; y < height - 1; y++) {
             for (let x = 1; x < width - 1; x++) {
-                const idx = (y * width + x) * 4;
-                const linearIdx = y * width + x;
-                // 現在のピクセルの明度
-                const r = data[idx];
-                const g = data[idx + 1];
-                const b = data[idx + 2];
-                const brightness = (r + g + b) / 3;
-                // エッジ検出（簡易Sobel）
                 const edgeX = this.getSimpleEdgeX(data, x, y, width);
                 const edgeY = this.getSimpleEdgeY(data, x, y, width);
                 const edgeMagnitude = Math.sqrt(edgeX * edgeX + edgeY * edgeY);
-                // 色彩分析（暖色=手前、寒色=奥）
-                const warmth = (r + g * 0.5) - b;
-                // 中央重要度（画像中央は被写体の可能性が高い）
-                const centerX = width / 2;
-                const centerY = height / 2;
+                edgeMap[y * width + x] = Math.min(255, edgeMagnitude);
+            }
+        }
+        // ぼけ推定マップ（局所的なコントラスト）
+        const kernelSize = 3;
+        const halfSize = Math.floor(kernelSize / 2);
+        for (let y = halfSize; y < height - halfSize; y++) {
+            for (let x = halfSize; x < width - halfSize; x++) {
+                let sum = 0;
+                let count = 0;
+                let maxVal = 0;
+                let minVal = 255;
+                for (let ky = -halfSize; ky <= halfSize; ky++) {
+                    for (let kx = -halfSize; kx <= halfSize; kx++) {
+                        const idx = ((y + ky) * width + (x + kx)) * 4;
+                        const gray = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                        sum += gray;
+                        count++;
+                        maxVal = Math.max(maxVal, gray);
+                        minVal = Math.min(minVal, gray);
+                    }
+                }
+                const avg = sum / count;
+                const localContrast = maxVal - minVal;
+                blurMap[y * width + x] = Math.min(255, localContrast);
+            }
+        }
+        // 焦点距離マップ（中心からの距離）
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
                 const distFromCenter = Math.sqrt((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY));
-                const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
-                const centralityScore = 1 - (distFromCenter / maxDist);
+                // シグモイド関数で中心に焦点があると仮定
+                const normalizedDist = distFromCenter / maxDist;
+                const focusWeight = 1 / (1 + Math.exp((normalizedDist - 0.5) * 5));
+                focusMap[y * width + x] = focusWeight * 255;
+            }
+        }
+        // マップの組み合わせで深度を計算
+        for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+                const idx = y * width + x;
+                const linearIdx = idx;
+                const pixelIdx = idx * 4;
+                const r = data[pixelIdx];
+                const g = data[pixelIdx + 1];
+                const b = data[pixelIdx + 2];
+                const brightness = (r + g + b) / 3;
+                // 色相（HSV変換）
+                const max = Math.max(r, g, b);
+                const min = Math.min(r, g, b);
+                const delta = max - min;
+                let hue = 0;
+                if (delta !== 0) {
+                    if (max === r)
+                        hue = ((g - b) / delta) % 6;
+                    else if (max === g)
+                        hue = (b - r) / delta + 2;
+                    else
+                        hue = (r - g) / delta + 4;
+                    hue *= 60;
+                    if (hue < 0)
+                        hue += 360;
+                }
                 // 被写体マスクの影響
                 const isSubject = subjectMask[linearIdx];
-                // 深度計算：iOS26風のアルゴリズム
-                let depthValue = 128; // 基準値（中間の深度）
-                // 被写体領域は手前に
-                if (isSubject) {
-                    depthValue = 200; // 手前（明るい値）
-                    // 被写体内でもエッジや明度で微調整
-                    depthValue += (brightness - 128) * 0.2;
-                    depthValue += Math.min(30, edgeMagnitude * 0.15);
+                // 特徴量統合による深度計算
+                let depthValue = isSubject ? 220 : 60; // 基本値（被写体：手前、背景：奥）
+                // エッジに基づく調整（エッジが強いほど手前）
+                const edgeWeight = 0.15;
+                depthValue += edgeMap[linearIdx] * edgeWeight * (isSubject ? 1 : 0.3);
+                // ぼけに基づく調整（ぼけていないほど手前）
+                const blurWeight = 0.12;
+                depthValue += blurMap[linearIdx] * blurWeight * (isSubject ? 1 : 0.4);
+                // 焦点距離に基づく調整
+                const focusWeight = 0.18;
+                depthValue += focusMap[linearIdx] * focusWeight * (isSubject ? 0.5 : 0.3);
+                // 色相に基づく調整（青系は遠く、赤系は近く）
+                if (hue >= 180 && hue <= 270) { // 青系
+                    depthValue -= 15 * (isSubject ? 0.3 : 1.0);
                 }
-                else {
-                    // 背景は奥に
-                    depthValue = 80; // 奥（暗い値）
-                    // 背景でも距離感を演出
-                    depthValue += warmth * 0.05;
-                    depthValue += centralityScore * 20; // 中央寄りの背景は少し手前
+                else if (hue >= 0 && hue <= 60) { // 赤〜黄系
+                    depthValue += 10 * (isSubject ? 0.3 : 0.8);
                 }
-                // 中央重要度で全体調整
-                depthValue += centralityScore * 15;
+                // 明度に基づく調整（明るいほど手前）
+                depthValue += (brightness - 128) * 0.1 * (isSubject ? 0.5 : 0.3);
+                // 境界付近の処理
+                if (edgeMap[linearIdx] > 40) {
+                    if (isSubject) {
+                        // 被写体の境界は少し強調
+                        depthValue += 15;
+                    }
+                    else {
+                        // 背景の境界は少し奥に
+                        depthValue -= 10;
+                    }
+                }
                 // 0-255の範囲にクランプ
                 tempDepth[linearIdx] = Math.max(0, Math.min(255, depthValue));
             }
         }
-        // 第3段階：ガウシアンブラーで滑らかに
-        const blurredDepth = this.applyGaussianBlur(tempDepth, width, height, 2.0);
-        // 最終的なImageDataに変換
+        // 第3段階：深度の平滑化（適応的ガウシアンブラー）
+        const smoothedDepth = this.applyAdaptiveGaussianBlur(tempDepth, edgeMap, width, height);
+        // 最終的な深度マップを作成
         for (let i = 0; i < width * height; i++) {
             const pixelIdx = i * 4;
-            const depthVal = Math.round(blurredDepth[i]);
+            const depthVal = Math.round(smoothedDepth[i]);
             depth[pixelIdx] = depthVal;
             depth[pixelIdx + 1] = depthVal;
             depth[pixelIdx + 2] = depthVal;
@@ -279,12 +431,62 @@ class SpatialSceneConverter {
         }
         return depthData;
     }
-    // iOS26風：被写体領域検出（簡易セグメンテーション）
+    // 適応的ガウシアンブラー（エッジを保持しつつ平滑化）
+    applyAdaptiveGaussianBlur(data, edgeMap, width, height) {
+        const result = new Float32Array(width * height);
+        const tempResult = new Float32Array(width * height);
+        // エッジに応じたシグマ値を決定
+        const sigmaMap = new Float32Array(width * height);
+        for (let i = 0; i < width * height; i++) {
+            const edgeStrength = edgeMap[i];
+            // エッジが強いほどシグマ値を小さく（ブラーを弱く）
+            sigmaMap[i] = Math.max(0.8, 3.0 - (edgeStrength / 255) * 2.5);
+        }
+        // 水平方向のブラー
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = y * width + x;
+                const sigma = sigmaMap[idx];
+                const radius = Math.ceil(sigma * 2.5);
+                let sum = 0;
+                let weightSum = 0;
+                for (let i = -radius; i <= radius; i++) {
+                    const xi = Math.max(0, Math.min(width - 1, x + i));
+                    const dist = i * i;
+                    const weight = Math.exp(-dist / (2 * sigma * sigma));
+                    sum += data[y * width + xi] * weight;
+                    weightSum += weight;
+                }
+                tempResult[idx] = sum / weightSum;
+            }
+        }
+        // 垂直方向のブラー
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = y * width + x;
+                const sigma = sigmaMap[idx];
+                const radius = Math.ceil(sigma * 2.5);
+                let sum = 0;
+                let weightSum = 0;
+                for (let i = -radius; i <= radius; i++) {
+                    const yi = Math.max(0, Math.min(height - 1, y + i));
+                    const dist = i * i;
+                    const weight = Math.exp(-dist / (2 * sigma * sigma));
+                    sum += tempResult[yi * width + x] * weight;
+                    weightSum += weight;
+                }
+                result[idx] = sum / weightSum;
+            }
+        }
+        return result;
+    }
+    // iOS26風：被写体領域検出（高度セグメンテーション）
     detectSubjectRegions(imageData) {
         const width = imageData.width;
         const height = imageData.height;
         const data = imageData.data;
         const mask = new Array(width * height).fill(false);
+        // 第1段階：ピクセルレベルの特性評価
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const idx = (y * width + x) * 4;
@@ -292,32 +494,52 @@ class SpatialSceneConverter {
                 const r = data[idx];
                 const g = data[idx + 1];
                 const b = data[idx + 2];
-                // 肌色検出（人物被写体）
-                const isSkinTone = this.isSkinColor(r, g, b);
+                // 肌色検出（人物被写体）- より精密な範囲で検出
+                const isSkinTone = this.isAdvancedSkinColor(r, g, b);
                 // 鮮やかな色検出（物体被写体）
                 const saturation = this.getColorSaturation(r, g, b);
-                const isVividColor = saturation > 50;
-                // 中央重要度
+                const brightness = (r + g + b) / 3;
+                const isVividColor = saturation > 45 && brightness > 50;
+                // 焦点距離に基づく中央重要度（シグモイド関数で自然な重み付け）
                 const centerX = width / 2;
                 const centerY = height / 2;
                 const distFromCenter = Math.sqrt((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY));
                 const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
-                const isCentral = (distFromCenter / maxDist) < 0.6;
-                // 被写体判定
-                mask[linearIdx] = (isSkinTone || (isVividColor && isCentral));
+                const normalizedDist = distFromCenter / maxDist;
+                const centralityWeight = 1 / (1 + Math.exp((normalizedDist - 0.5) * 10)); // シグモイド関数
+                // エッジ検出（被写体の輪郭を強調）
+                const hasStrongEdge = this.hasStrongEdgeAt(data, x, y, width, height);
+                // 被写体スコア計算（複数要素の重み付け組み合わせ）
+                let subjectScore = 0;
+                if (isSkinTone)
+                    subjectScore += 0.7;
+                if (isVividColor)
+                    subjectScore += 0.5;
+                subjectScore += centralityWeight * 0.6;
+                if (hasStrongEdge)
+                    subjectScore += 0.3;
+                // スコアしきい値で被写体判定
+                mask[linearIdx] = subjectScore > 0.6;
             }
         }
-        // モルフォロジー処理で雑音除去
-        return this.morphologyClose(mask, width, height);
+        // 第2段階：領域拡張法による被写体検出の強化
+        const enhancedMask = this.enhanceSubjectDetection(mask, width, height, data);
+        // 第3段階：モルフォロジー処理とノイズ除去
+        return this.advancedMorphologyProcess(enhancedMask, width, height);
     }
-    // 肌色判定
-    isSkinColor(r, g, b) {
-        // HSV変換による肌色判定
+    // 高度な肌色検出（YCbCr色空間を使用）
+    isAdvancedSkinColor(r, g, b) {
+        // RGB to YCbCr変換（写真業界標準の変換）
+        const y = 0.299 * r + 0.587 * g + 0.114 * b;
+        const cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+        const cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
+        // 肌色の標準範囲（研究ベースの値）
+        // Cb: 77-127, Cr: 133-173 が一般的な肌色範囲
+        const isSkinYCbCr = (cb >= 77 && cb <= 127 && cr >= 133 && cr <= 173);
+        // HSV変換による補助検証
         const max = Math.max(r, g, b);
         const min = Math.min(r, g, b);
         const delta = max - min;
-        if (max === 0)
-            return false;
         let hue = 0;
         if (delta !== 0) {
             if (max === r) {
@@ -335,43 +557,129 @@ class SpatialSceneConverter {
         }
         const saturation = max === 0 ? 0 : (delta / max) * 100;
         const value = (max / 255) * 100;
-        // 肌色の範囲：色相10-40度、彩度20-80%、明度30-90%
-        return (hue >= 10 && hue <= 40) &&
-            (saturation >= 20 && saturation <= 80) &&
-            (value >= 30 && value <= 90);
+        // 改良された肌色HSV範囲
+        const isSkinHSV = (hue >= 0 && hue <= 50) &&
+            (saturation >= 10 && saturation <= 85) &&
+            (value >= 20 && value <= 95);
+        // RGB比率チェック（肌色の特性：R>G>B）
+        const isRGBRatioCorrect = (r > g) && (g > b) && (r - b > 20);
+        // 複合判定（より高精度）
+        return (isSkinYCbCr && (isSkinHSV || isRGBRatioCorrect)) ||
+            (isSkinHSV && isRGBRatioCorrect);
     }
-    // 色彩度計算
-    getColorSaturation(r, g, b) {
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        return max === 0 ? 0 : ((max - min) / max) * 100;
+    // エッジ検出強化版
+    hasStrongEdgeAt(data, x, y, width, height) {
+        if (x <= 1 || x >= width - 2 || y <= 1 || y >= height - 2)
+            return false;
+        // Sobelオペレータによるエッジ検出
+        const gx = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
+        const gy = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
+        let sumX = 0;
+        let sumY = 0;
+        for (let j = -1; j <= 1; j++) {
+            for (let i = -1; i <= 1; i++) {
+                const pixelX = x + i;
+                const pixelY = y + j;
+                if (pixelX < 0 || pixelX >= width || pixelY < 0 || pixelY >= height)
+                    continue;
+                const idx = (pixelY * width + pixelX) * 4;
+                const gray = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                sumX += gray * gx[j + 1][i + 1];
+                sumY += gray * gy[j + 1][i + 1];
+            }
+        }
+        const magnitude = Math.sqrt(sumX * sumX + sumY * sumY);
+        return magnitude > 40; // しきい値調整
     }
-    // モルフォロジークロージング（簡易版）
-    morphologyClose(mask, width, height) {
-        // 膨張→収縮でノイズ除去と穴埋め
-        const dilated = this.morphologyDilate(mask, width, height);
-        return this.morphologyErode(dilated, width, height);
-    }
-    morphologyDilate(mask, width, height) {
-        const result = new Array(width * height).fill(false);
-        for (let y = 1; y < height - 1; y++) {
-            for (let x = 1; x < width - 1; x++) {
+    // 領域拡張法による被写体検出強化
+    enhanceSubjectDetection(mask, width, height, data) {
+        const result = [...mask];
+        const visited = new Array(width * height).fill(false);
+        const threshold = 30; // 類似度しきい値
+        // 領域拡張（Flood Fill）アルゴリズム
+        const floodFill = (startX, startY) => {
+            const queue = [[startX, startY]];
+            const startIdx = (startY * width + startX) * 4;
+            const startR = data[startIdx];
+            const startG = data[startIdx + 1];
+            const startB = data[startIdx + 2];
+            while (queue.length > 0) {
+                const [x, y] = queue.shift();
                 const idx = y * width + x;
-                result[idx] = mask[idx] ||
-                    mask[idx - 1] || mask[idx + 1] ||
-                    mask[idx - width] || mask[idx + width];
+                if (visited[idx])
+                    continue;
+                visited[idx] = true;
+                const pixelIdx = idx * 4;
+                const r = data[pixelIdx];
+                const g = data[pixelIdx + 1];
+                const b = data[pixelIdx + 2];
+                // 色の差が閾値より小さければ同じ領域と判断
+                const colorDiff = Math.sqrt(Math.pow(r - startR, 2) +
+                    Math.pow(g - startG, 2) +
+                    Math.pow(b - startB, 2));
+                if (colorDiff <= threshold) {
+                    result[idx] = true;
+                    // 隣接ピクセルをキューに追加
+                    const directions = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+                    for (const [dx, dy] of directions) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height && !visited[ny * width + nx]) {
+                            queue.push([nx, ny]);
+                        }
+                    }
+                }
+            }
+        };
+        // 強い被写体と判定されたピクセルから領域拡張
+        for (let y = 0; y < height; y += 5) { // 処理を軽減するためステップを大きくする
+            for (let x = 0; x < width; x += 5) {
+                const idx = y * width + x;
+                if (mask[idx] && !visited[idx]) {
+                    floodFill(x, y);
+                }
             }
         }
         return result;
     }
-    morphologyErode(mask, width, height) {
-        const result = new Array(width * height).fill(false);
-        for (let y = 1; y < height - 1; y++) {
-            for (let x = 1; x < width - 1; x++) {
+    // 高度なモルフォロジー処理
+    advancedMorphologyProcess(mask, width, height) {
+        // 小さなノイズ除去（オープニング処理）
+        let result = this.morphologyErode(mask, width, height);
+        result = this.morphologyErode(result, width, height); // 二回適用で効果強化
+        result = this.morphologyDilate(result, width, height);
+        result = this.morphologyDilate(result, width, height);
+        // 穴埋め処理（クロージング処理）
+        result = this.morphologyDilate(result, width, height);
+        result = this.morphologyDilate(result, width, height);
+        result = this.morphologyErode(result, width, height);
+        result = this.morphologyErode(result, width, height);
+        // 境界を滑らかにする
+        result = this.smoothBoundaries(result, width, height);
+        return result;
+    }
+    // 境界平滑化
+    smoothBoundaries(mask, width, height) {
+        const result = [...mask];
+        for (let y = 2; y < height - 2; y++) {
+            for (let x = 2; x < width - 2; x++) {
                 const idx = y * width + x;
-                result[idx] = mask[idx] &&
-                    mask[idx - 1] && mask[idx + 1] &&
-                    mask[idx - width] && mask[idx + width];
+                // 3x3ウィンドウ内での被写体ピクセル数をカウント
+                let count = 0;
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const neighborIdx = (y + dy) * width + (x + dx);
+                        if (mask[neighborIdx])
+                            count++;
+                    }
+                }
+                // 多数決原理（閾値を調整可能）
+                if (count >= 5) {
+                    result[idx] = true;
+                }
+                else if (count <= 3) {
+                    result[idx] = false;
+                }
             }
         }
         return result;
@@ -444,11 +752,69 @@ class SpatialSceneConverter {
         };
         return getGray(x, y + 1) - getGray(x, y - 1);
     }
-    // iOS26風：空間シーンレンダリング
+    // 色彩度計算
+    getColorSaturation(r, g, b) {
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        return max === 0 ? 0 : ((max - min) / max) * 100;
+    }
+    // モルフォロジー処理：膨張（Dilation）
+    morphologyDilate(mask, width, height) {
+        const result = new Array(width * height).fill(false);
+        const directions = [
+            [-1, -1], [0, -1], [1, -1],
+            [-1, 0], [0, 0], [1, 0],
+            [-1, 1], [0, 1], [1, 1]
+        ];
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = y * width + x;
+                // 近傍に被写体ピクセルがあれば真
+                for (const [dx, dy] of directions) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        if (mask[ny * width + nx]) {
+                            result[idx] = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+    // モルフォロジー処理：収縮（Erosion）
+    morphologyErode(mask, width, height) {
+        const result = new Array(width * height).fill(false);
+        const directions = [
+            [-1, -1], [0, -1], [1, -1],
+            [-1, 0], [0, 0], [1, 0],
+            [-1, 1], [0, 1], [1, 1]
+        ];
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = y * width + x;
+                // すべての近傍が被写体ピクセルの場合のみ真
+                let allNeighborsTrue = true;
+                for (const [dx, dy] of directions) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx < 0 || nx >= width || ny < 0 || ny >= height || !mask[ny * width + nx]) {
+                        allNeighborsTrue = false;
+                        break;
+                    }
+                }
+                result[idx] = allNeighborsTrue;
+            }
+        }
+        return result;
+    }
+    // iOS26風：視差効果レンダリング（高度な3D変換と視覚効果）
     renderSpatialScene() {
-        this.logDebug('[renderSpatialScene] tiltX:', this.tiltX, 'tiltY:', this.tiltY);
         if (!this.currentImage || !this.depthMap)
             return;
+        this.logDebug('[renderSpatialScene] tiltX:', this.tiltX, 'tiltY:', this.tiltY);
         this.resultCtx.clearRect(0, 0, this.resultCanvas.width, this.resultCanvas.height);
         const intensity = document.getElementById('spatialIntensity').valueAsNumber;
         // 元画像データを取得
@@ -460,65 +826,247 @@ class SpatialSceneConverter {
         const sourceImageData = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
         const scaleX = this.resultCanvas.width / sourceCanvas.width;
         const scaleY = this.resultCanvas.height / sourceCanvas.height;
-        // iOS26風：視差効果で2Dから3D風に
-        this.renderParallaxEffect(sourceImageData, this.depthMap, scaleX, scaleY, intensity);
+        // 高度な視差効果でよりリアルな3D表現
+        this.renderAdvancedParallaxEffect(sourceImageData, this.depthMap, scaleX, scaleY, intensity);
     }
-    // iOS26風：視差効果レンダリング（逆写像・高画質）
-    renderParallaxEffect(sourceImageData, depthMap, scaleX, scaleY, intensity) {
+    // iOS26風：高度な視差効果レンダリング（物理ベースの3D変換）- 最適化版
+    renderAdvancedParallaxEffect(sourceImageData, depthMap, scaleX, scaleY, intensity) {
         const width = sourceImageData.width;
         const height = sourceImageData.height;
         const outW = this.resultCanvas.width;
         const outH = this.resultCanvas.height;
         const outImage = this.resultCtx.createImageData(outW, outH);
         const outData = outImage.data;
+        // 傾きの値を安定化（急激な変化を防止）
         const tiltX = this.tiltX;
         const tiltY = this.tiltY;
+        // Step1: 強度の推奨上限と最大値の設定
+        const recommendedMax = 45;
+        const maxIntensity = 60; // 安定性のため少し控えめに
+        const safeIntensity = Math.min(intensity, maxIntensity);
+        // Step2: 高度なイージング関数（カスタムシグモイド）
+        const advancedSigmoid = (v) => {
+            // カスタムシグモイド関数（中間値付近を強調）
+            const sharpness = 6.5; // 急峻さを少し抑える
+            const offset = 0.5; // オフセットを中心に
+            return 1 / (1 + Math.exp(-sharpness * (v - offset)));
+        };
+        // Step3: 視差効果の最大シフト量（画像サイズに対する割合）- 控えめに設定
+        const maxShiftX = width * 0.05;
+        const maxShiftY = height * 0.045;
+        // Step4: 物理ベースの3D変換パラメータ（安定性向上）
+        const focalLength = 400; // 仮想的な焦点距離
+        const basePlaneDepth = 450; // 基準深度面
+        // 深度マップの前処理（パフォーマンス向上のためダウンサンプリング）
+        const downsampleFactor = Math.min(width, height) > 800 ? 2 : 1; // 大きな画像の場合はダウンサンプリング
+        let processedDepthMap;
+        if (downsampleFactor === 1) {
+            // 小〜中サイズ画像はバイラテラルフィルタを適用
+            processedDepthMap = this.applyBilateralFilterToDepth(depthMap, width, height);
+        }
+        else {
+            // 大きな画像は単純なブラーを適用（パフォーマンス向上）
+            processedDepthMap = depthMap.data.slice();
+        }
+        // エッジ情報の事前計算（パフォーマンス向上）
+        const edgeInfo = new Float32Array(width * height);
+        for (let y = 1; y < height - 1; y += downsampleFactor) {
+            for (let x = 1; x < width - 1; x += downsampleFactor) {
+                const idx = (y * width + x) * 4;
+                if (x % downsampleFactor === 0 && y % downsampleFactor === 0) {
+                    const dx = (depthMap.data[idx] - depthMap.data[idx + 4]) / 255;
+                    const dy = (depthMap.data[idx] - depthMap.data[(y + 1) * width + x]) / 255;
+                    edgeInfo[y * width + x] = Math.sqrt(dx * dx + dy * dy);
+                }
+            }
+        }
+        // 出力画像生成（最適化）
+        const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+        const centerX = width / 2;
+        const centerY = height / 2;
         for (let outY = 0; outY < outH; outY++) {
             for (let outX = 0; outX < outW; outX++) {
-                // 出力→元画像座標へ逆変換
                 const xNorm = outX / scaleX;
                 const yNorm = outY / scaleY;
                 let srcX = xNorm;
                 let srcY = yNorm;
-                if (intensity !== 0 || tiltX !== 0 || tiltY !== 0) {
-                    // 中心基準
-                    const centerX = width / 2;
-                    const centerY = height / 2;
-                    // 深度値取得
-                    const ix = Math.round(srcX);
-                    const iy = Math.round(srcY);
-                    if (ix < 0 || iy < 0 || ix >= width || iy >= height)
-                        continue;
+                if (safeIntensity !== 0 || tiltX !== 0 || tiltY !== 0) {
+                    const ix = Math.min(width - 1, Math.max(0, Math.round(xNorm)));
+                    const iy = Math.min(height - 1, Math.max(0, Math.round(yNorm)));
                     const depthIndex = (iy * width + ix) * 4;
-                    const depth = depthMap.data[depthIndex] / 255;
+                    // 深度値取得と正規化
+                    let depth = processedDepthMap[depthIndex] / 255;
+                    // 高度なイージング適用
+                    depth = advancedSigmoid(depth);
                     const normalizedDepth = (depth - 0.5) * 2;
-                    // 斜め方向対応：XY両軸の視差効果を同時適用
-                    const scale = 1 + normalizedDepth * intensity * 0.015;
-                    const parallaxX = normalizedDepth * intensity * 0.4 * (tiltY / 45);
-                    const parallaxY = normalizedDepth * intensity * 0.25 * (tiltX / 45);
-                    // 斜め方向の遠近感も加味
-                    const diagonalEffect = Math.sqrt(tiltX * tiltX + tiltY * tiltY) / 45;
-                    const extraDepthShift = normalizedDepth * diagonalEffect * intensity * 0.1;
-                    // 逆変換（斜め方向対応）
-                    srcX = ((xNorm - parallaxX) - centerX) / scale + centerX;
-                    srcY = ((yNorm - parallaxY) - centerY) / scale + centerY;
-                    // 斜め方向の微調整
-                    srcX += extraDepthShift * (tiltY / 45) * 0.5;
-                    srcY += extraDepthShift * (tiltX / 45) * 0.3;
+                    // 視差効果（効率化）
+                    const depthFactor = normalizedDepth * safeIntensity * 0.01;
+                    // 中心からの相対位置
+                    const relX = xNorm - centerX;
+                    const relY = yNorm - centerY;
+                    // パースペクティブ効果（奥行きによる拡大縮小）- 計算簡略化
+                    const persp = 1 + depthFactor * 0.8;
+                    const perspX = (relX / persp);
+                    const perspY = (relY / persp);
+                    // 視差効果（視点移動による見え方の変化）
+                    const parallaxX = clamp(tiltY / 45 * depthFactor * 800, -maxShiftX, maxShiftX);
+                    const parallaxY = clamp(tiltX / 45 * depthFactor * 700, -maxShiftY, maxShiftY);
+                    // 最終的な座標計算
+                    srcX = centerX + perspX + parallaxX;
+                    srcY = centerY + perspY + parallaxY;
+                    // 斜め方向の効果（最適化）
+                    if (Math.abs(tiltX) > 10 && Math.abs(tiltY) > 10) {
+                        const diagonalFactor = Math.min(1, Math.sqrt(tiltX * tiltX + tiltY * tiltY) / 60);
+                        const diagonalShift = diagonalFactor * safeIntensity * 0.06 * normalizedDepth;
+                        srcX += diagonalShift * (tiltY / Math.abs(tiltY + 0.001));
+                        srcY += diagonalShift * (tiltX / Math.abs(tiltX + 0.001));
+                    }
                 }
-                const sx = Math.round(srcX);
-                const sy = Math.round(srcY);
-                if (sx < 0 || sy < 0 || sx >= width || sy >= height)
-                    continue;
-                const srcIdx = (sy * width + sx) * 4;
+                // 範囲外参照時は端の色で埋める
+                const sx = Math.max(0, Math.min(width - 1, srcX));
+                const sy = Math.max(0, Math.min(height - 1, srcY));
+                // バイリニア補間による高品質サンプリング
+                const x0 = Math.floor(sx);
+                const y0 = Math.floor(sy);
+                const x1 = Math.min(x0 + 1, width - 1);
+                const y1 = Math.min(y0 + 1, height - 1);
+                const wx = sx - x0;
+                const wy = sy - y0;
+                const idx00 = (y0 * width + x0) * 4;
+                const idx01 = (y0 * width + x1) * 4;
+                const idx10 = (y1 * width + x0) * 4;
+                const idx11 = (y1 * width + x1) * 4;
+                // 各チャンネルでバイリニア補間
                 const outIdx = (outY * outW + outX) * 4;
-                outData[outIdx] = sourceImageData.data[srcIdx];
-                outData[outIdx + 1] = sourceImageData.data[srcIdx + 1];
-                outData[outIdx + 2] = sourceImageData.data[srcIdx + 2];
-                outData[outIdx + 3] = sourceImageData.data[srcIdx + 3];
+                // 照明効果（最適化）
+                const depthIdx = (Math.round(sy) * width + Math.round(sx)) * 4;
+                const depthValue = depthMap.data[depthIdx] / 255;
+                // 深度に応じた影効果（奥ほど暗く）- 軽量化
+                const shadowIntensity = 0.12; // 影の強さを控えめに
+                let shadow = 1.0 - (1.0 - depthValue) * shadowIntensity;
+                // 照明効果の簡略化
+                let lightEffect = 1.0;
+                if (Math.abs(tiltX) > 5 || Math.abs(tiltY) > 5) {
+                    const edgeValue = edgeInfo[Math.round(sy) * width + Math.round(sx)];
+                    const lightDirX = -tiltY / 45; // 左右の傾きで光の方向が変化
+                    const lightDirY = -tiltX / 45; // 上下の傾きで光の方向が変化
+                    // 簡略化した照明計算
+                    lightEffect = Math.max(0.9, Math.min(1.1, 1 + (lightDirX + lightDirY) * edgeValue * 0.3));
+                }
+                // 色を計算（最適化）
+                for (let c = 0; c < 3; c++) {
+                    const c00 = sourceImageData.data[idx00 + c];
+                    const c01 = sourceImageData.data[idx01 + c];
+                    const c10 = sourceImageData.data[idx10 + c];
+                    const c11 = sourceImageData.data[idx11 + c];
+                    const cx0 = c00 * (1 - wx) + c01 * wx;
+                    const cx1 = c10 * (1 - wx) + c11 * wx;
+                    const color = cx0 * (1 - wy) + cx1 * wy;
+                    // 照明効果を適用
+                    outData[outIdx + c] = Math.max(0, Math.min(255, color * shadow * lightEffect));
+                }
+                // アルファチャンネルはそのままコピー
+                outData[outIdx + 3] = 255;
             }
         }
         this.resultCtx.putImageData(outImage, 0, 0);
+        // 強度が推奨上限を超えた場合は警告表示
+        if (intensity > recommendedMax) {
+            const warn = document.getElementById('spatialWarning');
+            if (warn) {
+                warn.style.display = 'block';
+                warn.textContent = '※強度が高すぎると破綻する場合があります（推奨上限: ' + recommendedMax + '）';
+            }
+        }
+        else {
+            const warn = document.getElementById('spatialWarning');
+            if (warn)
+                warn.style.display = 'none';
+        }
+    }
+    // バイラテラルフィルタによる深度マップの前処理
+    applyBilateralFilterToDepth(depthMap, width, height) {
+        const data = depthMap.data;
+        const result = new Uint8ClampedArray(data.length);
+        const spatialSigma = 3.0; // 空間的な範囲
+        const rangeSigma = 25.0; // 値の範囲
+        const spatialRadius = Math.ceil(spatialSigma * 2);
+        const spatialKernel = new Array(spatialRadius * 2 + 1);
+        // 空間カーネルの計算
+        for (let i = 0; i <= spatialRadius * 2; i++) {
+            const x = i - spatialRadius;
+            spatialKernel[i] = Math.exp(-(x * x) / (2 * spatialSigma * spatialSigma));
+        }
+        // バイラテラルフィルタ適用
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const centerIdx = (y * width + x) * 4;
+                const centerValue = data[centerIdx];
+                let sum = 0;
+                let totalWeight = 0;
+                for (let dy = -spatialRadius; dy <= spatialRadius; dy++) {
+                    const ny = y + dy;
+                    if (ny < 0 || ny >= height)
+                        continue;
+                    for (let dx = -spatialRadius; dx <= spatialRadius; dx++) {
+                        const nx = x + dx;
+                        if (nx < 0 || nx >= width)
+                            continue;
+                        const neighborIdx = (ny * width + nx) * 4;
+                        const neighborValue = data[neighborIdx];
+                        // 空間的な重み
+                        const spatialWeight = spatialKernel[dx + spatialRadius] * spatialKernel[dy + spatialRadius];
+                        // 値の差に基づく重み
+                        const valueDiff = centerValue - neighborValue;
+                        const rangeWeight = Math.exp(-(valueDiff * valueDiff) / (2 * rangeSigma * rangeSigma));
+                        // 総合的な重み
+                        const weight = spatialWeight * rangeWeight;
+                        sum += neighborValue * weight;
+                        totalWeight += weight;
+                    }
+                }
+                // 結果を格納
+                const filteredValue = Math.round(sum / totalWeight);
+                result[centerIdx] = filteredValue;
+                result[centerIdx + 1] = filteredValue;
+                result[centerIdx + 2] = filteredValue;
+                result[centerIdx + 3] = 255;
+            }
+        }
+        return result;
+    }
+    // デバッグログをdebug-panelに出力
+    logDebug(...args) {
+        const logDiv = document.getElementById('debugLog');
+        if (logDiv) {
+            const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+            const line = document.createElement('div');
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            logDiv.appendChild(line);
+            while (logDiv.childNodes.length > 50)
+                logDiv.removeChild(logDiv.firstChild);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        if (window.console)
+            console.log(...args);
+    }
+    // 進捗バー表示
+    showProgressBar() {
+        const bar = document.getElementById('progressBarContainer');
+        if (bar)
+            bar.style.display = 'block';
+        this.updateProgressBar(0);
+    }
+    updateProgressBar(percent) {
+        const bar = document.getElementById('progressBar');
+        if (bar)
+            bar.style.width = `${percent}%`;
+    }
+    hideProgressBar() {
+        const bar = document.getElementById('progressBarContainer');
+        if (bar)
+            bar.style.display = 'none';
+        this.updateProgressBar(0);
     }
     saveResult() {
         if (!this.currentImage)
@@ -565,39 +1113,6 @@ class SpatialSceneConverter {
             this.updateSpatialDisplay();
         };
         img.src = canvas.toDataURL();
-    }
-    // 進捗バー表示
-    showProgressBar() {
-        const bar = document.getElementById('progressBarContainer');
-        if (bar)
-            bar.style.display = 'block';
-        this.updateProgressBar(0);
-    }
-    updateProgressBar(percent) {
-        const bar = document.getElementById('progressBar');
-        if (bar)
-            bar.style.width = `${percent}%`;
-    }
-    hideProgressBar() {
-        const bar = document.getElementById('progressBarContainer');
-        if (bar)
-            bar.style.display = 'none';
-        this.updateProgressBar(0);
-    }
-    // デバッグログをdebug-panelに出力
-    logDebug(...args) {
-        const logDiv = document.getElementById('debugLog');
-        if (logDiv) {
-            const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
-            const line = document.createElement('div');
-            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-            logDiv.appendChild(line);
-            while (logDiv.childNodes.length > 50)
-                logDiv.removeChild(logDiv.firstChild);
-            logDiv.scrollTop = logDiv.scrollHeight;
-        }
-        if (window.console)
-            console.log(...args);
     }
 }
 // アプリケーション開始
