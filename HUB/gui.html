@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Modern Light Game Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #e0e7ef;
+            --primary-hover: #d1d5db;
+            --accent: #10b981;
+            --bg: #f6f8fa;
+            --menubar-bg: #f9fafb;
+            --menubar-border: #e5e7eb;
+            --menu-bg: #fff;
+            --menu-shadow: 0 6px 32px 0 rgba(0,0,0,.07), 0 1.5px 5px 0 rgba(0,0,0,.03);
+            --menu-radius: 10px;
+            --text-main: #212529;
+            --transition: 0.19s cubic-bezier(.4,0,.2,1);
+            --modal-bg: #fff;
+            --modal-overlay: rgba(40,48,60,0.26);
+            --danger: #ef4444;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'Segoe UI', 'Meiryo', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            min-height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .menubar {
+            display: flex;
+            align-items: center;
+            height: 46px;
+            background: var(--menubar-bg);
+            color: var(--text-main);
+            padding: 0 18px;
+            box-shadow: 0 1px 0 var(--menubar-border);
+            border-bottom: 1px solid var(--menubar-border);
+            -webkit-user-select: none;
+            user-select: none;
+            position: relative;
+            z-index: 100;
+        }
+
+            .menubar .menu {
+                position: relative;
+                margin-right: 22px;
+                cursor: pointer;
+                font-weight: 500;
+                font-size: 1rem;
+                border-radius: 7px 7px 0 0;
+                transition: background var(--transition), color var(--transition);
+            }
+
+                .menubar .menu:last-child {
+                    margin-right: 0;
+                }
+
+                .menubar .menu span {
+                    padding: 5px 15px;
+                    display: inline-block;
+                    border-radius: 7px 7px 0 0;
+                    line-height: 36px;
+                    transition: background var(--transition), color var(--transition), box-shadow var(--transition);
+                    color: var(--text-main);
+                    background: transparent;
+                }
+
+                .menubar .menu:hover span,
+                .menubar .menu:focus span,
+                .menubar .menu.show span {
+                    background: var(--primary-light);
+                    color: var(--primary);
+                    box-shadow: 0 2px 8px #e5e7eb;
+                }
+
+        .menu-content {
+            display: none;
+            position: absolute;
+            top: 41px;
+            left: 50%;
+            min-width: 220px;
+            background: var(--menu-bg);
+            color: var(--text-main);
+            border-radius: var(--menu-radius);
+            box-shadow: var(--menu-shadow);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition), transform var(--transition);
+            border: 1px solid var(--menubar-border);
+            overflow: hidden;
+            transform: translateX(-50%) scaleY(0.95);
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+            .menu-content::-webkit-scrollbar {
+                display: none;
+                width: 0 !important;
+                background: transparent;
+            }
+
+        .menu.show .menu-content {
+            display: block;
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) scaleY(1);
+            animation: menuSlideIn 0.17s cubic-bezier(.6,-0.28,.74,.05);
+        }
+
+        @keyframes menuSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) scaleY(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(-50%) scaleY(1);
+            }
+        }
+
+        .menu-content ul {
+            list-style: none;
+            margin: 0;
+            padding: 4px 0;
+            max-height: 220px;
+            overflow: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .menu-content li, .menu-content button {
+            width: 100%;
+            font: inherit;
+            color: var(--text-main);
+            background: none;
+            border: none;
+            padding: 9px 28px;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.13s, color 0.13s;
+            font-size: 1.05rem;
+            border-radius: 0;
+            outline: none;
+            letter-spacing: .01em;
+            position: relative;
+            white-space: nowrap;
+        }
+
+            .menu-content li:hover,
+            .menu-content button:hover,
+            .menu-content li:focus,
+            .menu-content button:focus {
+                background: var(--primary-hover);
+                color: var(--primary);
+            }
+
+        .iframe-container {
+            position: absolute;
+            top: 46px;
+            left: 0;
+            width: 100vw;
+            height: calc(100vh - 46px);
+            background: var(--bg);
+            box-sizing: border-box;
+            overflow: hidden;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        object {
+            width: 100vw;
+            height: 100%;
+            border: none;
+            background: #fff;
+            display: block;
+            border-radius: 0;
+            margin: 0;
+            box-shadow: none;
+            outline: none;
+        }
+        /* モダールウィンドウ */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background: var(--modal-overlay);
+            -webkit-backdrop-filter: blur(1.5px);
+            backdrop-filter: blur(1.5px);
+            transition: opacity 0.2s;
+        }
+
+            .modal-overlay.active {
+                display: block;
+            }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 300px;
+            max-width: 94vw;
+            padding: 36px 28px 28px 28px;
+            background: var(--modal-bg);
+            border-radius: 16px;
+            box-shadow: 0 6px 36px #2222;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--text-main);
+        }
+
+            .modal-content h2 {
+                margin: 0 0 18px 0;
+                color: var(--danger);
+                font-size: 1.3rem;
+            }
+
+            .modal-content p {
+                color: #495057;
+                font-size: 1.07rem;
+            }
+
+            .modal-content .modal-spinner {
+                margin: 22px auto 0 auto;
+                width: 38px;
+                height: 38px;
+                border: 4px solid #d1d5db;
+                border-top: 4px solid var(--danger);
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 500px) {
+            .modal-content {
+                min-width: 0;
+                padding: 18px 7vw;
+            }
+
+                .modal-content h2 {
+                    font-size: 1.02rem;
+                }
+        }
+
+        @media (max-width: 700px) {
+            .menubar {
+                padding: 0 5px;
+            }
+
+                .menubar .menu span {
+                    padding: 5px 7px;
+                    font-size: .95rem;
+                }
+
+            .menu-content {
+                min-width: 150px;
+            }
+
+            .iframe-container {
+                height: calc(100vh - 46px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="menubar">
+        <div class="menu" tabindex="0">
+            <span>Game Hub</span>
+            <div class="menu-content">
+                <ul>
+                    <li><button id="btnToHub">HUBに戻る</button></li>
+                </ul>
+            </div>
+        </div>
+        <div class="menu" tabindex="0">
+            <span>管理</span>
+            <div class="menu-content">
+                <ul>
+                    <li><button id="btnFullscreen">フルスクリーン</button></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="iframe-container">
+        <object id="mainFrame" data="https://pexserver.github.io/HUB" type="text/html" width="100%" height="100%" style="width:100vw;height:100%;border:none;background:#fff;display:block;"></object>
+    </div>
+    <!-- モダールウィンドウ -->
+    <div class="modal-overlay" id="modalNetwork">
+        <div class="modal-content">
+            <h2>インターネット未接続</h2>
+            <p>ネットワークに接続してください。<br>接続が回復すると自動的に再読み込みされます。</p>
+            <div class="modal-spinner"></div>
+        </div>
+    </div>
+    <script>
+        document.querySelectorAll('.menu').forEach(menu => {
+            menu.addEventListener('mouseenter', function () {
+                document.querySelectorAll('.menu').forEach(m => {
+                    if (m !== menu) m.classList.remove('show');
+                });
+                menu.classList.add('show');
+            });
+            menu.addEventListener('mouseleave', function () {
+                menu.classList.remove('show');
+            });
+            menu.addEventListener('click', function (e) {
+                if (!menu.classList.contains('show')) {
+                    document.querySelectorAll('.menu').forEach(m => {
+                        if (m !== menu) m.classList.remove('show');
+                    });
+                }
+                menu.classList.toggle('show');
+                e.stopPropagation();
+            });
+        });
+        document.body.addEventListener('click', function () {
+            document.querySelectorAll('.menu').forEach(m => m.classList.remove('show'));
+        });
+
+        // HUBに戻る（objectのdataを書き換え）
+        document.getElementById('btnToHub').onclick = function () {
+            document.getElementById('mainFrame').data = "https://pexserver.github.io/HUB";
+        };
+
+        // フルスクリーン
+        document.getElementById('btnFullscreen').onclick = function () {
+            if (document.fullscreenEnabled) {
+                document.documentElement.requestFullscreen();
+            } else {
+                alert('フルスクリーンはサポートされていません');
+            }
+        };
+
+        // ---- ネットワーク監視とモーダル制御 ----
+        const modal = document.getElementById('modalNetwork');
+        let lostConnection = false;
+        let reloadPending = false;
+
+        function showModal() {
+            modal.classList.add('active');
+            document.body.style.pointerEvents = "none";
+            modal.style.pointerEvents = "auto";
+        }
+        function hideModal() {
+            modal.classList.remove('active');
+            document.body.style.pointerEvents = "";
+        }
+        function reloadContent() {
+            const iframe = document.getElementById('mainFrame');
+            iframe.src = iframe.src;
+            hideModal(); 
+        }
+
+        function checkOnlineStatus() {
+            if (!navigator.onLine) {
+                lostConnection = true;
+                reloadPending = true;
+                showModal();
+                return;
+            }
+            fetch("https://www.google.com/", { method: "HEAD", mode: "no-cors" })
+                .then(() => {
+                    if (lostConnection && reloadPending) {
+                        lostConnection = false;
+                        reloadPending = false;
+                        reloadContent(); // モーダルもここで閉じる
+                    } else if (lostConnection) {
+                        lostConnection = false;
+                        hideModal();
+                    }
+                })
+                .catch(() => {
+                    lostConnection = true;
+                    reloadPending = true;
+                    showModal();
+                });
+        }
+
+        window.addEventListener('online', checkOnlineStatus);
+        window.addEventListener('offline', checkOnlineStatus);
+
+        checkOnlineStatus();
+        setInterval(checkOnlineStatus, 4000);
+
+        modal.addEventListener('mousedown', e => e.stopPropagation());
+        modal.addEventListener('touchstart', e => e.stopPropagation());
+        window.addEventListener('keydown', function (e) {
+            if (modal.classList.contains('active')) {
+                e.preventDefault();
+            }
+        }, true);
+    </script>
+</body>
+</html>
