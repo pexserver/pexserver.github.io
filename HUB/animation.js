@@ -322,7 +322,7 @@ class HubManager {
         }
 
         visitBtn.onclick = () => {
-            window.open(item.url, '_blank');
+            window.location.href = item.url;
             this.closeModal();
         };
 
@@ -394,18 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
     new HubManager();
 });
 
-// PWA Service Worker registration
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-                console.log('SW registered: ', registration);
-            })
-            .catch(registrationError => {
-                console.log('SW registration failed: ', registrationError);
-            });
-    });
-}
+
 
 // Smooth scrolling for anchor links
 document.addEventListener('click', (e) => {
