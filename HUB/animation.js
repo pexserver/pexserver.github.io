@@ -2,9 +2,15 @@
 class HubManager {
     constructor() {
         this.contents = null;
-        this.favorites = JSON.parse(localStorage.getItem('hub-favorites') || '[]');
+        this.favorites = [];
         this.currentFilter = 'all';
         this.searchQuery = '';
+        try {
+            const fav = localStorage.getItem('hub-favorites');
+            this.favorites = fav ? JSON.parse(fav) : [];
+        } catch (e) {
+            this.favorites = [];
+        }
         this.init();
     }
 
@@ -358,7 +364,11 @@ class HubManager {
             this.favorites.push(url);
             this.showToast('お気に入りに追加しました', 'success');
         }
-        localStorage.setItem('hub-favorites', JSON.stringify(this.favorites));
+        try {
+            localStorage.setItem('hub-favorites', JSON.stringify(this.favorites));
+        } catch (e) {
+            // localStorageが使えない場合は何もしない
+        }
     }
 
     showToast(message, type = 'info') {
