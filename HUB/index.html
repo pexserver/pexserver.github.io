@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ツール・サービス一覧</title>
-    <meta name="description" content="PEX Serverの各種ツール・サービスへのアクセスハブ">
+    <meta name="description" content="Game HUBでの各種ツール・サービスへのアクセスハブ">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="/libs/Assets/images/home.png" type="image/png">
     <!-- FontAwesome for icons -->
@@ -15,7 +15,7 @@
     <div id="loading-screen" class="loading-screen">
         <div class="loading-content">
             <div class="loading-spinner"></div>
-            <h2>HUB Tool</h2>
+            <h2>Game Hub</h2>
             <p>読み込み中...</p>
         </div>
     </div>
@@ -26,8 +26,8 @@
         <header class="header">
             <div class="header-content">
                 <div class="logo">
-                    <img src="/libs/Assets/images/home.png" alt="PEX Server" class="logo-img">
-                    <h1>PEX Server HUB</h1>
+                    <i class="fas fa-gamepad logo-img"></i>
+                    <h1>Game HUB</h1>
                 </div>
                 <nav class="nav">
                     <button id="home-btn" class="nav-btn active">
@@ -57,10 +57,7 @@
             </div>
             <div class="search-filters">
                 <button class="filter-btn active" data-category="all">すべて</button>
-                <button class="filter-btn" data-category="tools">ツール</button>
-                <button class="filter-btn" data-category="api">API</button>
                 <button class="filter-btn" data-category="games">ゲーム</button>
-                <button class="filter-btn" data-category="admin">管理</button>
             </div>
         </div>
 
@@ -114,38 +111,12 @@
                     <p>別のキーワードで検索してみてください</p>
                 </div>
             </section>
-
-            <!-- Favorites Section -->
-            <section id="favorites-section" class="section hidden">
-                <h2 class="section-title">
-                    <i class="fas fa-star"></i>
-                    お気に入り
-                </h2>
-                <div id="favorites-grid" class="items-grid favorites-grid">
-                    <!-- Favorites will be loaded here -->
-                </div>
-                <div id="no-favorites" class="no-favorites hidden">
-                    <div class="no-favorites-content">
-                        <div class="no-favorites-icon">
-                            <i class="fas fa-star"></i>
-                            <i class="fas fa-star"></i>
-                            <i class="fas fa-star"></i>
-                        </div>
-                        <h3>お気に入りがありません</h3>
-                        <p>ツールやサービスを<span class="highlight">お気に入り</span>に追加してください</p>
-                        <button class="btn btn-primary" onclick="hubManager.switchTab('home')">
-                            <i class="fas fa-home"></i>
-                            ホームに戻る
-                        </button>
-                    </div>
-                </div>
-            </section>
         </main>
 
         <!-- Footer -->
         <footer class="footer">
             <div class="footer-content">
-                <p>&copy; 2025 HUB Tool All rights reserved.</p>
+                <p>&copy; 2025 Game Hub All rights reserved.</p>
             </div>
         </footer>
     </div>
