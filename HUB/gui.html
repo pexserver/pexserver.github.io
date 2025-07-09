@@ -182,7 +182,7 @@
             flex-direction: column;
         }
 
-        object {
+        iframe {
             width: 100vw;
             height: 100%;
             border: none;
@@ -309,7 +309,7 @@
         </div>
     </nav>
     <div class="iframe-container">
-        <object id="mainFrame" data="https://pexserver.github.io/HUB" type="text/html" width="100%" height="100%" style="width:100vw;height:100%;border:none;background:#fff;display:block;"></object>
+        <iframe id="mainFrame" src="https://pexserver.github.io/HUB" title="Game Content"></iframe>
     </div>
     <!-- モダールウィンドウ -->
     <div class="modal-overlay" id="modalNetwork">
@@ -344,9 +344,9 @@
             document.querySelectorAll('.menu').forEach(m => m.classList.remove('show'));
         });
 
-        // HUBに戻る（objectのdataを書き換え）
+        // HUBに戻る（iframeのsrcを書き換え）
         document.getElementById('btnToHub').onclick = function () {
-            document.getElementById('mainFrame').data = "https://pexserver.github.io/HUB";
+            document.getElementById('mainFrame').src = "https://pexserver.github.io/HUB";
         };
 
         // フルスクリーン
