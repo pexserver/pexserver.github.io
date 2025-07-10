@@ -5,6 +5,7 @@ class HubManager {
         this.favorites = [];
         this.currentFilter = 'all';
         this.searchQuery = '';
+        this.userOS = this.detectUserOS(); // OS自動検知
         try {
             const fav = localStorage.getItem('hub-favorites');
             this.favorites = fav ? JSON.parse(fav) : [];
@@ -12,6 +13,16 @@ class HubManager {
             this.favorites = [];
         }
         this.init();
+    }
+
+    detectUserOS() {
+        const ua = navigator.userAgent.toLowerCase();
+        if (/android|iphone|ipad|ipod|mobile|windows phone/.test(ua)) {
+            return 'mobile';
+        } else if (/windows|macintosh|linux/.test(ua)) {
+            return 'pc';
+        }
+        return 'none'; // 両対応または判別不能
     }
 
     async init() {
@@ -253,6 +264,11 @@ class HubManager {
         // Apply category filter
         if (this.currentFilter !== 'all') {
             items = items.filter(item => item.category === this.currentFilter);
+        }
+
+        // OS自動フィルタ: userOSがnone以外なら対応しているものだけ
+        if (this.userOS !== 'none') {
+            items = items.filter(item => Array.isArray(item.os) && item.os.includes(this.userOS));
         }
 
         // Apply search query

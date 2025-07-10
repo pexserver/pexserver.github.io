@@ -102,15 +102,14 @@
             border: 1px solid var(--menubar-border);
             overflow: hidden;
             transform: translateX(-50%) scaleY(0.95);
-            scrollbar-width: none;
-            -ms-overflow-style: none;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
         }
-
-            .menu-content::-webkit-scrollbar {
-                display: none;
-                width: 0 !important;
-                background: transparent;
-            }
+        .menu-content::-webkit-scrollbar {
+            display: none;
+            width: 0 !important;
+            background: transparent;
+        }
 
         .menu.show .menu-content {
             display: block;
@@ -138,8 +137,13 @@
             padding: 4px 0;
             max-height: 220px;
             overflow: auto;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
+        }
+        .menu-content ul::-webkit-scrollbar {
+            display: none;
+            width: 0 !important;
+            background: transparent;
         }
 
         .menu-content li, .menu-content button {
@@ -182,7 +186,7 @@
             flex-direction: column;
         }
 
-        iframe {
+        object {
             width: 100vw;
             height: 100%;
             border: none;
@@ -258,6 +262,28 @@
             }
         }
 
+        .modal-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 16px;
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .about-list {
+            text-align: left;
+            margin: 1em auto;
+            max-width: 400px;
+        }
+
+        .about-copyright {
+            margin-top: 1.5em;
+            color: #888;
+            font-size: 0.95em;
+        }
+
         @media (max-width: 500px) {
             .modal-content {
                 min-width: 0;
@@ -296,47 +322,35 @@
             <div class="menu-content">
                 <ul>
                     <li><button id="btnToHub">HUBに戻る</button></li>
-                </ul>
-            </div>
-        </div>
-        <div class="menu" tabindex="0">
-            <span>管理</span>
-            <div class="menu-content">
-                <ul>
-                    <li><button id="btnFullscreen">フルスクリーン</button></li>
+                    <li><button id="btnAbout">About</button></li>
                 </ul>
             </div>
         </div>
     </nav>
     <div class="iframe-container">
-        <iframe id="mainFrame" src="https://pexserver.github.io/HUB" title="Game Content"></iframe>
+        <object id="mainFrame" data="https://pexserver.github.io/HUB" type="text/html" width="100%" height="100%"></object>
     </div>
-    <!-- モダールウィンドウ -->
-    <div class="modal-overlay" id="modalNetwork">
+    <!-- About モーダル -->
+    <div class="modal-overlay" id="modalAbout">
         <div class="modal-content">
-            <h2>インターネット未接続</h2>
-            <p>ネットワークに接続してください。<br>接続が回復すると自動的に再読み込みされます。</p>
-            <div class="modal-spinner"></div>
+            <button id="closeAbout" class="modal-close-btn">&times;</button>
+            <h2>About Game HUB</h2>
+            <p>Game HUBは、さまざまなゲームやツールへのアクセスを一元化するためのモダンなハブです</p>
+            <ul class="about-list">
+                <li>・注目のツールやゲームを素早くチェック</li>
+                <li>・カテゴリや検索で目的のサービスにすぐアクセス</li>
+                <li>・お気に入り機能でよく使うものを管理</li>
+            </ul>
+            <p class="about-copyright">&copy; 2025 Game Hub</p>
         </div>
     </div>
     <script>
+        // メニューバー: クリックでリスト表示、再クリックで閉じる
         document.querySelectorAll('.menu').forEach(menu => {
-            menu.addEventListener('mouseenter', function () {
-                document.querySelectorAll('.menu').forEach(m => {
-                    if (m !== menu) m.classList.remove('show');
-                });
-                menu.classList.add('show');
-            });
-            menu.addEventListener('mouseleave', function () {
-                menu.classList.remove('show');
-            });
             menu.addEventListener('click', function (e) {
-                if (!menu.classList.contains('show')) {
-                    document.querySelectorAll('.menu').forEach(m => {
-                        if (m !== menu) m.classList.remove('show');
-                    });
-                }
-                menu.classList.toggle('show');
+                const isOpen = menu.classList.contains('show');
+                document.querySelectorAll('.menu').forEach(m => m.classList.remove('show'));
+                if (!isOpen) menu.classList.add('show');
                 e.stopPropagation();
             });
         });
@@ -344,18 +358,18 @@
             document.querySelectorAll('.menu').forEach(m => m.classList.remove('show'));
         });
 
-        // HUBに戻る（iframeのsrcを書き換え）
+        // HUBに戻る（object/iframeのsrcを書き換え）
         document.getElementById('btnToHub').onclick = function () {
             document.getElementById('mainFrame').src = "https://pexserver.github.io/HUB";
         };
 
-        // フルスクリーン
-        document.getElementById('btnFullscreen').onclick = function () {
-            if (document.fullscreenEnabled) {
-                document.documentElement.requestFullscreen();
-            } else {
-                alert('フルスクリーンはサポートされていません');
-            }
+        // Aboutモーダル表示
+        document.getElementById('btnAbout').onclick = function () {
+            document.getElementById('modalAbout').classList.add('active');
+        };
+        // Aboutモーダルを閉じる
+        document.getElementById('closeAbout').onclick = function () {
+            document.getElementById('modalAbout').classList.remove('active');
         };
 
         // ---- ネットワーク監視とモーダル制御 ----
