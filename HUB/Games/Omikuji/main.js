@@ -199,24 +199,21 @@ class OmikujiApp {
     checkCooldown() {
         const lastDrawKey = `omikuji_last_draw_${this.selectedCategory}`;
         const lastDrawDate = localStorage.getItem(lastDrawKey);
-        
         if (!lastDrawDate) {
             this.enableDrawing();
             return;
         }
-
         const lastDraw = new Date(lastDrawDate);
         const now = new Date();
-        
-        // 日付が変わっているかチェック
-        if (now.toDateString() !== lastDraw.toDateString()) {
+        const cooldownMs = 24 * 60 * 60 * 1000;
+        const nextAvailable = lastDraw.getTime() + cooldownMs;
+        if (now.getTime() >= nextAvailable) {
             this.enableDrawing();
             return;
         }
-
-        // まだ同じ日の場合、クールダウンを表示
+        // まだ24時間経っていない場合、クールダウンを表示
         this.disableDrawing();
-        this.showCooldownTimer(lastDrawKey);
+        this.showCooldownTimer(lastDrawKey, nextAvailable);
     }
 
     enableDrawing() {
@@ -232,23 +229,18 @@ class OmikujiApp {
         this.elements.statusMessage.textContent = `今日はもう${this.fortuneData.categories[this.selectedCategory].name}を引きました`;
     }
 
-    showCooldownTimer(lastDrawKey) {
+    showCooldownTimer(lastDrawKey, nextAvailable) {
         this.elements.cooldownTimer.style.display = 'block';
-        this.updateCooldownDisplay();
-        
+        this.updateCooldownDisplay(nextAvailable);
+        if (this.cooldownInterval) clearInterval(this.cooldownInterval);
         this.cooldownInterval = setInterval(() => {
-            this.updateCooldownDisplay();
+            this.updateCooldownDisplay(nextAvailable);
         }, 1000);
     }
 
-    updateCooldownDisplay() {
+    updateCooldownDisplay(nextAvailable) {
         const now = new Date();
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
-        
-        const timeLeft = tomorrow.getTime() - now.getTime();
-        
+        const timeLeft = nextAvailable - now.getTime();
         if (timeLeft <= 0) {
             this.enableDrawing();
             if (this.cooldownInterval) {
@@ -256,12 +248,12 @@ class OmikujiApp {
             }
             return;
         }
-        
         const hours = Math.floor(timeLeft / (1000 * 60 * 60));
         const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-        
-        this.elements.timeRemaining.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        this.elements.timeRemaining.textContent = `${hours.toString().padStart(2, '0')}:${minutes
+            .toString()
+            .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
     async drawFortune() {
