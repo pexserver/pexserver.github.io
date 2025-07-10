@@ -69,7 +69,8 @@ class OmikujiApp {
     async loadFortuneData() {
         try {
             const response = await fetch('mikuji.json');
-            this.fortuneData = await response.json();
+            const data = await response.json();
+            this.fortuneData = { categories: data.categories };
             this.renderCategories();
         } catch (error) {
             console.error('おみくじデータの読み込みに失敗しました:', error);
@@ -160,7 +161,7 @@ class OmikujiApp {
         }
     }
 
-    selectCategory(categoryKey) {
+    async selectCategory(categoryKey) {
         if (!this.fortuneData || !this.fortuneData.categories[categoryKey]) return;
 
         this.selectedCategory = categoryKey;
@@ -181,6 +182,16 @@ class OmikujiApp {
         const newURL = new URL(window.location);
         newURL.searchParams.set('category', categoryKey);
         window.history.replaceState({}, '', newURL);
+
+        // fortuneデータをカテゴリごとにfetch
+        try {
+            const fortuneRes = await fetch(`Mikuji/${categoryKey}.json`);
+            if (!fortuneRes.ok) throw new Error('fortuneデータ取得失敗');
+            this.categoryFortunes = await fortuneRes.json();
+        } catch (e) {
+            this.categoryFortunes = [];
+            this.showMessage('おみくじ内容の取得に失敗しました');
+        }
 
         this.checkCooldown();
     }
@@ -292,13 +303,11 @@ class OmikujiApp {
     }
 
     selectFortune() {
-        const categoryFortunes = this.fortuneData.fortunes[this.selectedCategory];
+        const categoryFortunes = this.categoryFortunes;
         if (!categoryFortunes || categoryFortunes.length === 0) {
             // フォールバック: 総合運から選択
-            const generalFortunes = this.fortuneData.fortunes.general || [];
-            return generalFortunes[Math.floor(Math.random() * generalFortunes.length)];
+            return { type: 'エラー', message: 'おみくじデータがありません', description: '', advice: [] };
         }
-
         // ランダムに選択
         return categoryFortunes[Math.floor(Math.random() * categoryFortunes.length)];
     }
@@ -378,7 +387,9 @@ class OmikujiApp {
             concentration: '集中力',
             memory: '記憶力',
             understanding: '理解力',
-            motivation: 'やる気'
+            motivation: 'やる気',
+            focus: '集中力',
+            result: '成果'
         };
         return labels[key] || key;
     }
@@ -600,23 +611,60 @@ class OmikujiApp {
 (function handleQueryOmikujiAPI() {
     const urlParams = new URLSearchParams(window.location.search);
     const typeParam = urlParams.get('type');
-    if (typeParam) {
+    const omikujiParam = urlParams.get('omikuji');
+    if (typeParam || omikujiParam) {
         // fortuneDataのロードを待つ
         const waitForData = () => {
             if (window.omikujiApp && window.omikujiApp.fortuneData) {
-                const allFortunes = Object.values(window.omikujiApp.fortuneData.fortunes).flat();
-                const found = allFortunes.find(f => f.type === typeParam);
-                if (found) {
-                    const result = JSON.stringify(found);
-                    // JSONを返す（画面書き換え）
-                    document.open();
-                    document.write('<pre>' + result + '</pre>');
-                    document.close();
-                } else {
-                    document.open();
-                    document.write('<pre>{"error":"not found"}</pre>');
-                    document.close();
+                const categories = Object.keys(window.omikujiApp.fortuneData.categories);
+                // ?omikuji=カテゴリ名 の場合（ランダム抽選して1件返す）
+                if (omikujiParam && categories.includes(omikujiParam)) {
+                    fetch(`Mikuji/${omikujiParam}.json`).then(r => r.json()).then(data => {
+                        if (Array.isArray(data) && data.length > 0) {
+                            const picked = data[Math.floor(Math.random() * data.length)];
+                            document.open();
+                            document.write('<pre>' + JSON.stringify(picked, null, 2) + '</pre>');
+                            document.close();
+                        } else {
+                            document.open();
+                            document.write('<pre>{"error":"no data"}</pre>');
+                            document.close();
+                        }
+                    }).catch(() => {
+                        document.open();
+                        document.write('<pre>{"error":"data load error"}</pre>');
+                        document.close();
+                    });
+                    return;
                 }
+                // ?type=xxx の場合（従来通り）
+                if (typeParam) {
+                    Promise.all(
+                        categories.map(cat => fetch(`Mikuji/${cat}.json`).then(r => r.json()))
+                    ).then(allData => {
+                        const allFortunes = allData.flat();
+                        const found = allFortunes.find(f => f.type === typeParam);
+                        if (found) {
+                            const result = JSON.stringify(found);
+                            document.open();
+                            document.write('<pre>' + result + '</pre>');
+                            document.close();
+                        } else {
+                            document.open();
+                            document.write('<pre>{"error":"not found"}</pre>');
+                            document.close();
+                        }
+                    }).catch(() => {
+                        document.open();
+                        document.write('<pre>{"error":"data load error"}</pre>');
+                        document.close();
+                    });
+                    return;
+                }
+                // パラメータ値が不正な場合
+                document.open();
+                document.write('<pre>{"error":"invalid parameter"}</pre>');
+                document.close();
             } else {
                 setTimeout(waitForData, 50);
             }
