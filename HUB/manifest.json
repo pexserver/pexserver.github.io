@@ -1,0 +1,22 @@
+{
+  "name": "Game HUB",
+  "short_name": "Game HUB",
+  "description": "ゲーム・ツール・サービスのハブサイト",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#222",
+  "theme_color": "#222",
+  "icons": [
+    {
+      "src": "/libs/Assets/images/home.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/libs/Assets/images/home.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "lang": "ja"
+}

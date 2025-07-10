@@ -717,6 +717,17 @@ body {
     color: white;
 }
 
+/* iOSホーム追加案内モーダル用 */
+#ios-pwa-modal .modal-body img.ios-pwa-guide {
+    width: 80%;
+    margin: 1em auto;
+    display: block;
+}
+#ios-pwa-modal .modal-body .ios-pwa-note {
+    font-size: 0.9em;
+    color: #888;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .header-content {

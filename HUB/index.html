@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ツール・サービス一覧</title>
     <meta name="description" content="Game HUBでの各種ツール・サービスへのアクセスハブ">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Game HUB">
+    <link rel="apple-touch-icon" href="/libs/Assets/images/home.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#222">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="/libs/Assets/images/home.png" type="image/png">
     <!-- FontAwesome for icons -->
@@ -150,6 +156,28 @@
 
     <!-- Toast Notifications -->
     <div id="toast-container" class="toast-container"></div>
+
+    <!-- iOSホーム追加案内モーダル -->
+    <div id="ios-pwa-modal" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" id="ios-pwa-close" title="閉じる">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-header">
+                <h3>ホーム画面に追加しよう</h3>
+            </div>
+            <div class="modal-body">
+                <p>iPhoneでより快適にご利用いただくため、<br>
+                <b>Safariの共有ボタン</b>から<br>
+                <b>「ホーム画面に追加」</b>を選択してください。</p>
+                <img src="https://developer.apple.com/design/human-interface-guidelines/images/intro/intro-hero_2x.png" alt="ホーム追加案内" class="ios-pwa-guide">
+                <p class="ios-pwa-note">※この案内は一度無視できます</p>
+            </div>
+            <div class="modal-actions">
+                <button id="ios-pwa-ignore" class="btn btn-secondary">今は表示しない</button>
+            </div>
+        </div>
+    </div>
 
     <script src="animation.js"></script>
 </body>

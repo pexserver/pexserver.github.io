@@ -457,3 +457,28 @@ setTimeout(() => {
         observer.observe(el);
     });
 }, 1500);
+
+// iOSホーム追加案内モーダル表示ロジック
+function shouldShowIOSPWAModal() {
+    const ua = window.navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/.test(ua);
+    const isInStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    const ignored = localStorage.getItem('ios-pwa-modal-ignore');
+    return isIOS && !isInStandalone && !ignored;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (shouldShowIOSPWAModal()) {
+        document.getElementById('ios-pwa-modal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    document.getElementById('ios-pwa-close').onclick = () => {
+        document.getElementById('ios-pwa-modal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    };
+    document.getElementById('ios-pwa-ignore').onclick = () => {
+        localStorage.setItem('ios-pwa-modal-ignore', '1');
+        document.getElementById('ios-pwa-modal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    };
+});
