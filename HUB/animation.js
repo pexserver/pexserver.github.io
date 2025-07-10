@@ -1,11 +1,13 @@
 // PEX Server HUB - Interactive JavaScript
+import { detectUserOS } from './main.js';
+
 class HubManager {
     constructor() {
         this.contents = null;
         this.favorites = [];
         this.currentFilter = 'all';
         this.searchQuery = '';
-        this.userOS = this.detectUserOS(); // OS自動検知
+        this.userOS = detectUserOS(); // main.jsから取得
         try {
             const fav = localStorage.getItem('hub-favorites');
             this.favorites = fav ? JSON.parse(fav) : [];
@@ -13,16 +15,6 @@ class HubManager {
             this.favorites = [];
         }
         this.init();
-    }
-
-    detectUserOS() {
-        const ua = navigator.userAgent.toLowerCase();
-        if (/android|iphone|ipad|ipod|mobile|windows phone/.test(ua)) {
-            return 'mobile';
-        } else if (/windows|macintosh|linux/.test(ua)) {
-            return 'pc';
-        }
-        return 'none'; // 両対応または判別不能
     }
 
     async init() {
@@ -81,8 +73,15 @@ class HubManager {
             });
         });
 
-        // Modal functionality
-        document.getElementById('item-modal').addEventListener('click', (e) => {
+        // Modal functionality（必ずクローズボタンにイベントを再登録）
+        const itemModal = document.getElementById('item-modal');
+        const closeBtns = itemModal.querySelectorAll('.modal-close');
+        closeBtns.forEach(btn => {
+            btn.onclick = () => {
+                this.closeModal();
+            };
+        });
+        itemModal.addEventListener('click', (e) => {
             if (e.target.id === 'item-modal' || e.target.classList.contains('modal-close')) {
                 this.closeModal();
             }
@@ -141,11 +140,12 @@ class HubManager {
     renderFeatured() {
         const grid = document.getElementById('featured-grid');
         grid.innerHTML = '';
-
-        this.contents.featured.forEach((item, index) => {
-            const card = this.createFeaturedCard(item, index);
-            grid.appendChild(card);
-        });
+        // OS対応のみ表示
+        this.contents.featured.filter(item => Array.isArray(item.os) ? item.os.includes(this.userOS) : true)
+            .forEach((item, index) => {
+                const card = this.createFeaturedCard(item, index);
+                grid.appendChild(card);
+            });
     }
 
     createFeaturedCard(item, index) {
@@ -167,10 +167,13 @@ class HubManager {
     renderCategories() {
         const grid = document.getElementById('categories-grid');
         grid.innerHTML = '';
-
+        // カテゴリ内に1つでもOS対応アイテムがある場合のみ表示
         this.contents.categories.forEach((category, index) => {
-            const card = this.createCategoryCard(category, index);
-            grid.appendChild(card);
+            const hasOSItem = category.items.some(item => Array.isArray(item.os) ? item.os.includes(this.userOS) : true);
+            if (hasOSItem) {
+                const card = this.createCategoryCard(category, index);
+                grid.appendChild(card);
+            }
         });
     }
 
@@ -178,11 +181,13 @@ class HubManager {
         const card = document.createElement('div');
         card.className = 'category-card scale-in';
         card.style.animationDelay = `${index * 0.1}s`;
+        // OS対応アイテム数のみカウント
+        const osCount = category.items.filter(item => Array.isArray(item.os) ? item.os.includes(this.userOS) : true).length;
         card.innerHTML = `
             <div class="category-icon">${category.icon}</div>
             <h3 class="category-name">${category.name}</h3>
             <p class="category-description">${category.description}</p>
-            <span class="category-count">${category.items.length} アイテム</span>
+            <span class="category-count">${osCount} アイテム</span>
         `;
         card.addEventListener('click', () => {
             this.currentFilter = category.id;
@@ -197,8 +202,8 @@ class HubManager {
     renderAllItems() {
         const grid = document.getElementById('all-items-grid');
         grid.innerHTML = '';
-
-        const allItems = this.getAllItems();
+        // OS対応のみ表示
+        const allItems = this.getAllItems().filter(item => Array.isArray(item.os) ? item.os.includes(this.userOS) : true);
         allItems.forEach((item, index) => {
             const card = this.createItemCard(item, index);
             grid.appendChild(card);
@@ -245,7 +250,8 @@ class HubManager {
     getAllItems() {
         const items = [];
         this.contents.categories.forEach(category => {
-            items.push(...category.items);
+            // OS対応のみ追加
+            items.push(...category.items.filter(item => Array.isArray(item.os) ? item.os.includes(this.userOS) : true));
         });
         return items;
     }
@@ -266,12 +272,7 @@ class HubManager {
             items = items.filter(item => item.category === this.currentFilter);
         }
 
-        // OS自動フィルタ: userOSがnone以外なら対応しているものだけ
-        if (this.userOS !== 'none') {
-            items = items.filter(item => Array.isArray(item.os) && item.os.includes(this.userOS));
-        }
-
-        // Apply search query
+        // 検索クエリ
         if (this.searchQuery) {
             items = items.filter(item => 
                 item.name.toLowerCase().includes(this.searchQuery) ||
@@ -344,7 +345,15 @@ class HubManager {
         }
 
         visitBtn.onclick = () => {
-            window.location.href = item.url;
+            // iOS PWA判定
+            const ua = window.navigator.userAgent;
+            const isIOS = /iPhone|iPad|iPod/.test(ua);
+            const isInStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+            if (isIOS && isInStandalone) {
+                window.open(item.url, '_blank');
+            } else {
+                window.location.href = item.url;
+            }
             this.closeModal();
         };
 
@@ -457,28 +466,3 @@ setTimeout(() => {
         observer.observe(el);
     });
 }, 1500);
-
-// iOSホーム追加案内モーダル表示ロジック
-function shouldShowIOSPWAModal() {
-    const ua = window.navigator.userAgent;
-    const isIOS = /iPhone|iPad|iPod/.test(ua);
-    const isInStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-    const ignored = localStorage.getItem('ios-pwa-modal-ignore');
-    return isIOS && !isInStandalone && !ignored;
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    if (shouldShowIOSPWAModal()) {
-        document.getElementById('ios-pwa-modal').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-    document.getElementById('ios-pwa-close').onclick = () => {
-        document.getElementById('ios-pwa-modal').classList.add('hidden');
-        document.body.style.overflow = 'auto';
-    };
-    document.getElementById('ios-pwa-ignore').onclick = () => {
-        localStorage.setItem('ios-pwa-modal-ignore', '1');
-        document.getElementById('ios-pwa-modal').classList.add('hidden');
-        document.body.style.overflow = 'auto';
-    };
-});

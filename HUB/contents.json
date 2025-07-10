@@ -28,7 +28,7 @@
           "name": "Mine Blocks",
           "description": "2Dマイクラ風サンドボックスゲーム（ブラウザ対応）",
           "thumbnail": "https://tse2.mm.bing.net/th/id/OIP.0mfKZkpIUtEZvBDCXdS9AgAAAA?rs=1&pid=ImgDetMain&o=7&rm=3",
-          "url": "https://mineblocks.com/",
+          "url": "./Games/MineBlock/index.html",
           "category": "games",
           "tags": ["mineblocks", "minecraft", "game"],
           "os": ["pc", "mobile"]

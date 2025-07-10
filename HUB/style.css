@@ -717,15 +717,75 @@ body {
     color: white;
 }
 
-/* iOSホーム追加案内モーダル用 */
-#ios-pwa-modal .modal-body img.ios-pwa-guide {
-    width: 80%;
-    margin: 1em auto;
+/* iOSホーム追加案内モーダル 強化デザイン */
+#ios-pwa-modal .modal-content {
+    background: #fffbe9;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    max-width: 350px;
+    margin: 8vh auto;
+    padding: 2.2em 1.5em 1.5em 1.5em;
+    text-align: center;
+    border: 2px solid #ffe082;
+    position: relative;
+}
+#ios-pwa-modal .modal-header h3 {
+    font-size: 1.35em;
+    color: #d48a00;
+    margin-bottom: 0.7em;
+    font-weight: bold;
+    letter-spacing: 0.03em;
+}
+#ios-pwa-modal .modal-body p {
+    color: #333;
+    font-size: 1.05em;
+    margin-bottom: 1.2em;
+    line-height: 1.7;
+}
+#ios-pwa-modal .modal-body .ios-pwa-guide {
+    width: 90%;
+    margin: 1em auto 0.5em auto;
     display: block;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    border: 1.5px solid #ffe082;
 }
 #ios-pwa-modal .modal-body .ios-pwa-note {
-    font-size: 0.9em;
-    color: #888;
+    font-size: 0.92em;
+    color: #bfae7c;
+    margin-top: 0.5em;
+}
+#ios-pwa-modal .modal-actions {
+    margin-top: 1.2em;
+}
+#ios-pwa-modal .btn.btn-secondary {
+    background: linear-gradient(90deg, #ffe082 60%, #ffd54f 100%);
+    color: #7a5c00;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    padding: 0.7em 1.7em;
+    font-size: 1em;
+    box-shadow: 0 2px 8px rgba(255, 215, 79, 0.13);
+    transition: background 0.2s, color 0.2s;
+}
+#ios-pwa-modal .btn.btn-secondary:hover {
+    background: linear-gradient(90deg, #ffd54f 60%, #ffe082 100%);
+    color: #d48a00;
+}
+#ios-pwa-modal .modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.3em;
+    color: #d48a00;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+#ios-pwa-modal .modal-close:hover {
+    color: #bfae7c;
 }
 
 /* Responsive Design */
