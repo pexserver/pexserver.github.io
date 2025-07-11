@@ -1,0 +1,601 @@
+/* modal.css: モーダルウィンドウのスタイル（CSS3対応） */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--modal-overlay) !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);
+}
+
+.modal-overlay.show {
+  opacity: 1;
+  pointer-events: all;
+  animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-container {
+  background: var(--modal-bg);
+  color: var(--text-main);
+  border-radius: 20px;
+  max-width: 600px;
+  width: 92vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: scale(0.7);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.2);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.modal-container::-webkit-scrollbar {
+  display: none;
+}
+
+.modal-overlay.show .modal-container {
+  transform: scale(1);
+  animation: modalBounceIn 0.5s forwards;
+}
+
+@keyframes modalBounceIn {
+  0% { transform: scale(0.7); opacity: 0; }
+  50% { transform: scale(1.05); opacity: 1; }
+  70% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.5em;
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.3em;
+  color: var(--text-sub);
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.modal-close:hover {
+  background: rgba(0,0,0,0.05);
+  color: var(--danger-color);
+  transform: rotate(90deg);
+}
+
+.modal-content {
+  padding: 20px;
+}
+
+.fortune-paper {
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.fortune-paper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* より目立たず、読みやすさを向上するための淡い背景パターン */
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23f0f0f0' fill-opacity='0.3' fill-rule='evenodd'%3E%3Cpath d='M0 60L60 0H30L0 30M60 60V30L30 60'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.3; /* 透明度を下げて可読性を向上 */
+  z-index: 0;
+  pointer-events: none;
+}
+
+.fortune-paper:hover {
+  transform: translateY(-5px) rotateX(5deg);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.paper-header {
+  background: linear-gradient(to bottom, #1565c0, #0d47a1);
+  color: white;
+  padding: 25px 20px;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  border-bottom: 4px solid rgba(0, 0, 0, 0.15);
+  border-radius: 15px 15px 0 0;
+  overflow: hidden;
+}
+
+.paper-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'%3E%3Cpath d='M0 0h40v40H0V0zm40 40h40v40H40V40zm0-40h2l-2 2V0zm0 4l4-4h2l-6 6V4zm0 4l8-8h2L40 10V8zm0 4L52 0h2L40 14v-2zm0 4L56 0h2L40 18v-2zm0 4L60 0h2L40 22v-2zm0 4L64 0h2L40 26v-2zm0 4L68 0h2L40 30v-2zm0 4L72 0h2L40 34v-2zm0 4L76 0h2L40 38v-2zm0 4L80 0v2L42 40h-2zm4 0L80 4v2L46 40h-2zm4 0L80 8v2L50 40h-2zm4 0l28-28v2L54 40h-2zm4 0l24-24v2L58 40h-2zm4 0l20-20v2L62 40h-2zm4 0l16-16v2L66 40h-2zm4 0l12-12v2L70 40h-2zm4 0l8-8v2l-6 6h-2zm4 0l4-4v2l-2 2h-2z' /%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.1;
+  z-index: -1;
+}
+
+.fortune-category {
+  font-size: 1.3em;
+  font-weight: 600;
+  margin-bottom: 15px;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  display: inline-block;
+  padding: 8px 20px;
+  border-radius: 25px;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.fortune-category::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.fortune-type {
+  font-size: 3.2em;
+  font-weight: 800;
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+  transform: scale(1.05);
+  transition: transform 0.3s ease;
+  background: linear-gradient(135deg, #fff, rgba(255, 255, 255, 0.7));
+  -webkit-background-clip: text;
+  background-clip: text;
+  position: relative;
+  padding: 10px 0;
+  animation: fortuneTypeGlow 2s infinite alternate;
+}
+
+.fortune-type::before {
+  content: '';
+  position: absolute;
+  width: 120%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.5), transparent);
+  bottom: 0;
+  left: -10%;
+  filter: blur(1px);
+}
+
+.fortune-type::after {
+  content: '';
+  position: absolute;
+  width: 120%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.5), transparent);
+  top: 0;
+  left: -10%;
+  filter: blur(1px);
+}
+
+@keyframes fortuneTypeGlow {
+  0% {
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5), 0 0 10px rgba(255, 255, 255, 0.3);
+  }
+  100% {
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.5);
+  }
+}
+
+.paper-content {
+  padding: 25px 20px;
+  position: relative;
+  z-index: 1;
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+.fortune-message {
+  font-size: 1.8em;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-align: center;
+  color: var(--accent-color);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  padding: 10px;
+  border-bottom: 2px dashed rgba(0, 0, 0, 0.1);
+  line-height: 1.4;
+}
+
+.fortune-description {
+  font-size: 1.2em;
+  line-height: 1.7;
+  margin-bottom: 25px;
+  text-align: center;
+  padding: 0 15px;
+  color: #333;
+  font-weight: 500;
+}
+
+.luck-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 20px;
+  margin: 30px 0;
+}
+
+.luck-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.8);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+  transition: all 0.3s;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.luck-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+}
+
+.luck-label {
+  font-size: 1em;
+  color: var(--text-sub);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.luck-value {
+  font-size: 1.3em;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  color: var(--accent-color);
+}
+
+.luck-stars {
+  display: flex;
+  gap: 3px;
+  color: var(--accent-color);
+  font-size: 1.1em;
+}
+
+.advice-section {
+  margin-top: 35px;
+  padding: 20px;
+  background: rgba(25, 118, 210, 0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(25, 118, 210, 0.12);
+}
+
+.advice-section h4 {
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  display: flex;
+  font-size: 1.3em;
+  align-items: center;
+  gap: 8px;
+}
+
+.advice-list {
+  list-style: none;
+  padding-left: 10px;
+}
+
+.advice-list li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+  font-size: 1.1em;
+  color: #333;
+}
+
+.advice-list li::before {
+  content: '✧';
+  position: absolute;
+  left: 0;
+  color: var(--accent-color);
+  font-size: 1.2em;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 25px 20px;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  background-color: rgba(247, 250, 255, 0.5);
+  border-radius: 0 0 15px 15px;
+}
+
+.save-button, .share-button {
+  padding: 12px 25px;
+  border-radius: 30px;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.save-button {
+  background: linear-gradient(135deg, var(--primary-color), #64b5f6);
+  color: white;
+}
+
+.share-button {
+  background: linear-gradient(135deg, var(--secondary-color), #66bb6a);
+  color: white;
+}
+
+.save-button:hover, .share-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+}
+
+/* 結果のアニメーション */
+@keyframes resultAppear {
+  0% { opacity: 0; transform: translateY(15px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.fortune-message,
+.fortune-description,
+.luck-item,
+.advice-list li {
+  animation: resultAppear 0.6s ease forwards;
+  opacity: 0;
+}
+
+.fortune-message { animation-delay: 0.2s; }
+.fortune-description { animation-delay: 0.4s; }
+.luck-item:nth-child(1) { animation-delay: 0.6s; }
+.luck-item:nth-child(2) { animation-delay: 0.7s; }
+.luck-item:nth-child(3) { animation-delay: 0.8s; }
+.luck-item:nth-child(4) { animation-delay: 0.9s; }
+.advice-list li:nth-child(1) { animation-delay: 1.0s; }
+.advice-list li:nth-child(2) { animation-delay: 1.1s; }
+.advice-list li:nth-child(3) { animation-delay: 1.2s; }
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .modal-container {
+    width: 95vw;
+    max-width: 95vw;
+    border-radius: 15px;
+    font-size: 0.98em;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+  }
+  
+  .luck-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .fortune-category {
+    font-size: 1.1em;
+    padding: 4px 12px;
+  }
+  
+  .fortune-type {
+    font-size: 2.8em;
+  }
+  
+  .fortune-category {
+    font-size: 1.2em;
+    padding: 6px 15px;
+  }
+  
+  .fortune-message {
+    font-size: 1.6em;
+  }
+  
+  .fortune-description {
+    font-size: 1.1em;
+  }
+  
+  .modal-footer {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .save-button, .share-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-container {
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 15px 15px 0 0;
+    font-size: 0.95em;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 4px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+    max-height: 95vh;
+    position: fixed;
+    bottom: 0;
+    margin-top: auto;
+  }
+  
+  .modal-header {
+    padding: 15px;
+  }
+  
+  .modal-content {
+    padding: 15px 10px;
+  }
+  
+  .fortune-type {
+    font-size: 2.5em;
+  }
+  
+  .fortune-category {
+    font-size: 1.1em;
+    padding: 5px 12px;
+  }
+  
+  .fortune-message {
+    font-size: 1.5em;
+  }
+  
+  .fortune-description {
+    padding: 0 8px;
+    font-size: 1.05em;
+  }
+  
+  .paper-content {
+    padding: 20px 15px;
+  }
+  
+  .luck-stats {
+    gap: 12px;
+    margin: 20px 0;
+  }
+}
+
+/* ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+  .modal-container {
+    background: var(--modal-bg-dark, #1f1f1f);
+    color: #f0f0f0;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .modal-overlay {
+    background: rgba(0,0,0,0.85) !important;
+  }
+  
+  .fortune-paper {
+    background: #2a2a2a;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  }
+  
+  .fortune-paper::before {
+    opacity: 0.2;
+  }
+  
+  .paper-header {
+    background: linear-gradient(to bottom, #1565c0, #0d47a1);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .fortune-type {
+    animation: fortuneTypeDarkGlow 2s infinite alternate;
+  }
+  
+  @keyframes fortuneTypeDarkGlow {
+    0% {
+      text-shadow: 0 0 5px rgba(255, 255, 255, 0.5), 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+    100% {
+      text-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 0 20px rgba(66, 165, 245, 0.8);
+    }
+  }
+  
+  .paper-content {
+    background-color: rgba(40, 40, 40, 0.95);
+  }
+  
+  .fortune-description {
+    color: #e0e0e0;
+  }
+  
+  .luck-item {
+    background: rgba(50,50,50,0.8);
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .luck-label {
+    color: #e0e0e0;
+  }
+  
+  .luck-value {
+    color: #ffca28;
+  }
+  
+  .advice-section {
+    background: rgba(25, 118, 210, 0.15);
+    border-color: rgba(25, 118, 210, 0.2);
+  }
+  
+  .advice-list li {
+    color: #e0e0e0;
+  }
+  
+  .modal-close:hover {
+    background: rgba(255,255,255,0.1);
+  }
+  
+  .modal-header, .modal-footer {
+    border-color: rgba(255,255,255,0.1);
+  }
+  
+  .modal-footer {
+    background-color: rgba(30, 30, 30, 0.5);
+  }
+  
+  .fortune-message {
+    color: #ffca28;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+}

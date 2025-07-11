@@ -6,12 +6,42 @@ class OmikujiApp {
         this.isAnimating = false;
         this.selectedCategory = null;
         this.currentFortune = null;
+        this._historyClickHandler = null;
         
+        this.detectDevice();
         this.initializeElements();
         this.loadFortuneData();
         this.loadUserData();
         this.bindEvents();
         this.setupURLParams();
+    }
+
+    // デバイス判定を行い、適切なクラスをbodyに追加
+    detectDevice() {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                        window.innerWidth <= 768;
+        
+        // bodyにクラスを追加
+        document.body.classList.toggle('ios', isIOS);
+        document.body.classList.toggle('mobile', isMobile);
+        document.body.classList.toggle('desktop', !isMobile);
+        
+        // Viewportの高さを設定（iOS Safariのアドレスバー対策）
+        this.updateViewportHeight();
+        window.addEventListener('resize', () => this.updateViewportHeight());
+        
+        // 画面の向きが変わったときにもビューポート高さを更新
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => this.updateViewportHeight(), 100);
+        });
+    }
+    
+    // iOS Safariのアドレスバーを考慮したビューポート高さを設定
+    updateViewportHeight() {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
     }
 
     initializeElements() {
@@ -238,6 +268,15 @@ class OmikujiApp {
         this.elements.drawButton.disabled = true;
         this.elements.omikujiBox.style.pointerEvents = 'none';
         this.elements.statusMessage.textContent = `今日はもう${this.fortuneData.categories[this.selectedCategory].name}を引きました`;
+        // クールダウンタイマーを正しく表示
+        const lastDrawKey = `omikuji_last_draw_${this.selectedCategory}`;
+        const lastDrawDate = localStorage.getItem(lastDrawKey);
+        if (lastDrawDate) {
+            const lastDraw = new Date(lastDrawDate);
+            const cooldownMs = 24 * 60 * 60 * 1000;
+            const nextAvailable = lastDraw.getTime() + cooldownMs;
+            this.showCooldownTimer(lastDrawKey, nextAvailable);
+        }
     }
 
     showCooldownTimer(lastDrawKey, nextAvailable) {
@@ -289,9 +328,13 @@ class OmikujiApp {
             
             // クールダウン設定
             const lastDrawKey = `omikuji_last_draw_${this.selectedCategory}`;
-            localStorage.setItem(lastDrawKey, new Date().toISOString());
+            const now = new Date();
+            localStorage.setItem(lastDrawKey, now.toISOString());
             this.disableDrawing();
-            this.showCooldownTimer(lastDrawKey);
+            // nextAvailableを正しく計算して渡す
+            const cooldownMs = 24 * 60 * 60 * 1000;
+            const nextAvailable = now.getTime() + cooldownMs;
+            this.showCooldownTimer(lastDrawKey, nextAvailable);
             
         } catch (error) {
             console.error('おみくじを引く際にエラーが発生しました:', error);
@@ -346,6 +389,8 @@ class OmikujiApp {
 
         // モーダル表示
         this.elements.modalOverlay.classList.add('show');
+        this.elements.modalOverlay.classList.remove('hidden');
+        this.elements.modalContainer.classList.remove('hidden');
         
         // ボディのスクロールを防ぐ
         document.body.style.overflow = 'hidden';
@@ -405,6 +450,8 @@ class OmikujiApp {
 
     hideModal() {
         this.elements.modalOverlay.classList.remove('show');
+        this.elements.modalOverlay.classList.add('hidden');
+        this.elements.modalContainer.classList.add('hidden');
         document.body.style.overflow = '';
     }
 
@@ -500,14 +547,16 @@ class OmikujiApp {
 
         this.elements.historyList.innerHTML = historyHTML;
 
-        // 履歴アイテムクリックイベント
-        this.elements.historyList.addEventListener('click', (e) => {
+        // 履歴アイテムクリックイベントを削除して再追加
+        this.elements.historyList.removeEventListener('click', this._historyClickHandler);
+        this._historyClickHandler = (e) => {
             const item = e.target.closest('.history-item');
             if (item) {
                 const historyId = parseInt(item.dataset.id);
                 this.showHistoryDetail(historyId);
             }
-        });
+        };
+        this.elements.historyList.addEventListener('click', this._historyClickHandler);
     }
 
     showHistoryDetail(historyId) {
@@ -527,6 +576,8 @@ class OmikujiApp {
         this.renderAdvice(historyItem.advice);
 
         this.elements.modalOverlay.classList.add('show');
+        this.elements.modalOverlay.classList.remove('hidden');
+        this.elements.modalContainer.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     }
 
@@ -736,6 +787,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.add('mobile');
     }
     
+    // ページコンテナの初期設定
+    const historyPage = document.getElementById('historyPage');
+    if (historyPage) {
+        historyPage.classList.remove('active');
+    }
+    
     // アプリケーション開始
     window.omikujiApp = new OmikujiApp();
 });
@@ -762,4 +819,76 @@ window.addEventListener('load', () => {
         const loadTime = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
         console.log(`ページ読み込み時間: ${loadTime}ms`);
     }
+});
+
+window.addEventListener('DOMContentLoaded', function() {
+  const hamburger = document.getElementById('hamburgerMenu');
+  const sideMenu = document.getElementById('sideMenu');
+  let menuOpen = false;
+
+  function openMenu() {
+    sideMenu.classList.add('open');
+    hamburger.setAttribute('aria-expanded', 'true');
+    menuOpen = true;
+    // フォーカスをメニューに移動
+    sideMenu.querySelector('li')?.focus();
+    document.body.style.overflow = 'hidden';
+  }
+  function closeMenu() {
+    sideMenu.classList.remove('open');
+    hamburger.setAttribute('aria-expanded', 'false');
+    menuOpen = false;
+    document.body.style.overflow = '';
+  }
+  hamburger?.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (menuOpen) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  });
+  // メニュー外クリックで閉じる
+  document.addEventListener('click', function(e) {
+    if (menuOpen && !sideMenu.contains(e.target) && e.target !== hamburger) {
+      closeMenu();
+    }
+  });
+  // Escキーで閉じる
+  document.addEventListener('keydown', function(e) {
+    if (menuOpen && (e.key === 'Escape' || e.key === 'Esc')) {
+      closeMenu();
+      hamburger.focus();
+    }
+  });
+  // メニュー内Tab移動サポート
+  sideMenu.addEventListener('keydown', function(e) {
+    if (e.key === 'Tab') {
+      const focusable = sideMenu.querySelectorAll('li');
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  });
+  // メニュー項目にtabindex
+  sideMenu.querySelectorAll('li').forEach(li => li.setAttribute('tabindex', '0'));
+
+  // サイドメニューから履歴ページへ移動
+  document.getElementById('menuHistory')?.addEventListener('click', function() {
+    document.getElementById('historyPage').classList.add('active');
+    document.querySelector('.container:not(#historyPage)').style.display = 'none';
+    closeMenu();
+  });
+  
+  // 履歴ページからメインページへ戻る
+  document.getElementById('backToMainFromHistory')?.addEventListener('click', function() {
+    document.getElementById('historyPage').classList.remove('active');
+    document.querySelector('.container:not(#historyPage)').style.display = '';
+  });
 });
