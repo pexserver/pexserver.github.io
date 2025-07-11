@@ -2,7 +2,7 @@ class OmikujiApp {
     constructor() {
         this.fortuneData = null;
         this.history = [];
-        this.maxHistory = 10;
+        this.maxHistory = 30; // 最大保存数を30に変更
         this.isAnimating = false;
         this.selectedCategory = null;
         this.currentFortune = null;
@@ -78,7 +78,6 @@ class OmikujiApp {
             fortuneDescription: document.getElementById('fortuneDescription'),
             luckStats: document.getElementById('luckStats'),
             adviceList: document.getElementById('adviceList'),
-            saveButton: document.getElementById('saveButton'),
             shareButton: document.getElementById('shareButton'),
             
             // 履歴関連
@@ -147,7 +146,10 @@ class OmikujiApp {
         });
 
         // おみくじを引く
-        this.elements.drawButton.addEventListener('click', () => this.drawFortune());
+        this.elements.drawButton.addEventListener('click', () => {
+            if (this.elements.drawButton.disabled) return; // 二重防止
+            this.drawFortune();
+        });
         
         // 札選択のイベントリスナー（動的に追加）
         this.elements.cardsGrid.addEventListener('click', (e) => {
@@ -169,7 +171,6 @@ class OmikujiApp {
         });
 
         // モーダル内ボタン
-        this.elements.saveButton.addEventListener('click', () => this.saveFortune());
         this.elements.shareButton.addEventListener('click', () => this.shareFortune());
 
         // 履歴関連
@@ -227,7 +228,7 @@ class OmikujiApp {
 
         // fortuneデータをカテゴリごとにfetch
         try {
-            const fortuneRes = await fetch(`Mikuji/${categoryKey}.json`);
+            const fortuneRes = await fetch(`Mikuji/${categoryKey}.jsonc`);
             if (!fortuneRes.ok) throw new Error('fortuneデータ取得失敗');
             this.categoryFortunes = await fortuneRes.json();
         } catch (e) {
@@ -271,6 +272,7 @@ class OmikujiApp {
 
     enableDrawing() {
         this.elements.drawButton.disabled = false;
+        this.elements.drawButton.style.display = 'inline-flex';
         this.elements.statusMessage.textContent = '心を落ち着けて、おみくじを引いてください';
         this.elements.cooldownTimer.style.display = 'none';
         // 札選択エリアを隠す
@@ -281,6 +283,7 @@ class OmikujiApp {
 
     disableDrawing() {
         this.elements.drawButton.disabled = true;
+        this.elements.drawButton.style.display = 'none';
         this.elements.statusMessage.textContent = `今日はもう${this.fortuneData.categories[this.selectedCategory].name}を引きました`;
         // 札選択エリアを隠す
         this.elements.cardsContainer.classList.remove('show');
@@ -435,22 +438,6 @@ class OmikujiApp {
         }
     }
 
-    selectFortune() {
-        const categoryFortunes = this.categoryFortunes;
-        if (!categoryFortunes || categoryFortunes.length === 0) {
-            // フォールバック: 総合運から選択
-            return { type: 'エラー', message: 'おみくじデータがありません', description: '', advice: [] };
-        }
-        // ランダムに選択
-        return categoryFortunes[Math.floor(Math.random() * categoryFortunes.length)];
-    }
-
-    // 札の開閉アニメーション（旧コード・削除予定）
-    playDrawAnimation() {
-        return Promise.resolve();
-    }
-
-    // 札の表面に結果を表示（旧コード・削除予定）
     showFortuneModal(fortune) {
         this.currentFortune = fortune;
         const category = this.fortuneData.categories[this.selectedCategory];
@@ -470,6 +457,31 @@ class OmikujiApp {
         this.elements.modalContainer.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
         document.body.classList.add('modal-open');
+
+        // 履歴に追加
+        this.addHistory(fortune, category);
+    }
+
+    addHistory(fortune, category) {
+        // 履歴に追加（最大30件まで）
+        const newItem = {
+            id: Date.now(),
+            categoryName: category.name,
+            categoryColor: category.color,
+            type: fortune.type,
+            color: fortune.color,
+            message: fortune.message,
+            description: fortune.description,
+            luck: fortune.luck,
+            advice: fortune.advice,
+            date: new Date().toISOString()
+        };
+        this.history.unshift(newItem);
+        if (this.history.length > this.maxHistory) {
+            this.history = this.history.slice(0, this.maxHistory);
+        }
+        this.saveUserData();
+        this.updateHistoryDisplay();
     }
 
     renderLuckStats(luck) {
@@ -530,37 +542,6 @@ class OmikujiApp {
         this.elements.modalContainer.classList.add('hidden');
         document.body.style.overflow = '';
         document.body.classList.remove('modal-open'); // モーダル表示時のクラスを削除
-    }
-
-    saveFortune() {
-        if (!this.currentFortune) return;
-
-        const historyItem = {
-            id: Date.now(),
-            date: new Date().toISOString(),
-            category: this.selectedCategory,
-            categoryName: this.fortuneData.categories[this.selectedCategory].name,
-            categoryColor: this.fortuneData.categories[this.selectedCategory].color,
-            type: this.currentFortune.type,
-            message: this.currentFortune.message,
-            color: this.currentFortune.color,
-            description: this.currentFortune.description,
-            advice: this.currentFortune.advice,
-            luck: this.currentFortune.luck
-        };
-
-        this.history.unshift(historyItem);
-        
-        // 最大件数を超えた場合は古いものを削除
-        if (this.history.length > this.maxHistory) {
-            this.history = this.history.slice(0, this.maxHistory);
-        }
-
-        this.saveUserData();
-        this.updateHistoryDisplay();
-        this.hideModal();
-
-        this.showMessage('おみくじ結果を保存しました！');
     }
 
     async shareFortune() {

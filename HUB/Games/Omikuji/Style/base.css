@@ -203,6 +203,37 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   transition: all 0.3s;
 }
 
+/* ボタンテキストスタイル */
+.button-text {
+  font-size: 1.15em;
+  font-weight: 700;
+  color: var(--primary-color);
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  transition: color 0.2s;
+}
+
+.button-text.danger {
+  color: var(--danger-color);
+}
+
+.button-text.secondary {
+  color: var(--secondary-color);
+}
+
+.button-text.accent {
+  color: var(--accent-color);
+}
+
+.button-text.invert {
+  color: var(--text-invert);
+}
+
+.button-text.small {
+  font-size: 0.95em;
+  font-weight: 500;
+}
+
 /* レスポンシブ対応 */
 @media (max-width: 768px) {
   .header {
