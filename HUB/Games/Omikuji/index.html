@@ -45,7 +45,7 @@
         <header class="header">
             <h1 class="title">
                 <i class="fas fa-torii-gate"></i>
-                おみくじBox
+                おみくじ
                 <i class="fas fa-torii-gate"></i>
             </h1>
             <p class="subtitle">カテゴリ別の運勢を占ってみませんか？</p>
@@ -73,42 +73,39 @@
                 </div>
 
                 <div class="omikuji-container" id="omikujiContainer">
-                    <div class="omikuji-box" id="omikujiBox">
-                        <div class="box-lid" id="boxLid">
-                            <div class="lid-decoration">
-                                <div class="golden-circle">
-                                    <i class="fas fa-yin-yang"></i>
-                                </div>
-                            </div>
-                            <div class="lid-shine"></div>
+                    <!-- 初期状態：札選択前 -->
+                    <div class="card-selection-prompt" id="cardSelectionPrompt">
+                        <div class="prompt-text">
+                            <i class="fas fa-hand-pointer"></i>
+                            <span>おみくじを引いて札を選んでください</span>
                         </div>
-                        <div class="box-body">
-                            <div class="box-shine"></div>
-                            <div class="mystical-glow"></div>
+                    </div>
+                    
+                    <!-- 札の選択エリア -->
+                    <div class="cards-container hidden" id="cardsContainer">
+                        <div class="cards-grid" id="cardsGrid">
+                            <!-- 札は動的に生成 -->
                         </div>
                     </div>
                 </div>
 
                 <!-- 操作パネル -->
                 <div class="control-panel">
-                    <button class="draw-button" id="drawButton">
+                    <button class="draw-button" id="drawButton" type="button" aria-label="おみくじを引く">
                         <i class="fas fa-hand-pointer"></i>
                         <span class="button-text">おみくじを引く</span>
-                        <div class="button-ripple"></div>
+                        <span class="button-ripple" aria-hidden="true"></span>
                     </button>
-                    
                     <div class="status-message" id="statusMessage">
                         心を落ち着けて、おみくじを引いてください
                     </div>
-
-                    <div class="cooldown-timer" id="cooldownTimer">
+                    <div class="cooldown-timer" id="cooldownTimer" style="display:none;">
                         <i class="fas fa-clock"></i>
-                        <span id="cooldownText">次回まで: <span id="timeRemaining"></span></span>
+                        <span id="cooldownText">次回まで: <span id="timeRemaining">--:--:--</span></span>
                     </div>
-
-                    <button class="back-button" id="backButton">
+                    <button class="back-button" id="backButton" type="button">
                         <i class="fas fa-arrow-left"></i>
-                        カテゴリ選択に戻る
+                        <span>カテゴリ選択に戻る</span>
                     </button>
                 </div>
             </section>
@@ -128,10 +125,6 @@
                 <i class="fas fa-history"></i>
                 おみくじ履歴
             </h1>
-            <button class="back-to-main" id="backToMainFromHistory">
-                <i class="fas fa-home"></i>
-                トップに戻る
-            </button>
         </header>
         
         <main class="main-content">
@@ -235,6 +228,7 @@
     </button>
     <nav class="side-menu" id="sideMenu" aria-label="メインメニュー">
       <ul>
+        <li id="menuHome"><i class="fas fa-home"></i> ホームへ</li>
         <li id="menuHistory"><i class="fas fa-history"></i> おみくじ履歴</li>
       </ul>
     </nav>

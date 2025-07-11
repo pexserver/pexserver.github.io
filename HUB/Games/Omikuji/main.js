@@ -7,6 +7,7 @@ class OmikujiApp {
         this.selectedCategory = null;
         this.currentFortune = null;
         this._historyClickHandler = null;
+        this.availableCards = []; // 札選択用の配列
         
         this.detectDevice();
         this.initializeElements();
@@ -58,8 +59,9 @@ class OmikujiApp {
             categoryDescription: document.getElementById('categoryDescription'),
             
             // おみくじボックス関連
-            omikujiBox: document.getElementById('omikujiBox'),
-            boxLid: document.getElementById('boxLid'),
+            cardSelectionPrompt: document.getElementById('cardSelectionPrompt'),
+            cardsContainer: document.getElementById('cardsContainer'),
+            cardsGrid: document.getElementById('cardsGrid'),
             drawButton: document.getElementById('drawButton'),
             backButton: document.getElementById('backButton'),
             statusMessage: document.getElementById('statusMessage'),
@@ -146,7 +148,14 @@ class OmikujiApp {
 
         // おみくじを引く
         this.elements.drawButton.addEventListener('click', () => this.drawFortune());
-        this.elements.omikujiBox.addEventListener('click', () => this.drawFortune());
+        
+        // 札選択のイベントリスナー（動的に追加）
+        this.elements.cardsGrid.addEventListener('click', (e) => {
+            const card = e.target.closest('.omikuji-card');
+            if (card && !card.classList.contains('flipped')) {
+                this.selectCard(card);
+            }
+        });
 
         // 戻るボタン
         this.elements.backButton.addEventListener('click', () => this.showCategorySelection());
@@ -196,6 +205,9 @@ class OmikujiApp {
 
         this.selectedCategory = categoryKey;
         const category = this.fortuneData.categories[categoryKey];
+
+        // アニメーションをリセット
+        this.resetOmikujiAnimation();
 
         // カテゴリ情報を表示
         this.elements.categoryIcon.className = `category-icon ${category.icon}`;
@@ -259,15 +271,21 @@ class OmikujiApp {
 
     enableDrawing() {
         this.elements.drawButton.disabled = false;
-        this.elements.omikujiBox.style.pointerEvents = 'auto';
         this.elements.statusMessage.textContent = '心を落ち着けて、おみくじを引いてください';
         this.elements.cooldownTimer.style.display = 'none';
+        // 札選択エリアを隠す
+        this.elements.cardsContainer.classList.remove('show');
+        this.elements.cardsContainer.classList.add('hidden');
+        this.elements.cardSelectionPrompt.style.display = 'flex';
     }
 
     disableDrawing() {
         this.elements.drawButton.disabled = true;
-        this.elements.omikujiBox.style.pointerEvents = 'none';
         this.elements.statusMessage.textContent = `今日はもう${this.fortuneData.categories[this.selectedCategory].name}を引きました`;
+        // 札選択エリアを隠す
+        this.elements.cardsContainer.classList.remove('show');
+        this.elements.cardsContainer.classList.add('hidden');
+        this.elements.cardSelectionPrompt.style.display = 'flex';
         // クールダウンタイマーを正しく表示
         const lastDrawKey = `omikuji_last_draw_${this.selectedCategory}`;
         const lastDrawDate = localStorage.getItem(lastDrawKey);
@@ -317,30 +335,102 @@ class OmikujiApp {
             // ローディング表示
             this.showLoading();
             
-            // アニメーション開始
-            await this.playDrawAnimation();
+            // 札を準備（5枚）
+            await this.prepareCards();
             
-            // おみくじの結果を決定
-            const fortune = this.selectFortune();
-            
-            // 結果をモーダルで表示
-            this.showFortuneModal(fortune);
-            
-            // クールダウン設定
-            const lastDrawKey = `omikuji_last_draw_${this.selectedCategory}`;
-            const now = new Date();
-            localStorage.setItem(lastDrawKey, now.toISOString());
-            this.disableDrawing();
-            // nextAvailableを正しく計算して渡す
-            const cooldownMs = 24 * 60 * 60 * 1000;
-            const nextAvailable = now.getTime() + cooldownMs;
-            this.showCooldownTimer(lastDrawKey, nextAvailable);
+            // 札選択状態に移行
+            this.showCardSelection();
             
         } catch (error) {
             console.error('おみくじを引く際にエラーが発生しました:', error);
             this.showMessage('エラーが発生しました。もう一度お試しください。');
         } finally {
             this.hideLoading();
+            this.isAnimating = false;
+        }
+    }
+
+    async prepareCards() {
+        const categoryFortunes = this.categoryFortunes;
+        if (!categoryFortunes || categoryFortunes.length === 0) {
+            throw new Error('おみくじデータがありません');
+        }
+
+        // 5枚の札を準備（重複なし）
+        const shuffled = [...categoryFortunes].sort(() => Math.random() - 0.5);
+        this.availableCards = shuffled.slice(0, 5);
+        
+        // 札のHTMLを生成
+        const cardsHTML = this.availableCards.map((fortune, index) => `
+            <div class="omikuji-card" data-card-index="${index}">
+                <div class="card-face card-front">
+                    <div class="card-number">${index + 1}</div>
+                    <div class="card-label">おみくじ札</div>
+                    <div class="card-graphic">
+                        <i class="fas fa-scroll"></i>
+                    </div>
+                    <div class="card-tap">クリックして開く</div>
+                </div>
+                <div class="card-face card-back">
+                    <div class="card-result">
+                        <span class="result-type" style="color: ${fortune.color || '#2e7d32'}">${fortune.type}</span>
+                        <span class="result-message">${fortune.message}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        this.elements.cardsGrid.innerHTML = cardsHTML;
+    }
+
+    showCardSelection() {
+        // プロンプトを隠して札選択エリアを表示
+        this.elements.cardSelectionPrompt.style.display = 'none';
+        this.elements.cardsContainer.classList.remove('hidden');
+        this.elements.cardsContainer.classList.add('show');
+        
+        // ステータスメッセージを更新
+        this.elements.statusMessage.textContent = '札を選んでクリックしてください';
+    }
+
+    async selectCard(cardElement) {
+        if (this.isAnimating) return;
+        
+        this.isAnimating = true;
+        
+        try {
+            // 選択された札を取得
+            const cardIndex = parseInt(cardElement.dataset.cardIndex);
+            const selectedFortune = this.availableCards[cardIndex];
+            
+            // 札を選択状態にする
+            cardElement.classList.add('selected');
+            
+            // 少し待ってから開く
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // 札を開く
+            cardElement.classList.add('flipped');
+            
+            // 開くアニメーション完了を待つ
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            // 結果モーダルを表示
+            this.showFortuneModal(selectedFortune);
+            
+            // クールダウン設定
+            const lastDrawKey = `omikuji_last_draw_${this.selectedCategory}`;
+            const now = new Date();
+            localStorage.setItem(lastDrawKey, now.toISOString());
+            this.disableDrawing();
+            const cooldownMs = 24 * 60 * 60 * 1000;
+            const nextAvailable = now.getTime() + cooldownMs;
+            this.showCooldownTimer(lastDrawKey, nextAvailable);
+            
+        } catch (error) {
+            console.error('札選択でエラーが発生しました:', error);
+            this.showMessage('エラーが発生しました。もう一度お試しください。');
+        } finally {
             this.isAnimating = false;
         }
     }
@@ -355,45 +445,31 @@ class OmikujiApp {
         return categoryFortunes[Math.floor(Math.random() * categoryFortunes.length)];
     }
 
-    async playDrawAnimation() {
-        return new Promise((resolve) => {
-            // 蓋を開けるアニメーション
-            this.elements.boxLid.classList.add('open');
-            
-            setTimeout(() => {
-                this.elements.boxLid.classList.remove('open');
-                resolve();
-            }, 1500);
-        });
+    // 札の開閉アニメーション（旧コード・削除予定）
+    playDrawAnimation() {
+        return Promise.resolve();
     }
 
+    // 札の表面に結果を表示（旧コード・削除予定）
     showFortuneModal(fortune) {
         this.currentFortune = fortune;
         const category = this.fortuneData.categories[this.selectedCategory];
-
-        // カテゴリと運勢タイプ
+        
+        // 既存のモーダル表示処理
         this.elements.fortuneCategory.textContent = category.name;
         this.elements.fortuneCategory.style.color = category.color;
         this.elements.fortuneType.textContent = fortune.type;
         this.elements.fortuneType.style.color = fortune.color;
-
-        // メッセージと説明
         this.elements.fortuneMessage.textContent = fortune.message;
         this.elements.fortuneDescription.textContent = fortune.description;
-
-        // 運勢詳細
         this.renderLuckStats(fortune.luck);
-
-        // アドバイス
         this.renderAdvice(fortune.advice);
-
         // モーダル表示
         this.elements.modalOverlay.classList.add('show');
         this.elements.modalOverlay.classList.remove('hidden');
         this.elements.modalContainer.classList.remove('hidden');
-        
-        // ボディのスクロールを防ぐ
         document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-open');
     }
 
     renderLuckStats(luck) {
@@ -453,6 +529,7 @@ class OmikujiApp {
         this.elements.modalOverlay.classList.add('hidden');
         this.elements.modalContainer.classList.add('hidden');
         document.body.style.overflow = '';
+        document.body.classList.remove('modal-open'); // モーダル表示時のクラスを削除
     }
 
     saveFortune() {
@@ -579,6 +656,7 @@ class OmikujiApp {
         this.elements.modalOverlay.classList.remove('hidden');
         this.elements.modalContainer.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-open'); // モーダル表示時のクラスを追加
     }
 
     confirmClearHistory() {
@@ -655,6 +733,18 @@ class OmikujiApp {
     handleError(error, context) {
         console.error(`${context}でエラーが発生:`, error);
         this.showMessage('エラーが発生しました。ページを再読み込みしてください。');
+    }
+
+    // おみくじアニメーションをリセット
+    resetOmikujiAnimation() {
+        // 札選択エリアをリセット
+        this.elements.cardsContainer.classList.remove('show');
+        this.elements.cardsContainer.classList.add('hidden');
+        this.elements.cardSelectionPrompt.style.display = 'flex';
+        this.elements.cardsGrid.innerHTML = '';
+        
+        // 利用可能な札をクリア
+        this.availableCards = [];
     }
 }
 
@@ -879,16 +969,18 @@ window.addEventListener('DOMContentLoaded', function() {
   // メニュー項目にtabindex
   sideMenu.querySelectorAll('li').forEach(li => li.setAttribute('tabindex', '0'));
 
+  // サイドメニューからホームページへ移動
+  document.getElementById('menuHome')?.addEventListener('click', function() {
+    document.getElementById('historyPage').classList.remove('active');
+    document.querySelector('.container:not(#historyPage)').style.display = 'block';
+    closeMenu(); // メニューを閉じる
+  });
+
   // サイドメニューから履歴ページへ移動
   document.getElementById('menuHistory')?.addEventListener('click', function() {
     document.getElementById('historyPage').classList.add('active');
     document.querySelector('.container:not(#historyPage)').style.display = 'none';
     closeMenu();
   });
-  
-  // 履歴ページからメインページへ戻る
-  document.getElementById('backToMainFromHistory')?.addEventListener('click', function() {
-    document.getElementById('historyPage').classList.remove('active');
-    document.querySelector('.container:not(#historyPage)').style.display = '';
-  });
+  // 履歴ページからメインページへ戻る処理はハンバーガーメニューの「ホームへ」で対応
 });
