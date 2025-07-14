@@ -69,7 +69,7 @@ class HubManager {
                 document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
                 e.target.classList.add('active');
                 this.currentFilter = e.target.dataset.category;
-                this.performSearch();
+                this.renderAllItems();
             });
         });
 
@@ -202,9 +202,12 @@ class HubManager {
     renderAllItems() {
         const grid = document.getElementById('all-items-grid');
         grid.innerHTML = '';
-        // OS対応のみ表示
-        const allItems = this.getAllItems().filter(item => Array.isArray(item.os) ? item.os.includes(this.userOS) : true);
-        allItems.forEach((item, index) => {
+        // currentFilterに応じてアイテムを絞り込む
+        let items = this.getAllItems().filter(item => Array.isArray(item.os) ? item.os.includes(this.userOS) : true);
+        if (this.currentFilter !== 'all') {
+            items = items.filter(item => item.category === this.currentFilter);
+        }
+        items.forEach((item, index) => {
             const card = this.createItemCard(item, index);
             grid.appendChild(card);
         });
