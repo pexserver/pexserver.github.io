@@ -8,7 +8,7 @@ class OmikujiApp {
         this.currentFortune = null;
         this._historyClickHandler = null;
         this.availableCards = []; // 札選択用の配列
-        
+
         this.detectDevice();
         this.initializeElements();
         this.loadFortuneData();
@@ -19,26 +19,26 @@ class OmikujiApp {
 
     // デバイス判定を行い、適切なクラスをbodyに追加
     detectDevice() {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                        window.innerWidth <= 768;
-        
+            window.innerWidth <= 768;
+
         // bodyにクラスを追加
         document.body.classList.toggle('ios', isIOS);
         document.body.classList.toggle('mobile', isMobile);
         document.body.classList.toggle('desktop', !isMobile);
-        
+
         // Viewportの高さを設定（iOS Safariのアドレスバー対策）
         this.updateViewportHeight();
         window.addEventListener('resize', () => this.updateViewportHeight());
-        
+
         // 画面の向きが変わったときにもビューポート高さを更新
         window.addEventListener('orientationchange', () => {
             setTimeout(() => this.updateViewportHeight(), 100);
         });
     }
-    
+
     // iOS Safariのアドレスバーを考慮したビューポート高さを設定
     updateViewportHeight() {
         const vh = window.innerHeight * 0.01;
@@ -50,14 +50,14 @@ class OmikujiApp {
             // カテゴリ選択関連
             categorySelection: document.getElementById('categorySelection'),
             categoryGrid: document.getElementById('categoryGrid'),
-            
+
             // おみくじセクション関連
             omikujiSection: document.getElementById('omikujiSection'),
             selectedCategory: document.getElementById('selectedCategory'),
             categoryIcon: document.getElementById('categoryIcon'),
             categoryName: document.getElementById('categoryName'),
             categoryDescription: document.getElementById('categoryDescription'),
-            
+
             // おみくじボックス関連
             cardSelectionPrompt: document.getElementById('cardSelectionPrompt'),
             cardsContainer: document.getElementById('cardsContainer'),
@@ -67,7 +67,7 @@ class OmikujiApp {
             statusMessage: document.getElementById('statusMessage'),
             cooldownTimer: document.getElementById('cooldownTimer'),
             timeRemaining: document.getElementById('timeRemaining'),
-            
+
             // モーダル関連
             modalOverlay: document.getElementById('modalOverlay'),
             modalContainer: document.getElementById('modalContainer'),
@@ -79,14 +79,14 @@ class OmikujiApp {
             luckStats: document.getElementById('luckStats'),
             adviceList: document.getElementById('adviceList'),
             shareButton: document.getElementById('shareButton'),
-            
+
             // 履歴関連
             historySection: document.getElementById('historySection'),
             historyList: document.getElementById('historyList'),
             historyCount: document.getElementById('historyCount'),
             noHistory: document.getElementById('noHistory'),
             clearHistoryButton: document.getElementById('clearHistoryButton'),
-            
+
             // その他
             loadingOverlay: document.getElementById('loadingOverlay'),
             confirmDialog: document.getElementById('confirmDialog'),
@@ -150,7 +150,7 @@ class OmikujiApp {
             if (this.elements.drawButton.disabled) return; // 二重防止
             this.drawFortune();
         });
-        
+
         // 札選択のイベントリスナー（動的に追加）
         this.elements.cardsGrid.addEventListener('click', (e) => {
             const card = e.target.closest('.omikuji-card');
@@ -339,17 +339,17 @@ class OmikujiApp {
         }
 
         this.isAnimating = true;
-        
+
         try {
             // ローディング表示
             this.showLoading();
-            
+
             // 札を準備（5枚）
             await this.prepareCards();
-            
+
             // 札選択状態に移行
             this.showCardSelection();
-            
+
         } catch (error) {
             console.error('おみくじを引く際にエラーが発生しました:', error);
             this.showMessage('エラーが発生しました。もう一度お試しください。');
@@ -368,7 +368,7 @@ class OmikujiApp {
         // 5枚の札を準備（重複なし）
         const shuffled = [...categoryFortunes].sort(() => Math.random() - 0.5);
         this.availableCards = shuffled.slice(0, 5);
-        
+
         // 札のHTMLを生成
         const cardsHTML = this.availableCards.map((fortune, index) => `
             <div class="omikuji-card" data-card-index="${index}">
@@ -397,36 +397,36 @@ class OmikujiApp {
         this.elements.cardSelectionPrompt.style.display = 'none';
         this.elements.cardsContainer.classList.remove('hidden');
         this.elements.cardsContainer.classList.add('show');
-        
+
         // ステータスメッセージを更新
         this.elements.statusMessage.textContent = '札を選んでクリックしてください';
     }
 
     async selectCard(cardElement) {
         if (this.isAnimating) return;
-        
+
         this.isAnimating = true;
-        
+
         try {
             // 選択された札を取得
             const cardIndex = parseInt(cardElement.dataset.cardIndex);
             const selectedFortune = this.availableCards[cardIndex];
-            
+
             // 札を選択状態にする
             cardElement.classList.add('selected');
-            
+
             // 少し待ってから開く
             await new Promise(resolve => setTimeout(resolve, 500));
-            
+
             // 札を開く
             cardElement.classList.add('flipped');
-            
+
             // 開くアニメーション完了を待つ
             await new Promise(resolve => setTimeout(resolve, 800));
-            
+
             // 結果モーダルを表示
             this.showFortuneModal(selectedFortune);
-            
+
             // クールダウン設定
             const lastDrawKey = `omikuji_last_draw_${this.selectedCategory}`;
             const now = new Date();
@@ -435,7 +435,7 @@ class OmikujiApp {
             const cooldownMs = 24 * 60 * 60 * 1000;
             const nextAvailable = now.getTime() + cooldownMs;
             this.showCooldownTimer(lastDrawKey, nextAvailable);
-            
+
         } catch (error) {
             console.error('札選択でエラーが発生しました:', error);
             this.showMessage('エラーが発生しました。もう一度お試しください。');
@@ -447,7 +447,7 @@ class OmikujiApp {
     showFortuneModal(fortune) {
         this.currentFortune = fortune;
         const category = this.fortuneData.categories[this.selectedCategory];
-        
+
         // 既存のモーダル表示処理
         this.elements.fortuneCategory.textContent = category.name;
         this.elements.fortuneCategory.style.color = category.color;
@@ -584,6 +584,8 @@ class OmikujiApp {
         // Fallback: DOMから取得
         const title = 'おみくじ結果';
         const category = this.elements.fortuneCategory.textContent || '';
+        const type = result?.type || this.elements.fortuneType.textContent || '';
+        const typeColor = result?.color || this.elements.fortuneType.style.color || '#d2691e';
         const message = this.elements.fortuneMessage.textContent || (result?.message ?? '');
         const luckStats = result?.luck
             ? Object.entries(result.luck).map(([label, value]) => ({ label, value }))
@@ -593,7 +595,7 @@ class OmikujiApp {
                 return { label, value };
             });
         const today = new Date();
-        const dateStr = `${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getDate().toString().padStart(2,'0')}`;
+        const dateStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
 
         // canvas生成
         const width = 480, height = 400;
@@ -608,21 +610,25 @@ class OmikujiApp {
         ctx.font = 'bold 28px sans-serif';
         ctx.fillStyle = '#d2691e';
         ctx.textAlign = 'center';
-        ctx.fillText(title, width/2, 48);
+        ctx.fillText(title, width / 2, 48);
         // カテゴリ名
         ctx.font = 'bold 22px sans-serif';
         ctx.fillStyle = '#0077b6';
-        ctx.fillText(category, width/2, 90);
+        ctx.fillText(`《${category}》`, width / 2, 90);
+        // 何吉か（type）
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillStyle = typeColor;
+        ctx.fillText(type, width / 2, 120);
         // メッセージ
         ctx.font = '18px sans-serif';
         ctx.fillStyle = '#333';
         ctx.textAlign = 'center';
-        ctx.fillText(message, width/2, 130);
+        ctx.fillText(message, width / 2, 150);
         // 運勢（星付き）
         ctx.font = '18px sans-serif';
         ctx.fillStyle = '#333';
-        let y = 170;
-        luckStats.forEach(({label, value}) => {
+        let y = 190;
+        luckStats.forEach(({ label, value }) => {
             ctx.textAlign = 'left';
             ctx.fillStyle = '#333';
             ctx.fillText(label, 60, y);
@@ -633,7 +639,7 @@ class OmikujiApp {
                 for (let i = 0; i < starCount; i++) {
                     ctx.font = '22px sans-serif';
                     ctx.fillStyle = '#f7b801';
-                    ctx.fillText('★', 180 + i*28, y);
+                    ctx.fillText('★', 180 + i * 28, y);
                 }
             } else {
                 ctx.font = '18px sans-serif';
@@ -646,7 +652,7 @@ class OmikujiApp {
         ctx.font = '16px sans-serif';
         ctx.fillStyle = '#888';
         ctx.textAlign = 'right';
-        ctx.fillText(dateStr, width-24, height-24);
+        ctx.fillText(dateStr, width - 24, height - 24);
 
         // クリップボードAPIでコピー
         if (!window.ClipboardItem || !navigator.clipboard || !navigator.clipboard.write) {
@@ -778,11 +784,11 @@ class OmikujiApp {
 
     showMessage(message) {
         this.elements.statusMessage.textContent = message;
-        
+
         // 3秒後に元のメッセージに戻す
         setTimeout(() => {
             if (this.selectedCategory) {
-                this.elements.statusMessage.textContent = this.elements.drawButton.disabled 
+                this.elements.statusMessage.textContent = this.elements.drawButton.disabled
                     ? `今日はもう${this.fortuneData.categories[this.selectedCategory].name}を引きました`
                     : '心を落ち着けて、おみくじを引いてください';
             }
@@ -812,18 +818,18 @@ class OmikujiApp {
     createRipple(e) {
         const button = e.currentTarget;
         const ripple = button.querySelector('.button-ripple');
-        
+
         if (!ripple) return;
 
         const rect = button.getBoundingClientRect();
         const size = Math.max(rect.width, rect.height);
         const x = e.clientX - rect.left - size / 2;
         const y = e.clientY - rect.top - size / 2;
-        
+
         ripple.style.width = ripple.style.height = size + 'px';
         ripple.style.left = x + 'px';
         ripple.style.top = y + 'px';
-        
+
         ripple.style.animation = 'none';
         requestAnimationFrame(() => {
             ripple.style.animation = 'ripple 0.6s linear';
@@ -843,7 +849,7 @@ class OmikujiApp {
         this.elements.cardsContainer.classList.add('hidden');
         this.elements.cardSelectionPrompt.style.display = 'flex';
         this.elements.cardsGrid.innerHTML = '';
-        
+
         // 利用可能な札をクリア
         this.availableCards = [];
     }
@@ -921,12 +927,12 @@ const utils = {
     isMobile: () => {
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     },
-    
+
     // iOS判定
     isIOS: () => {
         return /iPad|iPhone|iPod/.test(navigator.userAgent);
     },
-    
+
     // 日付フォーマット
     formatDate: (date) => {
         return date.toLocaleDateString('ja-JP', {
@@ -936,7 +942,7 @@ const utils = {
             weekday: 'long'
         });
     },
-    
+
     // ローカルストレージ使用可能チェック
     isLocalStorageAvailable: () => {
         try {
@@ -956,11 +962,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!utils.isLocalStorageAvailable()) {
         console.warn('ローカルストレージが使用できません。一部機能が制限されます。');
     }
-    
+
     // iOS用の特別な設定
     if (utils.isIOS()) {
         document.body.classList.add('ios');
-        
+
         // iOSでのビューポート問題を修正
         const viewport = document.querySelector('meta[name="viewport"]');
         if (viewport) {
@@ -972,18 +978,18 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.add('standalone');
         }
     }
-    
+
     // モバイル用の特別な設定
     if (utils.isMobile()) {
         document.body.classList.add('mobile');
     }
-    
+
     // ページコンテナの初期設定
     const historyPage = document.getElementById('historyPage');
     if (historyPage) {
         historyPage.classList.remove('active');
     }
-    
+
     // アプリケーション開始
     window.omikujiApp = new OmikujiApp();
 });
@@ -1012,76 +1018,76 @@ window.addEventListener('load', () => {
     }
 });
 
-window.addEventListener('DOMContentLoaded', function() {
-  const hamburger = document.getElementById('hamburgerMenu');
-  const sideMenu = document.getElementById('sideMenu');
-  let menuOpen = false;
+window.addEventListener('DOMContentLoaded', function () {
+    const hamburger = document.getElementById('hamburgerMenu');
+    const sideMenu = document.getElementById('sideMenu');
+    let menuOpen = false;
 
-  function openMenu() {
-    sideMenu.classList.add('open');
-    hamburger.setAttribute('aria-expanded', 'true');
-    menuOpen = true;
-    // フォーカスをメニューに移動
-    sideMenu.querySelector('li')?.focus();
-    document.body.style.overflow = 'hidden';
-  }
-  function closeMenu() {
-    sideMenu.classList.remove('open');
-    hamburger.setAttribute('aria-expanded', 'false');
-    menuOpen = false;
-    document.body.style.overflow = '';
-  }
-  hamburger?.addEventListener('click', function(e) {
-    e.stopPropagation();
-    if (menuOpen) {
-      closeMenu();
-    } else {
-      openMenu();
+    function openMenu() {
+        sideMenu.classList.add('open');
+        hamburger.setAttribute('aria-expanded', 'true');
+        menuOpen = true;
+        // フォーカスをメニューに移動
+        sideMenu.querySelector('li')?.focus();
+        document.body.style.overflow = 'hidden';
     }
-  });
-  // メニュー外クリックで閉じる
-  document.addEventListener('click', function(e) {
-    if (menuOpen && !sideMenu.contains(e.target) && e.target !== hamburger) {
-      closeMenu();
+    function closeMenu() {
+        sideMenu.classList.remove('open');
+        hamburger.setAttribute('aria-expanded', 'false');
+        menuOpen = false;
+        document.body.style.overflow = '';
     }
-  });
-  // Escキーで閉じる
-  document.addEventListener('keydown', function(e) {
-    if (menuOpen && (e.key === 'Escape' || e.key === 'Esc')) {
-      closeMenu();
-      hamburger.focus();
-    }
-  });
-  // メニュー内Tab移動サポート
-  sideMenu.addEventListener('keydown', function(e) {
-    if (e.key === 'Tab') {
-      const focusable = sideMenu.querySelectorAll('li');
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-  });
-  // メニュー項目にtabindex
-  sideMenu.querySelectorAll('li').forEach(li => li.setAttribute('tabindex', '0'));
+    hamburger?.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (menuOpen) {
+            closeMenu();
+        } else {
+            openMenu();
+        }
+    });
+    // メニュー外クリックで閉じる
+    document.addEventListener('click', function (e) {
+        if (menuOpen && !sideMenu.contains(e.target) && e.target !== hamburger) {
+            closeMenu();
+        }
+    });
+    // Escキーで閉じる
+    document.addEventListener('keydown', function (e) {
+        if (menuOpen && (e.key === 'Escape' || e.key === 'Esc')) {
+            closeMenu();
+            hamburger.focus();
+        }
+    });
+    // メニュー内Tab移動サポート
+    sideMenu.addEventListener('keydown', function (e) {
+        if (e.key === 'Tab') {
+            const focusable = sideMenu.querySelectorAll('li');
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+            }
+        }
+    });
+    // メニュー項目にtabindex
+    sideMenu.querySelectorAll('li').forEach(li => li.setAttribute('tabindex', '0'));
 
-  // サイドメニューからホームページへ移動
-  document.getElementById('menuHome')?.addEventListener('click', function() {
-    document.getElementById('historyPage').classList.remove('active');
-    document.querySelector('.container:not(#historyPage)').style.display = 'block';
-    closeMenu(); // メニューを閉じる
-  });
+    // サイドメニューからホームページへ移動
+    document.getElementById('menuHome')?.addEventListener('click', function () {
+        document.getElementById('historyPage').classList.remove('active');
+        document.querySelector('.container:not(#historyPage)').style.display = 'block';
+        closeMenu(); // メニューを閉じる
+    });
 
-  // サイドメニューから履歴ページへ移動
-  document.getElementById('menuHistory')?.addEventListener('click', function() {
-    document.getElementById('historyPage').classList.add('active');
-    document.querySelector('.container:not(#historyPage)').style.display = 'none';
-    closeMenu();
-  });
-  // 履歴ページからメインページへ戻る処理はハンバーガーメニューの「ホームへ」で対応
+    // サイドメニューから履歴ページへ移動
+    document.getElementById('menuHistory')?.addEventListener('click', function () {
+        document.getElementById('historyPage').classList.add('active');
+        document.querySelector('.container:not(#historyPage)').style.display = 'none';
+        closeMenu();
+    });
+    // 履歴ページからメインページへ戻る処理はハンバーガーメニューの「ホームへ」で対応
 });
