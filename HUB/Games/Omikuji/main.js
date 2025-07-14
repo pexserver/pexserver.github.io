@@ -553,12 +553,34 @@ class OmikujiApp {
     async shareFortune() {
         if (!this.currentFortune) return;
 
-        const shareText = `${this.fortuneData.categories[this.selectedCategory].name}: ${this.currentFortune.type}\n${this.currentFortune.message}\n\n# おみくじBox`;
+        // Share.jsonを取得
+        let shareTemplate = {
+            title: 'おみくじBox - 結果',
+            message: '{category}: {type}\n{message}\n\n# おみくじBox'
+        };
+        try {
+            const res = await fetch('Share.json');
+            if (res.ok) {
+                const json = await res.json();
+                shareTemplate = { ...shareTemplate, ...json };
+            }
+        } catch (e) {
+            // 失敗時はデフォルトテンプレートを使う
+        }
+
+        // テンプレートに値を埋め込む
+        const category = this.fortuneData.categories[this.selectedCategory].name;
+        const type = this.currentFortune.type;
+        const message = this.currentFortune.message;
+        const shareText = shareTemplate.message
+            .replace('{category}', category)
+            .replace('{type}', type)
+            .replace('{message}', message);
 
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'おみくじBox - 結果',
+                    title: shareTemplate.title.replace('{title}', type),
                     text: shareText,
                     url: window.location.href
                 });
@@ -654,7 +676,20 @@ class OmikujiApp {
         ctx.textAlign = 'right';
         ctx.fillText(dateStr, width - 24, height - 24);
 
-        // クリップボードAPIでコピー
+        // iOSの場合はabout:blankで画像を表示してコピーを促す
+        if (typeof utils !== 'undefined' && utils.isIOS && utils.isIOS()) {
+            const dataUrl = canvas.toDataURL('image/png');
+            const win = window.open('about:blank', '_blank');
+            if (win) {
+                win.document.write('<html><head><title>画像を長押しでコピー</title></head><body style="margin:0;text-align:center;background:#fffbe8;"><h2 style="font-family:sans-serif;color:#d2691e;">画像を長押しでコピーしてください</h2><img src="' + dataUrl + '" style="max-width:95vw;max-height:80vh;border-radius:12px;box-shadow:0 2px 12px #ccc;"/></body></html>');
+                win.document.close();
+            } else {
+                this.showMessage('画像を新しいタブで開けませんでした');
+            }
+            return;
+        }
+
+        // クリップボードAPIでコピー（iOS以外）
         if (!window.ClipboardItem || !navigator.clipboard || !navigator.clipboard.write) {
             this.showMessage('このブラウザは画像コピーに未対応です');
             return;
