@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -12,7 +13,8 @@
     <link rel="stylesheet" href="./Style/omikuji.css">
     <link rel="stylesheet" href="./Style/animations.css">
     <link rel="stylesheet" href="./Style/utilities.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1976d2" media="(prefers-color-scheme: light)">
@@ -25,6 +27,7 @@
     <meta name="apple-touch-fullscreen" content="yes">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
 </head>
+
 <body class="no-scrollbar">
     <div class="container">
         <!-- 背景装飾 -->
@@ -80,7 +83,7 @@
                             <span>おみくじを引いて札を選んでください</span>
                         </div>
                     </div>
-                    
+
                     <!-- 札の選択エリア -->
                     <div class="cards-container hidden" id="cardsContainer">
                         <div class="cards-grid" id="cardsGrid">
@@ -100,7 +103,8 @@
                         心を落ち着けて、おみくじを引いてください
                     </div>
                     <div class="cooldown-timer" id="cooldownTimer" style="display:none;">
-                        <span class="cards-time"><i class="fas fa-clock"></i>次回まで: <span id="timeRemaining">--:--:--</span></span>
+                        <span class="cards-time"><i class="fas fa-clock"></i>次回まで: <span
+                                id="timeRemaining">--:--:--</span></span>
                     </div>
                     <button class="back-button" id="backButton" type="button">
                         <i class="fas fa-arrow-left"></i>
@@ -116,7 +120,7 @@
             <p class="disclaimer">※ これは娯楽目的のおみくじです</p>
         </footer>
     </div>
-    
+
     <!-- 履歴ページ (別ページコンテナ) -->
     <div class="container page-container" id="historyPage">
         <header class="header">
@@ -125,12 +129,12 @@
                 おみくじ履歴
             </h1>
         </header>
-        
+
         <main class="main-content">
             <!-- 履歴セクション -->
             <section class="history-section" id="historySection">
                 <h3 class="section-title">
-                    <i class="fas fa-history"></i> 
+                    <i class="fas fa-history"></i>
                     おみくじ履歴 <span class="history-count" id="historyCount">(0/30)</span>
                 </h3>
                 <div class="history-list" id="historyList">
@@ -144,7 +148,7 @@
                 </button>
             </section>
         </main>
-        
+
         <footer class="footer">
             <p>&copy; 2024 おみくじBox. すべての権利を留保します。</p>
         </footer>
@@ -166,15 +170,15 @@
                         <div class="fortune-category" id="fortuneCategory"></div>
                         <div class="fortune-type" id="fortuneType"></div>
                     </div>
-                    
+
                     <div class="paper-content">
                         <div class="fortune-message" id="fortuneMessage"></div>
                         <div class="fortune-description" id="fortuneDescription"></div>
-                        
+
                         <div class="luck-stats" id="luckStats">
                             <!-- 運勢の詳細はJavaScriptで動的に生成 -->
                         </div>
-                        
+
                         <div class="advice-section">
                             <h4><i class="fas fa-lightbulb"></i> アドバイス</h4>
                             <ul class="advice-list" id="adviceList">
@@ -221,19 +225,19 @@
 
     <!-- ハンバーガーメニュー -->
     <button class="hamburger" id="hamburgerMenu" aria-label="メニューを開く">
-      <span class="hamburger-bar"></span>
-      <span class="hamburger-bar"></span>
-      <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
     </button>
     <nav class="side-menu" id="sideMenu" aria-label="メインメニュー">
-      <ul>
-        <li id="menuHome"><i class="fas fa-home"></i> ホームへ</li>
-        <li id="menuHistory"><i class="fas fa-history"></i> おみくじ履歴</li>
-      </ul>
+        <ul>
+            <li id="menuHome"><i class="fas fa-home"></i> ホームへ</li>
+            <li id="menuHistory"><i class="fas fa-history"></i> おみくじ履歴</li>
+        </ul>
     </nav>
 
     <div class="hidden developer-note">
-      <!--
+        <!--
         ?type=fortuneType でアクセスすると該当typeのおみくじ結果をjsonで返します。
         例: ?type=general
         存在しない場合は {"error":"not found"} を返します。
@@ -242,4 +246,5 @@
 
     <script src="main.js"></script>
 </body>
+
 </html>

@@ -1,15 +1,16 @@
 /* hamburger.css: ハンバーガーメニュー・サイドメニューのCSS3スタイル */
 .hamburger {
-  display: none;
+  display: flex !important;
   position: fixed;
-  top: max(calc(env(safe-area-inset-top, 0px) + 20px), 20px);
-  right: max(calc(env(safe-area-inset-right, 0px) + 20px), 20px);
-  z-index: 2001;
-  width: 52px; /* タップ領域を拡大 */
-  height: 52px; /* タップ領域を拡大 */
-  background: rgba(255,255,255,0.95);
+  top: 32px;
+  left: 32px;
+  right: auto;
+  width: 56px;
+  height: 56px;
+  background: rgba(255,255,255,0.98);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
   border-radius: 50%;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+  z-index: 2101;
   justify-content: center;
   align-items: center;
   cursor: pointer;
@@ -77,142 +78,147 @@ body.modal-open .hamburger {
 }
 
 .side-menu {
-  display: none;
+  display: block !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: auto;
+  width: 320px;
+  height: 100vh;
+  background: #fff;
+  box-shadow: 4px 0 25px rgba(0,0,0,0.10);
+  border-radius: 0 20px 20px 0;
+  border-right: 1px solid #e0e0e0;
+  padding-top: 80px;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+  z-index: 2100;
+  transition: left 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+  overflow-y: auto;
+}
+
+.side-menu ul {
+  padding: 30px 20px;
+}
+
+.side-menu li {
+  font-size: 1.1em;
+  padding: 18px 18px 20px;
+  margin: 18px 0;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 @media (max-width: 900px) {
   .hamburger {
-    display: flex;
+    left: auto;
+    right: max(calc(env(safe-area-inset-right, 0px) + 20px), 20px);
+    top: max(calc(env(safe-area-inset-top, 0px) + 20px), 20px);
+    width: 52px;
+    height: 52px;
   }
-  
   .side-menu {
-    display: block;
-    position: fixed;
-    top: 0;
-    right: -320px; /* 少し広げて隠す範囲を増やす */
-    width: 320px; /* 幅を広げてタップ領域を拡大 */
-    height: 100%;
-    height: 100dvh; /* dynamic viewport heightを使用 - modern browsers */
-    background: #fff;
+    left: auto;
+    right: -320px;
+    border-radius: 20px 0 0 20px;
+    border-right: none;
+    border-left: 1px solid rgba(0,0,0,0.05);
     box-shadow: -5px 0 25px rgba(0,0,0,0.2);
-    z-index: 2100;
-    transition: right 0.4s cubic-bezier(0.19, 1, 0.22, 1);
     padding-top: max(calc(env(safe-area-inset-top, 0px) + 35px), 35px);
+    padding-left: 25px;
     padding-right: max(env(safe-area-inset-right, 0px), 0px);
     padding-bottom: max(calc(env(safe-area-inset-bottom, 0px) + 25px), 25px);
-    padding-left: 25px;
-    overflow-y: auto;
-    border-radius: 20px 0 0 20px;
-    border-left: 1px solid rgba(0,0,0,0.05);
-    -webkit-overflow-scrolling: touch; /* iOSのスクロールを滑らかに */
-    overscroll-behavior: contain; /* スクロールが親要素に伝播するのを防ぐ */
+    transition: right 0.4s cubic-bezier(0.19, 1, 0.22, 1);
   }
-  
   .side-menu.open {
     right: 0;
+    left: auto;
     animation: slideIn 0.4s forwards;
   }
-  
   @keyframes slideIn {
     from { right: -320px; }
     to { right: 0; }
   }
-  
-  .side-menu::before {
-    content: '';
-    position: absolute;
-    top: 0;
+}
+
+@media (min-width: 901px) {
+  .side-menu {
     left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23f0f0f0' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");
-    z-index: -1;
-    opacity: 0.3;
-    pointer-events: none;
+    right: auto;
+    width: 280px; /* 少しスリムに */
+    border-radius: 0 16px 16px 0;
+    border-right: 1px solid #e0e0e0;
+    border-left: none;
+    box-shadow: 4px 0 25px rgba(0,0,0,0.10);
+    padding-top: 64px;
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    transition: width 0.3s, left 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+    z-index: 2100;
+    display: block !important;
+    transform: none !important;
+    animation: none !important;
   }
-  
+  .side-menu.collapsed {
+    width: 72px;
+    min-width: 56px;
+    overflow-x: hidden;
+  }
   .side-menu ul {
-    list-style: none;
-    padding: 15px 20px;
-    margin: 30px 0;
+    padding: 24px 10px;
   }
-  
   .side-menu li {
-    margin: 22px 0;
-    font-size: 1.15em;
-    color: var(--primary-color);
-    cursor: pointer;
-    border-bottom: 1px solid #f0f0f0;
-    padding: 16px 16px 18px;
-    background: rgba(255, 255, 255, 0.8);
-    transition: all 0.3s;
-    border-radius: 14px;
+    font-size: 1em;
+    padding: 12px 10px 14px;
+    margin: 10px 0;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.98);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background 0.2s;
+  }
+  .side-menu li.active, .side-menu li:focus {
+    background: #e3f2fd;
+    color: #1976d2;
+    outline: none;
+  }
+  /* 折りたたみボタン */
+  .side-menu-toggle {
     display: flex;
     align-items: center;
-    gap: 14px;
-    position: relative;
-    overflow: hidden;
-    font-weight: 600;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    justify-content: flex-end;
+    padding: 8px 12px 0 0;
+    cursor: pointer;
+    color: #888;
+    font-size: 1.2em;
+    background: none;
+    border: none;
+    outline: none;
+    transition: color 0.2s;
   }
-  
-  .side-menu li:focus, 
-  .side-menu li:hover {
-    background: #e3f2fd;
-    outline: 2px solid var(--focus-outline);
-    transform: translateX(5px);
+  .side-menu-toggle:hover {
+    color: #1976d2;
   }
-  
-  .side-menu li:active {
-    transform: translateX(5px) scale(0.98);
+  /* PCではハンバーガー非表示 */
+  .hamburger {
+    display: none !important;
   }
-  
-  .side-menu li i {
-    font-size: 1.3em;
-    color: var(--accent-color);
-    transition: transform 0.3s;
-  }
-  
-  .side-menu li:hover i {
-    transform: scale(1.2);
-  }
-  
-  .side-menu li::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: linear-gradient(to right, var(--primary-color), transparent);
-    transform: scaleX(0.3);
-    transform-origin: left;
-    transition: transform 0.3s;
-  }
-  
-  .side-menu li:hover::after {
-    transform: scaleX(1);
-  }
-  
-  /* オーバーレイ */
-  .menu-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s;
-    z-index: 2050;
-    -webkit-backdrop-filter: blur(3px);
-    backdrop-filter: blur(3px);
-    will-change: opacity; /* GPUアクセラレーションを有効にする */
-    touch-action: none; /* タッチ操作を無効にする */
-  }
-  
-  .menu-overlay.active {
-    opacity: 1;
-    pointer-events: all;
-  }
+}
+
+/* サイドメニューのアクセシビリティ強化 */
+.side-menu[aria-label], .side-menu[role="navigation"] {
+  outline: none;
+}
+.side-menu li {
+  cursor: pointer;
+}
+.side-menu li:focus {
+  outline: 2px solid #1976d2;
 }
 
 /* ダークモード完全廃止: @media (prefers-color-scheme: dark) セクションを削除 */
