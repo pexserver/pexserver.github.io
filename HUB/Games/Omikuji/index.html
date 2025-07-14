@@ -96,12 +96,11 @@
                         <span class="button-text">おみくじを引く</span>
                         <span class="button-ripple" aria-hidden="true"></span>
                     </button>
-                    <div class="status-message button-text small" id="statusMessage">
+                    <div class="drawed-message" id="statusMessage">
                         心を落ち着けて、おみくじを引いてください
                     </div>
                     <div class="cooldown-timer" id="cooldownTimer" style="display:none;">
-                        <i class="fas fa-clock"></i>
-                        <span class="button-text">次回まで: <span id="timeRemaining">--:--:--</span></span>
+                        <span class="cards-time"><i class="fas fa-clock"></i>次回まで: <span id="timeRemaining">--:--:--</span></span>
                     </div>
                     <button class="back-button" id="backButton" type="button">
                         <i class="fas fa-arrow-left"></i>
@@ -113,7 +112,7 @@
 
         <!-- フッター -->
         <footer class="footer">
-            <p>&copy; 2024 おみくじBox. すべての権利を留保します。</p>
+            <p>&copy; 2025 おみくじBox. すべての権利を留保します。</p>
             <p class="disclaimer">※ これは娯楽目的のおみくじです</p>
         </footer>
     </div>
@@ -132,7 +131,7 @@
             <section class="history-section" id="historySection">
                 <h3 class="section-title">
                     <i class="fas fa-history"></i> 
-                    おみくじ履歴 <span class="history-count" id="historyCount">(0/10)</span>
+                    おみくじ履歴 <span class="history-count" id="historyCount">(0/30)</span>
                 </h3>
                 <div class="history-list" id="historyList">
                     <div class="no-history" id="noHistory">
@@ -189,6 +188,10 @@
                 <button class="share-button" id="shareButton">
                     <i class="fas fa-share"></i>
                     結果をシェア
+                </button>
+                <button class="share-image-button" id="shareImageButton">
+                    <i class="fas fa-image"></i>
+                    結果画像をコピー
                 </button>
             </div>
         </div>

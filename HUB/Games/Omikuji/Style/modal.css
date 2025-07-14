@@ -467,14 +467,18 @@
   .modal-container {
     width: 100vw;
     max-width: 100vw;
-    border-radius: 15px 15px 0 0;
+    height: 100vh;
+    max-height: 100vh;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    position: fixed;
+    border-radius: 0;
+    margin: 0;
     font-size: 0.95em;
     padding-top: calc(env(safe-area-inset-top, 0px) + 4px);
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
-    max-height: 95vh;
-    position: fixed;
-    bottom: 0;
-    margin-top: auto;
   }
   
   .modal-header {

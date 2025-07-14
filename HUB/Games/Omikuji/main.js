@@ -173,6 +173,12 @@ class OmikujiApp {
         // モーダル内ボタン
         this.elements.shareButton.addEventListener('click', () => this.shareFortune());
 
+        // 画像シェアボタン
+        this.elements.shareImageButton = document.getElementById('shareImageButton');
+        if (this.elements.shareImageButton) {
+            this.elements.shareImageButton.addEventListener('click', () => this.shareFortuneAsImage());
+        }
+
         // 履歴関連
         this.elements.clearHistoryButton.addEventListener('click', () => this.confirmClearHistory());
 
@@ -547,7 +553,7 @@ class OmikujiApp {
     async shareFortune() {
         if (!this.currentFortune) return;
 
-        const shareText = `${this.fortuneData.categories[this.selectedCategory].name}: ${this.currentFortune.type}\n${this.currentFortune.message}\n\n#おみくじBox`;
+        const shareText = `${this.fortuneData.categories[this.selectedCategory].name}: ${this.currentFortune.type}\n${this.currentFortune.message}\n\n# おみくじBox`;
 
         if (navigator.share) {
             try {
@@ -571,12 +577,104 @@ class OmikujiApp {
         }
     }
 
+    // おみくじ結果をシンプルなcanvasで画像生成しクリップボードにコピー
+    async shareFortuneAsImage() {
+        // 結果データをJSONで取得
+        const result = this.getCurrentFortuneResult?.() || this.getCurrentResult?.() || null;
+        // Fallback: DOMから取得
+        const title = 'おみくじ結果';
+        const category = this.elements.fortuneCategory.textContent || '';
+        const message = this.elements.fortuneMessage.textContent || (result?.message ?? '');
+        const luckStats = result?.luck
+            ? Object.entries(result.luck).map(([label, value]) => ({ label, value }))
+            : Array.from(this.elements.luckStats.querySelectorAll('.luck-item')).map(item => {
+                const label = item.querySelector('.luck-label')?.textContent || '';
+                const value = item.querySelector('.luck-value')?.textContent || '';
+                return { label, value };
+            });
+        const today = new Date();
+        const dateStr = `${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getDate().toString().padStart(2,'0')}`;
+
+        // canvas生成
+        const width = 480, height = 400;
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        // 背景
+        ctx.fillStyle = '#fffbe8';
+        ctx.fillRect(0, 0, width, height);
+        // タイトル
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillStyle = '#d2691e';
+        ctx.textAlign = 'center';
+        ctx.fillText(title, width/2, 48);
+        // カテゴリ名
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillStyle = '#0077b6';
+        ctx.fillText(category, width/2, 90);
+        // メッセージ
+        ctx.font = '18px sans-serif';
+        ctx.fillStyle = '#333';
+        ctx.textAlign = 'center';
+        ctx.fillText(message, width/2, 130);
+        // 運勢（星付き）
+        ctx.font = '18px sans-serif';
+        ctx.fillStyle = '#333';
+        let y = 170;
+        luckStats.forEach(({label, value}) => {
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#333';
+            ctx.fillText(label, 60, y);
+            // 星を描画
+            ctx.textAlign = 'left';
+            let starCount = Number(value);
+            if (!isNaN(starCount) && starCount > 0) {
+                for (let i = 0; i < starCount; i++) {
+                    ctx.font = '22px sans-serif';
+                    ctx.fillStyle = '#f7b801';
+                    ctx.fillText('★', 180 + i*28, y);
+                }
+            } else {
+                ctx.font = '18px sans-serif';
+                ctx.fillStyle = '#888';
+                ctx.fillText(value, 180, y);
+            }
+            y += 32;
+        });
+        // 日付
+        ctx.font = '16px sans-serif';
+        ctx.fillStyle = '#888';
+        ctx.textAlign = 'right';
+        ctx.fillText(dateStr, width-24, height-24);
+
+        // クリップボードAPIでコピー
+        if (!window.ClipboardItem || !navigator.clipboard || !navigator.clipboard.write) {
+            this.showMessage('このブラウザは画像コピーに未対応です');
+            return;
+        }
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+        if (!blob) {
+            this.showMessage('画像データの生成に失敗しました');
+            return;
+        }
+        try {
+            await navigator.clipboard.write([
+                new window.ClipboardItem({ 'image/png': blob })
+            ]);
+            this.showClipboardModal();
+        } catch (clipErr) {
+            this.showMessage('画像コピーに失敗: ' + (clipErr && clipErr.message ? clipErr.message : clipErr));
+        }
+    }
+
     updateHistoryDisplay() {
         this.elements.historyCount.textContent = `(${this.history.length}/${this.maxHistory})`;
 
         if (this.history.length === 0) {
             this.elements.noHistory.style.display = 'block';
             this.elements.clearHistoryButton.style.display = 'none';
+            this.elements.historyList.innerHTML = '';
             return;
         }
 
@@ -645,11 +743,12 @@ class OmikujiApp {
         this.elements.confirmMessage.textContent = 'すべての履歴を削除しますか？この操作は取り消せません。';
         this.confirmedAction = () => this.clearHistory();
         this.elements.confirmDialog.classList.add('show');
+        this.elements.confirmDialog.classList.remove('hidden'); // hiddenを必ず除去
     }
 
     clearHistory() {
         this.history = [];
-        this.saveUserData();
+        localStorage.removeItem('omikuji_history'); // localStorageからも完全削除
         this.updateHistoryDisplay();
         this.hideConfirmDialog();
         this.showMessage('履歴をクリアしました');
@@ -664,6 +763,7 @@ class OmikujiApp {
 
     hideConfirmDialog() {
         this.elements.confirmDialog.classList.remove('show');
+        this.elements.confirmDialog.classList.add('hidden'); // 閉じるときはhiddenを付与
     }
 
     showLoading() {
@@ -687,6 +787,26 @@ class OmikujiApp {
                     : '心を落ち着けて、おみくじを引いてください';
             }
         }, 3000);
+    }
+
+    // 画像コピー成功時に通知モーダルを表示
+    showClipboardModal(message = '画像をクリップボードにコピーしました！') {
+        // 既存モーダルがあれば削除
+        document.querySelector('.clipboard-modal-overlay')?.remove();
+        const overlay = document.createElement('div');
+        overlay.className = 'clipboard-modal-overlay';
+        overlay.innerHTML = `
+          <div class="clipboard-modal">
+            <div class="modal-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="modal-message">${message}</div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+        setTimeout(() => {
+            overlay.classList.add('fadeout');
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.remove(), 400);
+        }, 1800);
     }
 
     createRipple(e) {

@@ -1,0 +1,43 @@
+/* omikuji-clipboard-modal.css: 画像コピー通知モーダル用 */
+
+.clipboard-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s;
+}
+
+.clipboard-modal {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(30,40,80,0.15);
+  padding: 32px 36px 28px 36px;
+  min-width: 260px;
+  text-align: center;
+  font-size: 1.15em;
+  color: #1976d2;
+  font-family: 'Noto Sans JP', sans-serif;
+  position: relative;
+  animation: modalPop 0.3s cubic-bezier(.4,2,.6,1) both;
+}
+
+.clipboard-modal .modal-icon {
+  font-size: 2.5em;
+  color: #43a047;
+  margin-bottom: 12px;
+}
+
+@keyframes modalPop {
+  0% { transform: scale(0.7); opacity: 0; }
+  80% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
