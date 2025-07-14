@@ -373,17 +373,17 @@
         };
 
         // ---- ネットワーク監視とモーダル制御 ----
-        const modal = document.getElementById('modalNetwork');
+        const networkModal = document.getElementById('modalNetwork');
         let lostConnection = false;
         let reloadPending = false;
 
         function showModal() {
-            modal.classList.add('active');
+            networkModal.classList.add('active');
             document.body.style.pointerEvents = "none";
-            modal.style.pointerEvents = "auto";
+            networkModal.style.pointerEvents = "auto";
         }
         function hideModal() {
-            modal.classList.remove('active');
+            networkModal.classList.remove('active');
             document.body.style.pointerEvents = "";
         }
         function reloadContent() {
@@ -423,13 +423,15 @@
         checkOnlineStatus();
         setInterval(checkOnlineStatus, 4000);
 
-        modal.addEventListener('mousedown', e => e.stopPropagation());
-        modal.addEventListener('touchstart', e => e.stopPropagation());
-        window.addEventListener('keydown', function (e) {
-            if (modal.classList.contains('active')) {
-                e.preventDefault();
-            }
-        }, true);
+        if (networkModal) {
+            networkModal.addEventListener('mousedown', e => e.stopPropagation());
+            networkModal.addEventListener('touchstart', e => e.stopPropagation());
+            window.addEventListener('keydown', function (e) {
+                if (networkModal.classList.contains('active')) {
+                    e.preventDefault();
+                }
+            }, true);
+        }
     </script>
 </body>
 </html>

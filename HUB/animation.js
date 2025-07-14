@@ -69,7 +69,8 @@ class HubManager {
                 document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
                 e.target.classList.add('active');
                 this.currentFilter = e.target.dataset.category;
-                this.renderAllItems();
+                this.switchTab('search');
+                this.performSearch();
             });
         });
 
