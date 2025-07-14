@@ -59,5 +59,32 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
     }
+    // --- iOSでfilter-btnクリック時にsearch-inputへ自動focusしないようにする ---
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const searchInput = document.getElementById('search-input');
+    let filterBtnJustPressed = false;
+    filterBtns.forEach(btn => {
+        btn.addEventListener('pointerdown', (e) => {
+            filterBtnJustPressed = true;
+            if (searchInput) searchInput.blur();
+        });
+        btn.addEventListener('mousedown', (e) => {
+            filterBtnJustPressed = true;
+            if (searchInput) searchInput.blur();
+        });
+        btn.addEventListener('touchstart', (e) => {
+            filterBtnJustPressed = true;
+            if (searchInput) searchInput.blur();
+        });
+    });
+    if (searchInput) {
+        searchInput.addEventListener('focus', (e) => {
+            if (filterBtnJustPressed) {
+                e.preventDefault();
+                searchInput.blur();
+            }
+            filterBtnJustPressed = false;
+        });
+    }
     tryShowIOSPWAModal();
 });
