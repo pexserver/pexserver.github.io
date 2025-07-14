@@ -34,6 +34,23 @@
           "os": ["pc", "mobile"]
         }
       ]
+    },
+    {
+      "id": "casual",
+      "name": "カジュアルゲーム",
+      "description": "手軽に遊べるカジュアルゲームのリンク集",
+      "icon": "🎲",
+      "items": [
+        {
+          "name": "おみくじ",
+          "description": "運試しができるシンプルなおみくじゲーム",
+          "thumbnail": "https://base-ec2.akamaized.net/images/item/origin/bd7eab1e986bcd1e8c15956ef73205a2.png",
+          "url": "./Games/Omikuji/index.html",
+          "category": "casual",
+          "tags": ["omikuji", "fortune", "casual", "game"],
+          "os": ["pc", "mobile"]
+        }
+      ]
     }
   ],
   "featured": [
