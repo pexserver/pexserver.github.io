@@ -569,7 +569,14 @@ class OmikujiApp {
         }
 
         // テンプレートに値を埋め込む
-        const category = this.fortuneData.categories[this.selectedCategory].name;
+        let category = '';
+        if (this.selectedCategory && this.fortuneData && this.fortuneData.categories && this.fortuneData.categories[this.selectedCategory]) {
+            category = this.fortuneData.categories[this.selectedCategory].name;
+        } else if (this.currentFortune && this.currentFortune.categoryName) {
+            category = this.currentFortune.categoryName;
+        } else if (this.elements && this.elements.fortuneCategory) {
+            category = this.elements.fortuneCategory.textContent || '';
+        }
         const type = this.currentFortune.type;
         const message = this.currentFortune.message;
         const shareText = shareTemplate.message
@@ -577,26 +584,57 @@ class OmikujiApp {
             .replace('{type}', type)
             .replace('{message}', message);
 
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: shareTemplate.title.replace('{title}', type),
-                    text: shareText,
-                    url: window.location.href
-                });
-            } catch (error) {
-                console.log('シェアがキャンセルされました');
-            }
-        } else {
-            // フォールバック: クリップボードにコピー
-            try {
-                await navigator.clipboard.writeText(shareText);
-                this.showMessage('結果をクリップボードにコピーしました！');
-            } catch (error) {
-                console.error('クリップボードへのコピーに失敗しました:', error);
-                this.showMessage('シェア機能は利用できません');
-            }
-        }
+        // クリップボードAPIやWeb Share APIは使わず、手動でコピーさせるUIを表示
+        // iOSもサポートし、コピー成功時はmodalで通知
+        const isIOS = typeof utils !== 'undefined' && utils.isIOS && utils.isIOS();
+        // 既存のモーダルがあれば削除
+        document.querySelector('.clipboard-modal-overlay')?.remove();
+        // 手動コピー用のモーダルを作成
+        const overlay = document.createElement('div');
+        overlay.className = 'clipboard-modal-overlay';
+        overlay.style.zIndex = 3000;
+        overlay.innerHTML = `
+          <div class="clipboard-modal" style="max-width: 95vw;">
+            <div class="modal-icon"><i class="fas fa-share-alt"></i></div>
+            <div class="modal-message" style="font-size:1.1em;margin-bottom:1em;">下のテキストを長押ししてコピーしてください</div>
+            <textarea id="manualShareText" readonly style="width:90%;min-height:5em;font-size:1.1em;padding:0.7em 1em;border-radius:10px;border:1px solid #ccc;resize:none;">${shareText}</textarea>
+            <button id="copyShareTextBtn" style="margin-top:1.2em;padding:0.7em 2em;font-size:1.1em;border-radius:8px;background:#1976d2;color:#fff;border:none;cursor:pointer;">コピー</button>
+            <div style="margin-top:1.2em;font-size:0.95em;color:#888;">${isIOS ? 'iPhone/iPadでは長押しで「コピー」または「すべて選択→コピー」を選んでください' : 'コピーできない場合は手動で選択してコピーしてください'}</div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+        const textarea = overlay.querySelector('#manualShareText');
+        const copyBtn = overlay.querySelector('#copyShareTextBtn');
+        // テキストエリアを自動選択
+        textarea.focus();
+        textarea.select();
+        // コピー処理
+        copyBtn.addEventListener('click', () => {
+          textarea.select();
+          let copied = false;
+          try {
+            copied = document.execCommand('copy');
+          } catch (e) {
+            copied = false;
+          }
+          if (copied) {
+            overlay.remove();
+            this.showClipboardModal('結果をクリップボードにコピーしました！');
+          } else {
+            this.showMessage('コピーできませんでした。手動で選択してコピーしてください');
+          }
+        });
+        // モーダル外クリックで閉じる
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) overlay.remove();
+        });
+        // Escキーで閉じる
+        document.addEventListener('keydown', function escHandler(e) {
+          if (e.key === 'Escape') {
+            overlay.remove();
+            document.removeEventListener('keydown', escHandler);
+          }
+        });
     }
 
     // おみくじ結果をシンプルなcanvasで画像生成しクリップボードにコピー
@@ -681,7 +719,62 @@ class OmikujiApp {
             const dataUrl = canvas.toDataURL('image/png');
             const win = window.open('about:blank', '_blank');
             if (win) {
-                win.document.write('<html><head><title>画像を長押しでコピー</title></head><body style="margin:0;text-align:center;background:#fffbe8;"><h2 style="font-family:sans-serif;color:#d2691e;">画像を長押しでコピーしてください</h2><img src="' + dataUrl + '" style="max-width:95vw;max-height:80vh;border-radius:12px;box-shadow:0 2px 12px #ccc;"/></body></html>');
+                win.document.write(`<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>画像を長押しでコピー</title>
+  <style>
+    body {
+      margin: 0;
+      background: #fffbe8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
+    }
+    .copy-instruction {
+      color: #d2691e;
+      margin: 3em 0 2em 0;
+      font-size: 2.2em;
+      font-weight: bold;
+      text-align: center;
+      line-height: 1.4;
+      letter-spacing: 0.02em;
+      text-shadow: 0 2px 8px #fffbe8, 0 1px 0 #fff;
+    }
+    .share-image {
+      max-width: 98vw;
+      max-height: 72vh;
+      border-radius: 24px;
+      box-shadow: 0 8px 32px #c9b97a;
+      border: 4px solid #f7b801;
+      display: block;
+      margin: 0 auto 2.5em auto;
+      touch-action: manipulation;
+    }
+    @media (max-width: 600px) {
+      .copy-instruction {
+        font-size: 1.3em;
+        margin: 2em 0 1.2em 0;
+      }
+      .share-image {
+        max-width: 99vw;
+        max-height: 60vh;
+        border-radius: 14px;
+        border-width: 2px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="copy-instruction">画像を長押しして<br>「写真に追加」や「コピー」を選択してください</div>
+  <img src="${dataUrl}" class="share-image" alt="おみくじ結果画像" />
+</body>
+</html>`);
                 win.document.close();
             } else {
                 this.showMessage('画像を新しいタブで開けませんでした');
