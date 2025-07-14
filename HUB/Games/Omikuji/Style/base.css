@@ -248,7 +248,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   letter-spacing: 0.01em;
   border-top: 1px solid #e0e0e0;
   box-shadow: 0 -1px 4px rgba(25, 118, 210, 0.03);
-  z-index: 1000;
+  z-index: 9999;
 }
 
 .footer .disclaimer {
