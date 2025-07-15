@@ -141,6 +141,9 @@ class OmikujiApp {
         this.elements.categoryGrid.addEventListener('click', (e) => {
             const card = e.target.closest('.category-card');
             if (card) {
+                // iOSでカテゴリ選択時にsearch-inputへfocusが飛ぶのを防ぐ
+                const searchInput = document.getElementById('search-input');
+                if (searchInput) searchInput.blur();
                 this.selectCategory(card.dataset.category);
             }
         });
