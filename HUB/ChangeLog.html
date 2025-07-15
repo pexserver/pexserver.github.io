@@ -203,7 +203,7 @@
     async function fetchCommits(maxPages = 30) {
       let allCommits = [];
       for (let page = 1; page <= maxPages; page++) {
-        const res = await fetch(`https://api.github.com/repos/pexserver/pexserver.github.io/commits?per_page=100&page=${page}`);
+        const res = await fetch(`https://api.github.com/repos/pexserver/pexserver.github.io/commits?per_page=100&page=${page}&path=HUB`);
         if (!res.ok) break;
         const commits = await res.json();
         if (!Array.isArray(commits) || commits.length === 0) break;
