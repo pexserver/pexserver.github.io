@@ -345,6 +345,29 @@
         </div>
     </div>
     <script>
+        // 右クリック（コンテキストメニュー）を無効化
+        window.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // F12やCtrl+Shift+Iなど開発者ツールのショートカットも無効化
+        window.addEventListener('keydown', function(e) {
+            // F12
+            if (e.key === 'F12') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+Shift+K
+            if (e.ctrlKey && e.shiftKey && ['I','J','C','K'].includes(e.key.toUpperCase())) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            // Ctrl+U（ソース表示）
+            if (e.ctrlKey && e.key.toUpperCase() === 'U') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
         // メニューバー: クリックでリスト表示、再クリックで閉じる
         document.querySelectorAll('.menu').forEach(menu => {
             menu.addEventListener('click', function (e) {
@@ -360,7 +383,7 @@
 
         // HUBに戻る（object/iframeのsrcを書き換え）
         document.getElementById('btnToHub').onclick = function () {
-            document.getElementById('mainFrame').src = "https://pexserver.github.io/HUB";
+            location.reload();
         };
 
         // Aboutモーダル表示
