@@ -1,0 +1,741 @@
+
+/* --- Google/Firebase UIベースのWebカメラテストUI --- */
+body {
+    font-family: 'Roboto', 'Meiryo', Arial, sans-serif;
+    background: #f5f7fa;
+    margin: 0;
+    min-height: 100vh;
+}
+
+.firebase-ui-root {
+    display: flex;
+    min-height: 100vh;
+    position: relative;
+}
+
+/* ハンバーガーメニュー */
+.sidebar-toggle {
+    display: none;
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    z-index: 1100;
+    width: 44px;
+    height: 44px;
+    background: #fff;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(60,60,60,0.10);
+    cursor: pointer;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.2s, border 0.2s;
+}
+.sidebar-toggle span {
+    display: block;
+    width: 22px;
+    height: 3px;
+    margin: 4px auto;
+    background: #4285f4;
+    border-radius: 2px;
+    transition: all 0.25s cubic-bezier(.4,0,.2,1);
+}
+.sidebar-toggle.open span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+}
+.sidebar-toggle.open span:nth-child(2) {
+    opacity: 0;
+}
+.sidebar-toggle.open span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+}
+
+.sidebar {
+    width: 260px;
+    background: #fff;
+    box-shadow: 2px 0 12px rgba(60,60,60,0.07);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 36px 0 0 0;
+    z-index: 1050;
+    transition: left 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.2s;
+    position: relative;
+}
+.sidebar h1 {
+    font-size: 1.5em;
+    color: #4285f4;
+    margin-bottom: 2.5em;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.sidebar .form-group {
+    width: 90%;
+    margin-bottom: 2em;
+}
+.sidebar label {
+    font-size: 1.08em;
+    color: #555;
+    margin-bottom: 0.4em;
+    display: block;
+}
+.sidebar #cameraList {
+    width: 100%;
+    padding: 0.7em 1em;
+    border-radius: 8px;
+    border: 1.5px solid #e0e0e0;
+    font-size: 1.08em;
+    background: #f7fafd;
+    margin-bottom: 1.2em;
+    transition: border 0.2s;
+}
+.sidebar #cameraList:focus {
+    border: 1.5px solid #4285f4;
+    outline: none;
+}
+.sidebar #testBtn {
+    width: 100%;
+    padding: 0.9em 0;
+    background: linear-gradient(90deg, #4285f4 0%, #34a853 100%);
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    margin-bottom: 2em;
+    box-shadow: 0 2px 8px rgba(66,133,244,0.10);
+    transition: background 0.2s, box-shadow 0.2s;
+}
+.sidebar #testBtn:hover {
+    background: linear-gradient(90deg, #3367d6 0%, #34a853 100%);
+    box-shadow: 0 4px 16px rgba(66,133,244,0.18);
+}
+.sidebar #showInfoBtn, .sidebar #showSettingsBtn {
+    width: 100%;
+    padding: 0.7em 0;
+    background: #fff;
+    color: #4285f4;
+    font-weight: 600;
+    border: 1.5px solid #4285f4;
+    border-radius: 8px;
+    font-size: 1.05em;
+    cursor: pointer;
+    margin-bottom: 1.2em;
+    margin-top: 0.5em;
+    transition: background 0.2s, color 0.2s;
+}
+.sidebar #showInfoBtn:hover, .sidebar #showSettingsBtn:hover {
+    background: #e3f0fd;
+    color: #2563eb;
+}
+
+.main-content {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 48px 0 0 0;
+}
+
+.card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(60,60,60,0.10);
+    padding: 32px 36px 28px 36px;
+    width: 700px;
+    max-width: 90vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.card-title {
+    font-size: 1.3em;
+    color: #222;
+    font-weight: 600;
+    margin-bottom: 1.2em;
+    letter-spacing: 0.02em;
+}
+
+#videoContainer {
+    width: 100%;
+    min-height: 120px;
+    background: #f1f3f4;
+    border-radius: 12px;
+    padding: 18px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: min-height 0.2s;
+    overflow-x: auto;
+}
+#video {
+    background: #222;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.13);
+    object-fit: contain;
+    border: 2px solid #e0e0e0;
+    display: block;
+    margin: 0 auto;
+    max-width: 100vw;
+    max-height: 80vh;
+    min-width: 80px;
+    min-height: 60px;
+    transition: width 0.2s, height 0.2s;
+}
+
+/* --- モーダル共通 --- */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: auto;
+    background: transparent;
+    transition: background 0.2s;
+}
+.modal-content {
+    background: #fff;
+    margin: 80px auto;
+    padding: 32px 36px 24px 36px;
+    border-radius: 14px;
+    width: 420px;
+    max-width: 92vw;
+    box-shadow: 0 8px 32px rgba(60,60,60,0.18);
+    position: absolute;
+    left: 50%;
+    top: 120px;
+    transform: translate(-50%, 0);
+    cursor: grab;
+    animation: modalIn 0.18s cubic-bezier(.4,0,.2,1);
+    overflow-x: auto;
+}
+.modal-content.dragging, .modal-header.dragging {
+    opacity: 0.85;
+    cursor: grabbing !important;
+    user-select: none;
+    -webkit-user-select: none;
+}
+@keyframes modalIn {
+    from { opacity: 0; transform: translate(-50%, 40px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    padding-bottom: 0.5em;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 1em;
+}
+.modal h2 {
+    font-size: 1.25em;
+    color: #4285f4;
+    margin-bottom: 1.2em;
+    font-weight: 700;
+    user-select: none;
+}
+.modal .close {
+    position: absolute;
+    right: 18px;
+    top: 12px;
+    font-size: 1.6em;
+    color: #bbb;
+    cursor: pointer;
+    transition: color 0.2s;
+    user-select: none;
+}
+.modal .close:hover {
+    color: #4285f4;
+}
+#cameraInfoContent {
+    font-size: 1.08em;
+    color: #333;
+    word-break: break-all;
+    max-width: 100%;
+}
+.info-placeholder {
+    color: #888;
+}
+.modal-content table, .modal-content td, .modal-content th {
+    user-select: none;
+    -webkit-user-select: none;
+}
+.modal-content td {
+    max-width: 220px;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+}
+#copyInfoBtn {
+    padding: 0.3em 0.9em;
+    font-size: 0.98em;
+    border-radius: 6px;
+    border: 1.2px solid #4285f4;
+    background: #f7fafd;
+    color: #4285f4;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.18s, color 0.18s;
+}
+#copyInfoBtn:hover {
+    background: #e3f0fd;
+    color: #2563eb;
+}
+
+/* --- カメラ設定モーダル専用 --- */
+#settingsModal .modal-content {
+    width: 370px;
+    max-width: 96vw;
+}
+#settingsModal h2 {
+    font-size: 1.15em;
+}
+#cameraSettingsForm {
+    margin-top: 1em;
+}
+#cameraSettingsForm label {
+    color: #555;
+    font-size: 1.05em;
+    display: block;
+    margin-bottom: 0.3em;
+    font-weight: 500;
+}
+#cameraSettingsForm input[type="number"] {
+    width: 120px;
+    padding: 0.4em 0.8em;
+    border-radius: 7px;
+    border: 1.2px solid #bbb;
+    font-size: 1.08em;
+    background: #f7fafd;
+    margin-top: 0.2em;
+    margin-bottom: 0.1em;
+    transition: border 0.18s;
+}
+#cameraSettingsForm input[type="number"]:focus {
+    border: 1.2px solid #4285f4;
+    outline: none;
+    background: #fff;
+}
+#cameraSettingsForm .settings-row {
+    margin-bottom: 1.2em;
+    display: flex;
+    flex-direction: column;
+}
+#cameraSettingsForm .settings-actions {
+    text-align: right;
+    margin-top: 1.2em;
+}
+#cameraSettingsForm button[type="submit"], #cameraSettingsForm button[type="button"] {
+    padding: 0.5em 1.5em;
+    font-size: 1.05em;
+    border-radius: 7px;
+    border: 1.2px solid #4285f4;
+    background: #4285f4;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+}
+#cameraSettingsForm button[type="button"] {
+    background: #f7fafd;
+    color: #4285f4;
+}
+#cameraSettingsForm button[type="submit"]:hover {
+    background: #2563eb;
+}
+#cameraSettingsForm button[type="button"]:hover {
+    background: #e3f0fd;
+    color: #2563eb;
+}
+#settingsError {
+    color: #d32f2f;
+    font-size: 0.98em;
+    margin-top: 0.7em;
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .sidebar-toggle {
+        display: flex;
+    }
+    .sidebar {
+        position: fixed;
+        left: -290px;
+        top: 0;
+        width: 260px;
+        height: 100vh;
+        min-height: 100vh;
+        box-shadow: 2px 0 16px rgba(60,60,60,0.13);
+        transition: left 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.2s;
+        flex-direction: column;
+        align-items: center;
+        padding: 36px 0 0 0;
+        background: #fff;
+    }
+    .sidebar.open {
+        left: 0;
+        box-shadow: 2px 0 24px rgba(60,60,60,0.18);
+    }
+    .firebase-ui-root {
+        flex-direction: column;
+    }
+    .main-content {
+        padding: 24px 0 0 0;
+    }
+    .card {
+        width: 98vw;
+        padding: 18px 4vw 18px 4vw;
+    }
+    #video {
+        width: 100%;
+        height: 320px;
+    }
+}
+
+@media (max-width: 900px) {
+    #video {
+        max-width: 98vw;
+        max-height: 50vw;
+    }
+}
+
+@media (max-width: 600px) {
+    #video {
+        min-width: 60px;
+        min-height: 40px;
+        max-width: 100vw;
+        max-height: 40vw;
+    }
+}
+/* camera.css - Webカメラ一覧テスト専用UI (CSS3)
+   本番向けのシンプルかつモダンなデザイン */
+body {
+    font-family: 'Roboto', 'Meiryo', Arial, sans-serif;
+    background: #f5f7fa;
+    margin: 0;
+    min-height: 100vh;
+}
+
+.firebase-ui-root {
+    display: flex;
+    min-height: 100vh;
+    position: relative;
+}
+
+/* ハンバーガーメニュー */
+.sidebar-toggle {
+    display: none;
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    z-index: 1100;
+    width: 44px;
+    height: 44px;
+    background: #fff;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(60,60,60,0.10);
+    cursor: pointer;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.2s, border 0.2s;
+}
+.sidebar-toggle span {
+    display: block;
+    width: 22px;
+    height: 3px;
+    margin: 4px auto;
+    background: #4285f4;
+    border-radius: 2px;
+    transition: all 0.25s cubic-bezier(.4,0,.2,1);
+}
+.sidebar-toggle.open span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+}
+.sidebar-toggle.open span:nth-child(2) {
+    opacity: 0;
+}
+.sidebar-toggle.open span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+}
+
+.sidebar {
+    width: 260px;
+    background: #fff;
+    box-shadow: 2px 0 12px rgba(60,60,60,0.07);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 36px 0 0 0;
+    z-index: 1050;
+    transition: left 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.2s;
+    position: relative;
+}
+.sidebar h1 {
+    font-size: 1.5em;
+    color: #4285f4;
+    margin-bottom: 2.5em;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.sidebar .form-group {
+    width: 90%;
+    margin-bottom: 2em;
+}
+.sidebar label {
+    font-size: 1.08em;
+    color: #555;
+    margin-bottom: 0.4em;
+    display: block;
+}
+.sidebar #cameraList {
+    width: 100%;
+    padding: 0.7em 1em;
+    border-radius: 8px;
+    border: 1.5px solid #e0e0e0;
+    font-size: 1.08em;
+    background: #f7fafd;
+    margin-bottom: 1.2em;
+    transition: border 0.2s;
+}
+.sidebar #cameraList:focus {
+    border: 1.5px solid #4285f4;
+    outline: none;
+}
+.sidebar #testBtn {
+    width: 100%;
+    padding: 0.9em 0;
+    background: linear-gradient(90deg, #4285f4 0%, #34a853 100%);
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    margin-bottom: 2em;
+    box-shadow: 0 2px 8px rgba(66,133,244,0.10);
+    transition: background 0.2s, box-shadow 0.2s;
+}
+.sidebar #testBtn:hover {
+    background: linear-gradient(90deg, #3367d6 0%, #34a853 100%);
+    box-shadow: 0 4px 16px rgba(66,133,244,0.18);
+}
+
+.main-content {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 48px 0 0 0;
+}
+
+.card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(60,60,60,0.10);
+    padding: 32px 36px 28px 36px;
+    width: 700px;
+    max-width: 90vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.card-title {
+    font-size: 1.3em;
+    color: #222;
+    font-weight: 600;
+    margin-bottom: 1.2em;
+    letter-spacing: 0.02em;
+}
+/* videoコンテナは可変サイズ・中央寄せ */
+
+#videoContainer {
+    width: 100%;
+    min-height: 120px;
+    background: #f1f3f4;
+    border-radius: 12px;
+    padding: 18px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: min-height 0.2s;
+    overflow-x: auto;
+}
+#video {
+    background: #222;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.13);
+    object-fit: contain;
+    border: 2px solid #e0e0e0;
+    display: block;
+    margin: 0 auto;
+    /* JSでwidth/heightを上書きするのでmax/minは制限のみ */
+    max-width: 100vw;
+    max-height: 80vh;
+    min-width: 80px;
+    min-height: 60px;
+    transition: width 0.2s, height 0.2s;
+}
+
+
+@media (max-width: 900px) {
+    #video {
+        max-width: 98vw;
+        max-height: 50vw;
+    }
+}
+
+@media (max-width: 600px) {
+    #video {
+        min-width: 60px;
+        min-height: 40px;
+        max-width: 100vw;
+        max-height: 40vw;
+    }
+}
+
+/* --- ドラッグ可能なモーダル --- */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: auto;
+    background: rgba(60,60,60,0.18);
+    transition: background 0.2s;
+}
+.modal-content {
+    background: #fff;
+    margin: 80px auto;
+    padding: 32px 36px 24px 36px;
+    border-radius: 14px;
+    width: 420px;
+    max-width: 92vw;
+    box-shadow: 0 8px 32px rgba(60,60,60,0.18);
+    position: absolute;
+    left: 50%;
+    top: 120px;
+    transform: translate(-50%, 0);
+    cursor: grab;
+    animation: modalIn 0.18s cubic-bezier(.4,0,.2,1);
+    overflow-x: auto;
+}
+.modal-content.dragging {
+    opacity: 0.85;
+    cursor: grabbing;
+}
+@keyframes modalIn {
+    from { opacity: 0; transform: translate(-50%, 40px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+}
+.modal h2 {
+    font-size: 1.25em;
+    color: #4285f4;
+    margin-bottom: 1.2em;
+    font-weight: 700;
+    user-select: none;
+}
+.modal .close {
+    position: absolute;
+    right: 18px;
+    top: 12px;
+    font-size: 1.6em;
+    color: #bbb;
+    cursor: pointer;
+    transition: color 0.2s;
+    user-select: none;
+}
+.modal .close:hover {
+    color: #4285f4;
+}
+/* デバイスIDが長い場合折り返し・スクロール */
+#cameraInfoContent {
+    font-size: 1.08em;
+    color: #333;
+    word-break: break-all;
+    max-width: 100%;
+}
+/* テーブル内のテキスト選択禁止 */
+.modal-content table, .modal-content td, .modal-content th {
+    user-select: none;
+    -webkit-user-select: none;
+}
+.modal-content td {
+    max-width: 220px;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+}
+
+/* コピーボタン */
+#copyInfoBtn {
+    padding: 0.3em 0.9em;
+    font-size: 0.98em;
+    border-radius: 6px;
+    border: 1.2px solid #4285f4;
+    background: #f7fafd;
+    color: #4285f4;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.18s, color 0.18s;
+}
+#copyInfoBtn:hover {
+    background: #e3f0fd;
+    color: #2563eb;
+}
+.info-placeholder {
+    color: #888;
+}
+
+@media (max-width: 900px) {
+    .sidebar-toggle {
+        display: flex;
+    }
+    .sidebar {
+        position: fixed;
+        left: -290px;
+        top: 0;
+        width: 260px;
+        height: 100vh;
+        min-height: 100vh;
+        box-shadow: 2px 0 16px rgba(60,60,60,0.13);
+        transition: left 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.2s;
+        flex-direction: column;
+        align-items: center;
+        padding: 36px 0 0 0;
+        background: #fff;
+    }
+    .sidebar.open {
+        left: 0;
+        box-shadow: 2px 0 24px rgba(60,60,60,0.18);
+    }
+    .firebase-ui-root {
+        flex-direction: column;
+    }
+    .main-content {
+        padding: 24px 0 0 0;
+    }
+    .card {
+        width: 98vw;
+        padding: 18px 4vw 18px 4vw;
+    }
+    #video {
+        width: 100%;
+        height: 320px;
+    }
+}

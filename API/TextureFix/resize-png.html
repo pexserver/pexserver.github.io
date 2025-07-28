@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PNGリサイズツール</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2em;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: auto;
+        }
+
+        label,
+        input,
+        button {
+            display: block;
+            margin: 1em 0;
+        }
+
+        canvas {
+            border: 1px solid #ccc;
+            margin-top: 1em;
+        }
+
+        .hidden-canvas {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>PNG画像リサイズツール</h2>
+        <label>PNG画像を選択:
+            <input type="file" id="fileInput" accept="image/png">
+        </label>
+        <label>幅(px):
+            <input type="number" id="widthInput" min="1">
+        </label>
+        <label>高さ(px):
+            <input type="number" id="heightInput" min="1">
+        </label>
+        <button id="saveBtn">保存</button>
+        <canvas id="canvas" class="hidden-canvas"></canvas>
+    </div>
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const widthInput = document.getElementById('widthInput');
+        const heightInput = document.getElementById('heightInput');
+        const saveBtn = document.getElementById('saveBtn');
+        const canvas = document.getElementById('canvas');
+        let img = new Image();
+        let imgLoaded = false;
+
+        fileInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (evt) {
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        img.onload = function () {
+            imgLoaded = true;
+            widthInput.value = img.width;
+            heightInput.value = img.height;
+            drawToCanvas();
+        };
+
+        widthInput.addEventListener('input', drawToCanvas);
+        heightInput.addEventListener('input', drawToCanvas);
+
+        function drawToCanvas() {
+            if (!imgLoaded) return;
+            const w = parseInt(widthInput.value, 10);
+            const h = parseInt(heightInput.value, 10);
+            if (w < 1 || h < 1) return;
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, w, h);
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(img, 0, 0, w, h);
+        }
+
+        saveBtn.addEventListener('click', function () {
+            if (!imgLoaded) {
+                alert('先にPNG画像を選択してください。');
+                return;
+            }
+            canvas.toBlob(function (blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'resized.png';
+                a.click();
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        });
+    </script>
+</body>
+
+</html>

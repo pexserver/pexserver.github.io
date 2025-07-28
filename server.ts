@@ -62,9 +62,22 @@ async function requestHandler(req: http.IncomingMessage, res: http.ServerRespons
             return;
         }
 
-        const fileContent = await fs.readFile(filePath);
+        let fileContent = await fs.readFile(filePath);
         const ext = path.extname(filePath).toLowerCase();
-        const contentType = mimeTypes[ext] || 'application/octet-stream';
+        let contentType = mimeTypes[ext] || 'application/octet-stream';
+
+        // index.htmlの場合は<base>タグを<head>内に自動挿入
+        if (ext === '.html' && path.basename(filePath).toLowerCase() === 'index.html') {
+            let html = fileContent.toString('utf8');
+            // <head>直後に<base href="...">を挿入
+            const dirPath = path.dirname(path.relative(DEFAULT_ROOT_DIR, filePath)).replace(/\\/g, '/');
+            let baseHref = '/';
+            if (dirPath && dirPath !== '.') baseHref = '/' + dirPath + '/';
+            if (!/<base\s/i.test(html)) {
+                html = html.replace(/<head(\s*[^>]*)>/i, `<head$1>\n    <base href=\"${baseHref}\">`);
+            }
+            fileContent = Buffer.from(html, 'utf8');
+        }
 
         res.writeHead(200, {
             'Content-Type': contentType,
