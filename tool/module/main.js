@@ -294,6 +294,11 @@ function initializeToolModals() {
         modalTitle.textContent = toolData.title || "ツール詳細";
         modalImage.src = toolData.imageLarge || toolData.image || "../libs/Assets/images/placeholder.png"; // 大きい画像があれば優先
         modalImage.alt = toolData.title || "ツール画像";
+        // 画像が見つからない場合は404.pngを表示
+        modalImage.onerror = function() {
+          this.onerror = null;
+          this.src = './module/404.png';
+        };
         modalDescription.innerHTML = toolData.detailedDescription || toolData.description || "<p>詳細情報はありません。</p>";
 
         // メタ情報の設定 (存在しない場合は 'N/A' など表示)
@@ -780,11 +785,11 @@ function renderToolGridPage(pageNumber) {
       ? `<a href="${tool.docsUrl}" class="btn btn-outline" target="_blank" rel="noopener noreferrer" data-action="docs"><i class="fas fa-book"></i> 詳細</a>`
       : "";
 
-    // カードのHTML構造
+    // カードのHTML構造（画像が見つからない場合は404.pngを表示）
     toolCard.innerHTML = `
             <div class="tool-image">
                 ${tool.category ? `<span class="tool-category">${tool.category}</span>` : ''}
-                <img src="${tool.image || '../libs/Assets/images/placeholder.png'}" alt="${tool.title || 'ツール画像'}" loading="lazy">
+                <img src="${tool.image || '../libs/Assets/images/placeholder.png'}" alt="${tool.title || 'ツール画像'}" loading="lazy" onerror="this.onerror=null;this.src='./module/404.png';">
             </div>
             <div class="tool-content">
                 <h3 class="tool-title">${tool.title || '無題のツール'}</h3>

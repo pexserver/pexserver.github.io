@@ -19,6 +19,11 @@
       "name": "ツール配布",
       "updates": [
         {
+          "date": "2025-07-29",
+          "version": "v1.0.4-beta",
+          "description": "新規: もしヘッダー画像が破損及び消えかけていた場合自動的に404.pngを表示するように変更しました。"
+        },
+        {
           "date": "2025-05-27",
           "version": "1.0.3",
           "description": "新規 PEXtool 関連を追加\n PEX Uninstaller / SkinInjector"
