@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web編集ツール HUB</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/updates.css">
+    <style>
+        .tool-card-list {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+        .tool-card {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            padding: 1rem;
+            width: 220px;
+            cursor: pointer;
+            transition: box-shadow .2s;
+        }
+        .tool-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+        #main-content {
+            min-height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Web編集ツール HUB</h1>
+    </header>
+    <main>
+        <section id="tool-card-list" class="tool-card-list">
+        </section>
+        <section id="main-content">
+            <div id="updates-list"></div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 PEXWeb. All rights reserved.</p>
+    </footer>
+    <script src="js/utils.js" defer></script>
+    <script src="js/hub.js" defer></script>
+    <script src="js/updates.js" defer></script>
+    <script src="js/pluginLoader.js" defer></script>
+    <script src="js/toolCards.js" defer></script>
+</body>
+</html>

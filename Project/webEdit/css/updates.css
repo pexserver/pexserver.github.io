@@ -1,0 +1,39 @@
+/* CSS styles for the updates section */
+
+.updates-section {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.updates-section h2 {
+    font-size: 24px;
+    color: #333;
+}
+
+.update-item {
+    border-bottom: 1px solid #ccc;
+    padding: 10px 0;
+}
+
+.update-item:last-child {
+    border-bottom: none;
+}
+
+.update-item .version {
+    font-weight: bold;
+    color: #007bff;
+}
+
+.update-item .date {
+    font-size: 12px;
+    color: #888;
+}
+
+.update-item .description {
+    margin-top: 5px;
+    font-size: 14px;
+    color: #555;
+}
