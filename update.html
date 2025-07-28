@@ -3,17 +3,17 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>更新履歴 - PEX Server v4</title>
+    <title>更新履歴 - PEX Server</title>
     <link rel="icon" href="https://pexserver.github.io/libs/Assets/images/home.png" type="image/x-icon">
     <link rel="shortcut icon" href="https://pexserver.github.io/libs/Assets/images/home.png" type="image/x-icon">
-    <meta name="description" content="PEX Server v4のアップデート履歴・バージョン情報を掲載しています。">
+    <meta name="description" content="PEX Serverのアップデート履歴・バージョン情報を掲載しています。">
     <!-- OGP設定 -->
-    <meta property="og:title" content="更新履歴 - PEX Server v4">
+    <meta property="og:title" content="更新履歴 - PEX Server">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://pexserver.github.io/update.html">
     <meta property="og:image" content="https://pexserver.github.io/libs/Assets/images/ogp.png">
-    <meta property="og:description" content="PEX Server v4のアップデート履歴・バージョン情報を掲載しています。">
-    <meta property="og:site_name" content="PEX Server v4">
+    <meta property="og:description" content="PEX Serverのアップデート履歴・バージョン情報を掲載しています。">
+    <meta property="og:site_name" content="PEX Server">
     <meta property="og:locale" content="ja_JP">
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
@@ -28,7 +28,7 @@
 <body>
     <header>
         <div class="container">
-            <a href="/index.html" style="font-size:1.3em;font-weight:600;letter-spacing:0.05em;">PEX Server v4</a>
+            <a href="/index.html" style="font-size:1.3em;font-weight:600;letter-spacing:0.05em;">PEX Server</a>
             <nav>
                 <a href="/update.html" style="margin-left:1.5em;font-weight:500;">更新履歴</a>
                 <a href="/about.html" style="margin-left:1.5em;font-weight:500;">About</a>
@@ -38,7 +38,7 @@
     <main>
         <div class="container fade-in">
             <section class="hero">
-                <h1>PEX Server v4 更新履歴</h1>
+                <h1>PEX Server  更新履歴</h1>
                 <p>PEX Serverの主なアップデート履歴・バージョン情報を掲載しています。</p>
             </section>
             <!-- 動的に履歴を表示するセクション -->
@@ -49,7 +49,7 @@
         <div class="container">
             <div class="footer-content">
                 <div class="copyright">
-                    &copy; 2025 PEX Server v4
+                    &copy; 2025 PEX Server 
                 </div>
                 <div class="footer-links">
                     <a href="/index.html">ホーム</a>
@@ -68,17 +68,39 @@
             const container = document.getElementById('updates-dynamic');
             if (!container) return;
             
-            // カテゴリ順に処理
+            // カテゴリフィルターUI追加
+            const filterDiv = document.createElement('div');
+            filterDiv.style.margin = '1em 0';
+            // カテゴリリスト生成
+            const categoryOptions = data.categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('');
+            filterDiv.innerHTML = `
+                <label for="category-filter" style="font-weight:600;margin-right:0.5em;">カテゴリフィルター:</label>
+                <select id="category-filter" style="padding:0.3em 1em;margin-right:1em;">
+                    <option value="all">すべて</option>
+                    ${categoryOptions}
+                </select>
+                <label for="version-filter" style="font-weight:600;margin-right:0.5em;">バージョン種別フィルター:</label>
+                <select id="version-filter" style="padding:0.3em 1em;">
+                    <option value="all">すべて</option>
+                    <option value="stable">Stable</option>
+                    <option value="beta">Beta</option>
+                    <option value="alpha">Alpha</option>
+                </select>
+            `;
+            container.appendChild(filterDiv);
+
+            // カテゴリごとにsectionを生成し、sectionを配列で保持
+            const sections = [];
             data.categories.forEach((category, index) => {
                 // カテゴリタイトル
                 const section = document.createElement('section');
                 section.className = 'section fade-in';
                 section.style.animationDelay = (index * 0.2) + 's';
-                
+
                 const h2 = document.createElement('h2');
                 h2.textContent = category.name + ' の更新履歴';
                 section.appendChild(h2);
-                
+
                 // テーブル
                 const table = document.createElement('table');
                 table.className = 'update-history';
@@ -93,34 +115,75 @@
                     </thead>
                     <tbody></tbody>
                 `;
-                
+
                 const tbody = table.querySelector('tbody');
-                
-                // 各アップデートを処理
-                category.updates.forEach(update => {
-                    const tr = document.createElement('tr');
-                    
-                    // バージョンタイプに応じたバッジを追加
-                    let versionWithBadge = update.version;
-                    if (update.version.includes('beta')) {
-                        versionWithBadge = `${update.version} <span class="version-badge badge-beta">Beta</span>`;
-                    } else if (update.version.includes('alpha')) {
-                        versionWithBadge = `${update.version} <span class="version-badge badge-alpha">Alpha</span>`;
-                    } else {
-                        versionWithBadge = `${update.version} <span class="version-badge badge-stable">Stable</span>`;
-                    }
-                    
-                    tr.innerHTML = `
-                        <td>${update.date}</td>
-                        <td>${versionWithBadge}</td>
-                        <td>${update.description}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-                
+
+                // アップデート種別判定関数
+                function getVersionType(version) {
+                    const v = version.toLowerCase();
+                    if (/[-_]?beta\b/.test(v)) return 'beta';
+                    if (/[-_]?alpha\b/.test(v)) return 'alpha';
+                    if (/[-_]?stable\b/.test(v)) return 'stable';
+                    return 'stable';
+                }
+
+                // フィルター・ソート用データ生成
+                let updates = category.updates.map(update => ({
+                    ...update,
+                    type: getVersionType(update.version)
+                }));
+                // Stable→Beta→Alpha順でソート
+                const typeOrder = { stable: 0, beta: 1, alpha: 2 };
+                updates.sort((a, b) => typeOrder[a.type] - typeOrder[b.type]);
+
+                // 描画関数
+                function renderTable(versionType) {
+                    tbody.innerHTML = '';
+                    updates.forEach(update => {
+                        if (versionType !== 'all' && update.type !== versionType) return;
+                        let versionWithBadge = update.version;
+                        if (update.type === 'beta') {
+                            versionWithBadge = `${update.version} <span class="version-badge badge-beta">Beta</span>`;
+                        } else if (update.type === 'alpha') {
+                            versionWithBadge = `${update.version} <span class="version-badge badge-alpha">Alpha</span>`;
+                        } else {
+                            versionWithBadge = `${update.version} <span class="version-badge badge-stable">Stable</span>`;
+                        }
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${update.date}</td>
+                            <td>${versionWithBadge}</td>
+                            <td>${update.description}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                // 初期描画
+                renderTable('all');
                 section.appendChild(table);
                 container.appendChild(section);
+                sections.push({ name: category.name, section, renderTable });
             });
+
+            // フィルターイベント
+            const categoryFilter = document.getElementById('category-filter');
+            const versionFilter = document.getElementById('version-filter');
+            function applyFilters() {
+                const selectedCategory = categoryFilter.value;
+                const selectedVersion = versionFilter.value;
+                sections.forEach(({ name, section, renderTable }) => {
+                    // カテゴリフィルター
+                    if (selectedCategory !== 'all' && name !== selectedCategory) {
+                        section.style.display = 'none';
+                    } else {
+                        section.style.display = '';
+                        renderTable(selectedVersion);
+                    }
+                });
+            }
+            categoryFilter.addEventListener('change', applyFilters);
+            versionFilter.addEventListener('change', applyFilters);
         } catch (error) {
             console.error('更新履歴の読み込みに失敗しました:', error);
             const container = document.getElementById('updates-dynamic');

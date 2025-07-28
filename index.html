@@ -7,20 +7,20 @@
     <link rel="icon" href="https://pexserver.github.io/libs/Assets/images/home.png" type="image/x-icon">
     <link rel="shortcut icon" href="https://pexserver.github.io/libs/Assets/images/home.png" type="image/x-icon">
 
-    <title>PEX Server v4</title>
+    <title>PEX Server</title>
     <meta name="description"
-        content="PEX Server v4は、こう君が開発したサーバー関連サービス、ゲーム、ツールへのリンク集です。サーバー管理、AIツール、ゲームなど、様々なサービスを体験いただけます。">
+        content="PEX Serverは、こう君が開発したサーバー関連サービス、ゲーム、ツールへのリンク集です。サーバー管理、AIツール、ゲームなど、様々なサービスを体験いただけます。">
     <meta name="keywords" content="PEX Server, こう君, サーバーサービス, ゲーム, AIツール, 管理ツール, リンク集">
     <meta name="author" content="こう君">
 
     <!-- OGP設定 -->
-    <meta property="og:title" content="PEX Server v4">
+    <meta property="og:title" content="PEX Server">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://gamelist1990.github.io/gamelist1990/pexserver/">
     <meta property="og:image" href="./libs/Assets/images/home.png"> <!-- パスが正しいか確認してください -->
     <meta property="og:description"
-        content="PEX Server v4は、こう君が開発したサーバー関連サービス、ゲーム、ツールへのリンク集です。サーバー管理、AIツール、ゲームなど、様々なサービスを体験いただけます。">
-    <meta property="og:site_name" content="PEX Server v4">
+        content="PEX Serverは、こう君が開発したサーバー関連サービス、ゲーム、ツールへのリンク集です。サーバー管理、AIツール、ゲームなど、様々なサービスを体験いただけます。">
+    <meta property="og:site_name" content="PEX Server">
     <meta property="og:locale" content="ja_JP">
 
     <!-- Twitter Card -->
@@ -31,9 +31,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-touch-fullscreen" content="yes">
-    <meta name="apple-mobile-web-app-title" content="PEX Server v4">
+    <meta name="apple-mobile-web-app-title" content="PEX Server">
     <link rel="apple-touch-icon" href="./libs/Assets/images/home.png"> <!-- パスが正しいか確認してください -->
-    
+
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -58,7 +58,7 @@
     <header>
         <div class="container">
             <a href="#" class="logo">
-                <p>🖥️ PEX Server v4</p>
+                <p>🖥️ PEX Server</p>
             </a>
             <nav>
                 <ul>
@@ -79,7 +79,7 @@
     <main>
         <div class="container">
             <section class="hero">
-                <h1>PEX Server v4</h1>
+                <h1>PEX Server</h1>
                 <p>こう君が開発した色々なコンテンツを提供します マインクラフト、AIツール、ゲームなど、幅広いサービスを体験いただけます。</p>
             </section>
 
@@ -92,6 +92,13 @@
                         <p class="date">2025-04-19</p>
                         <p>MenuClientの更新版ですベースはMenuClientv3のコードを一部使用しています</p>
                         <p><br>旧 MenuClientは >><a href="https://gamelist1990.github.io/gamelist1990/page/">こちら</a></p>
+                    </article>
+                    <article class="card">
+                        <div class="icon"><i class="fas fa-gamepad"></i></div>
+                        <h3>GameHUBを新しく追加しました</h3>
+                        <p class="date">2025-07-29</p>
+                        <p>ゲーム・ミニゲーム・AI連携などをまとめた新しいHUBページを公開しました。<br>
+                        <a href="./HUB/index.html">GameHUBはこちら</a></p>
                     </article>
                 </div>
             </section>
@@ -139,17 +146,20 @@
 
 
                     <!-- PEXServer Card -->
-                    <article class="card server-card" data-service-id="bluemap" data-service-url="http://pexserver.wiki.gd/">
+                    <article class="card server-card" data-service-id="bluemap"
+                        data-service-url="http://pexserver.wiki.gd/">
                         <div class="icon"><i class="fa-solid fa-server"></i></div> <!-- アイコン変更 -->
                         <h3>PEX鯖(Minecraft)<br>IP: <strong>pexserver.wiki.gd:2554</strong></h3>
                         <div class="server-status">
                             <span class="status-indicator status-loading" id="bluemap-status-indicator"></span>
                             <span class="status-text" id="bluemap-status-text">確認中...</span>
-                            <span class="ping-display" style="margin-left: 0.5rem; font-size: 0.8em; color: var(--text-light);">(Ping: <span
+                            <span class="ping-display"
+                                style="margin-left: 0.5rem; font-size: 0.8em; color: var(--text-light);">(Ping: <span
                                     class="ping-time" id="bluemap-ping-time">-</span> ms)</span>
                         </div>
                         <p class="last-update" id="bluemap-last-update">
-                            <i class="fas fa-clock"></i> 最終更新: <span class="update-time" id="bluemap-update-time">確認中...</span>
+                            <i class="fas fa-clock"></i> 最終更新: <span class="update-time"
+                                id="bluemap-update-time">確認中...</span>
                         </p>
                         <p>PEXServerだよ <br>Minecraft Java版1.20.1で鯖を大体起動しています</p>
                     </article>
@@ -163,6 +173,11 @@
                         <div class="icon"><i class="fas fa-tachometer-alt"></i></div>
                         <h3><a href="./tool/index.html">ツール系配布</a></h3>
                         <p>こう君が作ったツール等を配布しています</p>
+                    </article>
+                    <article class="card service-card">
+                        <div class="icon"><i class="fas fa-gamepad"></i></div>
+                        <h3><a href="./HUB/index.html">GameHUB</a></h3>
+                        <p>ゲーム・ミニゲーム・AI連携などをまとめた新しいHUBページです</p>
                     </article>
                 </div>
             </section>

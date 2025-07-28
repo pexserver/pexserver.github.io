@@ -49,6 +49,16 @@
           "description": "AIツール・コードツールの追加、UI改善。"
         }
       ]
+    },
+    {
+      "name": "GameHub",
+      "updates": [
+        {
+          "date": "2025-07-29",
+          "version": "v0.0.1-beta",
+          "description": "まだまだ初期版です.. 不定期更新の為完成には時間がかかります//"
+        }
+      ]
     }
   ]
 }

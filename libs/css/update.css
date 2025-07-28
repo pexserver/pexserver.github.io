@@ -1,3 +1,39 @@
+/* フィルターUI全体 */
+#updates-dynamic > div {
+  display: flex;
+  align-items: center;
+  gap: 1.5em;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 0.8em 1.2em;
+  margin-bottom: 1.2em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+/* ラベル */
+#updates-dynamic label {
+  font-size: 1em;
+  color: #333;
+}
+
+/* セレクトボックス */
+#updates-dynamic select {
+  font-size: 1em;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background: #fff;
+  padding: 0.4em 1.2em;
+  margin-right: 0.5em;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+#updates-dynamic select:focus {
+  border-color: #0078d7;
+  box-shadow: 0 0 0 2px #0078d733;
+}
+#updates-dynamic select:hover {
+  border-color: #0078d7;
+}
 /* 更新履歴ページ用CSS */
 
 /* 基本変数 */
