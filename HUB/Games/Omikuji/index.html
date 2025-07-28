@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>おみくじBox - カテゴリ別運勢占い</title>
+    <link rel="stylesheet" href="./Style/base.css">
+    <link rel="stylesheet" href="./Style/modal.css">
+    <link rel="stylesheet" href="./Style/hamburger.css">
+    <link rel="stylesheet" href="./Style/history.css">
+    <link rel="stylesheet" href="./Style/history-page.css">
+    <link rel="stylesheet" href="./Style/omikuji.css">
+    <link rel="stylesheet" href="./Style/animations.css">
+    <link rel="stylesheet" href="./Style/utilities.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1976d2" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)">
+    <meta name="msapplication-TileColor" content="#1976d2">
+    <meta name="msapplication-navbutton-color" content="#1976d2">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="おみくじBox">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <link rel="apple-touch-icon" href="./Image/logo.png">
+</head>
+
+<body class="no-scrollbar">
+    <div class="container">
+        <!-- 背景装飾 -->
+        <div class="background-decoration">
+            <div class="sakura-petals">
+                <div class="petal"></div>
+                <div class="petal"></div>
+                <div class="petal"></div>
+                <div class="petal"></div>
+                <div class="petal"></div>
+                <div class="petal"></div>
+                <div class="petal"></div>
+                <div class="petal"></div>
+            </div>
+        </div>
+
+        <!-- ヘッダー -->
+        <header class="header">
+            <h1 class="title">
+                <i class="fas fa-torii-gate"></i>
+                おみくじ
+                <i class="fas fa-torii-gate"></i>
+            </h1>
+            <p class="subtitle">カテゴリ別の運勢を占ってみませんか？</p>
+        </header>
+
+        <!-- メインコンテンツ -->
+        <main class="main-content">
+            <!-- カテゴリ選択 -->
+            <section class="category-selection" id="categorySelection">
+                <h2 class="section-title">
+                    <i class="fas fa-list"></i>
+                    おみくじの種類を選んでください
+                </h2>
+                <div class="category-grid" id="categoryGrid">
+                    <!-- カテゴリはJavaScriptで動的に生成 -->
+                </div>
+            </section>
+
+            <!-- おみくじボックス -->
+            <section class="omikuji-section" id="omikujiSection">
+                <div class="selected-category" id="selectedCategory">
+                    <i class="category-icon" id="categoryIcon"></i>
+                    <span class="category-name" id="categoryName"></span>
+                    <p class="category-description" id="categoryDescription"></p>
+                </div>
+
+                <div class="omikuji-container" id="omikujiContainer">
+                    <!-- 初期状態：札選択前 -->
+                    <div class="card-selection-prompt" id="cardSelectionPrompt">
+                        <div class="prompt-text">
+                            <i class="fas fa-hand-pointer"></i>
+                            <span>おみくじを引いて札を選んでください</span>
+                        </div>
+                    </div>
+
+                    <!-- 札の選択エリア -->
+                    <div class="cards-container hidden" id="cardsContainer">
+                        <div class="cards-grid" id="cardsGrid">
+                            <!-- 札は動的に生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作パネル -->
+                <div class="control-panel">
+                    <button class="draw-button" id="drawButton" type="button" aria-label="おみくじを引く">
+                        <i class="fas fa-hand-pointer"></i>
+                        <span class="button-text">おみくじを引く</span>
+                        <span class="button-ripple" aria-hidden="true"></span>
+                    </button>
+                    <div class="drawed-message" id="statusMessage">
+                        心を落ち着けて、おみくじを引いてください
+                    </div>
+                    <div class="cooldown-timer" id="cooldownTimer" style="display:none;">
+                        <span class="cards-time"><i class="fas fa-clock"></i>次回まで: <span
+                                id="timeRemaining">--:--:--</span></span>
+                    </div>
+                    <button class="back-button" id="backButton" type="button">
+                        <i class="fas fa-arrow-left"></i>
+                        <span class="button-text">カテゴリ選択に戻る</span>
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- フッター -->
+        <footer class="footer">
+            <p>&copy; 2025 おみくじBox. すべての権利を留保します。</p>
+            <p class="disclaimer">※ これは娯楽目的のおみくじです</p>
+        </footer>
+    </div>
+
+    <!-- 履歴ページ (別ページコンテナ) -->
+    <div class="container page-container" id="historyPage">
+        <header class="header">
+            <h1 class="title">
+                <i class="fas fa-history"></i>
+                おみくじ履歴
+            </h1>
+        </header>
+
+        <main class="main-content">
+            <!-- 履歴セクション -->
+            <section class="history-section" id="historySection">
+                <h3 class="section-title">
+                    <i class="fas fa-history"></i>
+                    おみくじ履歴 <span class="history-count" id="historyCount">(0/30)</span>
+                </h3>
+                <div class="history-list" id="historyList">
+                    <div class="no-history" id="noHistory">
+                        まだおみくじを引いていません
+                    </div>
+                </div>
+                <button class="clear-history-button" id="clearHistoryButton">
+                    <i class="fas fa-trash"></i>
+                    履歴をクリア
+                </button>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2025 おみくじBox. すべての権利を留保します。</p>
+        </footer>
+    </div>
+
+    <!-- おみくじ結果モーダル -->
+    <div class="modal-overlay hidden" id="modalOverlay">
+        <div class="modal-container hidden" id="modalContainer">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">おみくじ結果</h2>
+                <button class="modal-close" id="modalClose" title="閉じる" aria-label="閉じる">
+                    <i class="fas fa-times"></i>
+                    <span class="sr-only">閉じる</span>
+                </button>
+            </div>
+            <div class="modal-content">
+                <div class="fortune-paper">
+                    <div class="paper-header">
+                        <div class="fortune-category" id="fortuneCategory"></div>
+                        <div class="fortune-type" id="fortuneType"></div>
+                    </div>
+
+                    <div class="paper-content">
+                        <div class="fortune-message" id="fortuneMessage"></div>
+                        <div class="fortune-description" id="fortuneDescription"></div>
+
+                        <div class="luck-stats" id="luckStats">
+                            <!-- 運勢の詳細はJavaScriptで動的に生成 -->
+                        </div>
+
+                        <div class="advice-section">
+                            <h4><i class="fas fa-lightbulb"></i> アドバイス</h4>
+                            <ul class="advice-list" id="adviceList">
+                                <!-- アドバイスはJavaScriptで動的に生成 -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="share-button" id="shareButton">
+                    <i class="fas fa-share"></i>
+                    結果をシェア
+                </button>
+                <button class="share-image-button" id="shareImageButton">
+                    <i class="fas fa-image"></i>
+                    結果画像をコピー
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ローディングオーバーレイ -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+        </div>
+        <p class="loading-text">運命を読み取っています...</p>
+    </div>
+
+    <!-- 確認ダイアログ -->
+    <div class="confirm-dialog hidden" id="confirmDialog">
+        <div class="confirm-content">
+            <h3 id="confirmTitle">確認</h3>
+            <p id="confirmMessage">この操作を実行しますか？</p>
+            <div class="confirm-buttons">
+                <button class="confirm-yes" id="confirmYes">はい</button>
+                <button class="confirm-no" id="confirmNo">いいえ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ハンバーガーメニュー -->
+    <button class="hamburger" id="hamburgerMenu" aria-label="メニューを開く">
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+    </button>
+    <nav class="side-menu" id="sideMenu" aria-label="メインメニュー">
+        <ul>
+            <li id="menuHome"><i class="fas fa-home"></i> ホームへ</li>
+            <li id="menuHistory"><i class="fas fa-history"></i> おみくじ履歴</li>
+        </ul>
+    </nav>
+
+    <div class="hidden developer-note">
+        <!--
+        ?type=fortuneType でアクセスすると該当typeのおみくじ結果をjsonで返します。
+        例: ?type=general
+        存在しない場合は {"error":"not found"} を返します。
+      -->
+    </div>
+
+    <script src="main.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Modern Light Game Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #e0e7ef;
+            --primary-hover: #d1d5db;
+            --accent: #10b981;
+            --bg: #f6f8fa;
+            --menubar-bg: #f9fafb;
+            --menubar-border: #e5e7eb;
+            --menu-bg: #fff;
+            --menu-shadow: 0 6px 32px 0 rgba(0,0,0,.07), 0 1.5px 5px 0 rgba(0,0,0,.03);
+            --menu-radius: 10px;
+            --text-main: #212529;
+            --transition: 0.19s cubic-bezier(.4,0,.2,1);
+            --modal-bg: #fff;
+            --modal-overlay: rgba(40,48,60,0.26);
+            --danger: #ef4444;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'Segoe UI', 'Meiryo', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            min-height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .menubar {
+            display: flex;
+            align-items: center;
+            height: 46px;
+            background: var(--menubar-bg);
+            color: var(--text-main);
+            padding: 0 18px;
+            box-shadow: 0 1px 0 var(--menubar-border);
+            border-bottom: 1px solid var(--menubar-border);
+            -webkit-user-select: none;
+            user-select: none;
+            position: relative;
+            z-index: 100;
+        }
+
+            .menubar .menu {
+                position: relative;
+                margin-right: 22px;
+                cursor: pointer;
+                font-weight: 500;
+                font-size: 1rem;
+                border-radius: 7px 7px 0 0;
+                transition: background var(--transition), color var(--transition);
+            }
+
+                .menubar .menu:last-child {
+                    margin-right: 0;
+                }
+
+                .menubar .menu span {
+                    padding: 5px 15px;
+                    display: inline-block;
+                    border-radius: 7px 7px 0 0;
+                    line-height: 36px;
+                    transition: background var(--transition), color var(--transition), box-shadow var(--transition);
+                    color: var(--text-main);
+                    background: transparent;
+                }
+
+                .menubar .menu:hover span,
+                .menubar .menu:focus span,
+                .menubar .menu.show span {
+                    background: var(--primary-light);
+                    color: var(--primary);
+                    box-shadow: 0 2px 8px #e5e7eb;
+                }
+
+        .menu-content {
+            display: none;
+            position: absolute;
+            top: 41px;
+            left: 50%;
+            min-width: 220px;
+            background: var(--menu-bg);
+            color: var(--text-main);
+            border-radius: var(--menu-radius);
+            box-shadow: var(--menu-shadow);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition), transform var(--transition);
+            border: 1px solid var(--menubar-border);
+            overflow: hidden;
+            transform: translateX(-50%) scaleY(0.95);
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
+        }
+        .menu-content::-webkit-scrollbar {
+            display: none;
+            width: 0 !important;
+            background: transparent;
+        }
+
+        .menu.show .menu-content {
+            display: block;
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) scaleY(1);
+            animation: menuSlideIn 0.17s cubic-bezier(.6,-0.28,.74,.05);
+        }
+
+        @keyframes menuSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) scaleY(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(-50%) scaleY(1);
+            }
+        }
+
+        .menu-content ul {
+            list-style: none;
+            margin: 0;
+            padding: 4px 0;
+            max-height: 220px;
+            overflow: auto;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
+        }
+        .menu-content ul::-webkit-scrollbar {
+            display: none;
+            width: 0 !important;
+            background: transparent;
+        }
+
+        .menu-content li, .menu-content button {
+            width: 100%;
+            font: inherit;
+            color: var(--text-main);
+            background: none;
+            border: none;
+            padding: 9px 28px;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.13s, color 0.13s;
+            font-size: 1.05rem;
+            border-radius: 0;
+            outline: none;
+            letter-spacing: .01em;
+            position: relative;
+            white-space: nowrap;
+        }
+
+            .menu-content li:hover,
+            .menu-content button:hover,
+            .menu-content li:focus,
+            .menu-content button:focus {
+                background: var(--primary-hover);
+                color: var(--primary);
+            }
+
+        .iframe-container {
+            position: absolute;
+            top: 46px;
+            left: 0;
+            width: 100vw;
+            height: calc(100vh - 46px);
+            background: var(--bg);
+            box-sizing: border-box;
+            overflow: hidden;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        object {
+            width: 100vw;
+            height: 100%;
+            border: none;
+            background: #fff;
+            display: block;
+            border-radius: 0;
+            margin: 0;
+            box-shadow: none;
+            outline: none;
+        }
+        /* モダールウィンドウ */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background: var(--modal-overlay);
+            -webkit-backdrop-filter: blur(1.5px);
+            backdrop-filter: blur(1.5px);
+            transition: opacity 0.2s;
+        }
+
+            .modal-overlay.active {
+                display: block;
+            }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 300px;
+            max-width: 94vw;
+            padding: 36px 28px 28px 28px;
+            background: var(--modal-bg);
+            border-radius: 16px;
+            box-shadow: 0 6px 36px #2222;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--text-main);
+        }
+
+            .modal-content h2 {
+                margin: 0 0 18px 0;
+                color: var(--danger);
+                font-size: 1.3rem;
+            }
+
+            .modal-content p {
+                color: #495057;
+                font-size: 1.07rem;
+            }
+
+            .modal-content .modal-spinner {
+                margin: 22px auto 0 auto;
+                width: 38px;
+                height: 38px;
+                border: 4px solid #d1d5db;
+                border-top: 4px solid var(--danger);
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 16px;
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .about-list {
+            text-align: left;
+            margin: 1em auto;
+            max-width: 400px;
+        }
+
+        .about-copyright {
+            margin-top: 1.5em;
+            color: #888;
+            font-size: 0.95em;
+        }
+
+        @media (max-width: 500px) {
+            .modal-content {
+                min-width: 0;
+                padding: 18px 7vw;
+            }
+
+                .modal-content h2 {
+                    font-size: 1.02rem;
+                }
+        }
+
+        @media (max-width: 700px) {
+            .menubar {
+                padding: 0 5px;
+            }
+
+                .menubar .menu span {
+                    padding: 5px 7px;
+                    font-size: .95rem;
+                }
+
+            .menu-content {
+                min-width: 150px;
+            }
+
+            .iframe-container {
+                height: calc(100vh - 46px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="menubar">
+        <div class="menu" tabindex="0">
+            <span>Game Hub</span>
+            <div class="menu-content">
+                <ul>
+                    <li><button id="btnToHub">HUBに戻る</button></li>
+                    <li><button id="btnAbout">About</button></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="iframe-container">
+        <object id="mainFrame" data="https://pexserver.github.io/HUB" type="text/html" width="100%" height="100%"></object>
+    </div>
+    <!-- About モーダル -->
+    <div class="modal-overlay" id="modalAbout">
+        <div class="modal-content">
+            <button id="closeAbout" class="modal-close-btn">&times;</button>
+            <h2>About Game HUB</h2>
+            <p>Game HUBは、さまざまなゲームやツールへのアクセスを一元化するためのモダンなハブです</p>
+            <ul class="about-list">
+                <li>・注目のツールやゲームを素早くチェック</li>
+                <li>・カテゴリや検索で目的のサービスにすぐアクセス</li>
+                <li>・お気に入り機能でよく使うものを管理</li>
+            </ul>
+            <p class="about-copyright">&copy; 2025 Game Hub</p>
+        </div>
+    </div>
+    <script>
+        // 右クリック（コンテキストメニュー）を無効化
+        window.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // F12やCtrl+Shift+Iなど開発者ツールのショートカットも無効化
+        window.addEventListener('keydown', function(e) {
+            // F12
+            if (e.key === 'F12') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+Shift+K
+            if (e.ctrlKey && e.shiftKey && ['I','J','C','K'].includes(e.key.toUpperCase())) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            // Ctrl+U（ソース表示）
+            if (e.ctrlKey && e.key.toUpperCase() === 'U') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
+        // メニューバー: クリックでリスト表示、再クリックで閉じる
+        document.querySelectorAll('.menu').forEach(menu => {
+            menu.addEventListener('click', function (e) {
+                const isOpen = menu.classList.contains('show');
+                document.querySelectorAll('.menu').forEach(m => m.classList.remove('show'));
+                if (!isOpen) menu.classList.add('show');
+                e.stopPropagation();
+            });
+        });
+        document.body.addEventListener('click', function () {
+            document.querySelectorAll('.menu').forEach(m => m.classList.remove('show'));
+        });
+
+        // HUBに戻る（object/iframeのsrcを書き換え）
+        document.getElementById('btnToHub').onclick = function () {
+            location.reload();
+        };
+
+        // Aboutモーダル表示
+        document.getElementById('btnAbout').onclick = function () {
+            document.getElementById('modalAbout').classList.add('active');
+        };
+        // Aboutモーダルを閉じる
+        document.getElementById('closeAbout').onclick = function () {
+            document.getElementById('modalAbout').classList.remove('active');
+        };
+
+        // ---- ネットワーク監視とモーダル制御 ----
+        const networkModal = document.getElementById('modalNetwork');
+        let lostConnection = false;
+        let reloadPending = false;
+
+        function showModal() {
+            networkModal.classList.add('active');
+            document.body.style.pointerEvents = "none";
+            networkModal.style.pointerEvents = "auto";
+        }
+        function hideModal() {
+            networkModal.classList.remove('active');
+            document.body.style.pointerEvents = "";
+        }
+        function reloadContent() {
+            const iframe = document.getElementById('mainFrame');
+            iframe.src = iframe.src;
+            hideModal(); 
+        }
+
+        function checkOnlineStatus() {
+            if (!navigator.onLine) {
+                lostConnection = true;
+                reloadPending = true;
+                showModal();
+                return;
+            }
+            fetch("https://www.google.com/", { method: "HEAD", mode: "no-cors" })
+                .then(() => {
+                    if (lostConnection && reloadPending) {
+                        lostConnection = false;
+                        reloadPending = false;
+                        reloadContent(); // モーダルもここで閉じる
+                    } else if (lostConnection) {
+                        lostConnection = false;
+                        hideModal();
+                    }
+                })
+                .catch(() => {
+                    lostConnection = true;
+                    reloadPending = true;
+                    showModal();
+                });
+        }
+
+        window.addEventListener('online', checkOnlineStatus);
+        window.addEventListener('offline', checkOnlineStatus);
+
+        checkOnlineStatus();
+        setInterval(checkOnlineStatus, 4000);
+
+        if (networkModal) {
+            networkModal.addEventListener('mousedown', e => e.stopPropagation());
+            networkModal.addEventListener('touchstart', e => e.stopPropagation());
+            window.addEventListener('keydown', function (e) {
+                if (networkModal.classList.contains('active')) {
+                    e.preventDefault();
+                }
+            }, true);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+{
+  "categories": {
+    "general": {
+      "name": "総合運",
+      "icon": "fas fa-star",
+      "color": "#667eea",
+      "description": "今日の全体的な運勢を占います"
+    },
+    "love": {
+      "name": "恋愛運",
+      "icon": "fas fa-heart",
+      "color": "#ff6b9d",
+      "description": "恋愛に関する運勢を占います"
+    },
+    "money": {
+      "name": "金運",
+      "icon": "fas fa-coins",
+      "color": "#ffd700",
+      "description": "お金に関する運勢を占います"
+    },
+    "work": {
+      "name": "仕事運",
+      "icon": "fas fa-briefcase",
+      "color": "#4ecdc4",
+      "description": "仕事やキャリアに関する運勢を占います"
+    },
+    "health": {
+      "name": "健康運",
+      "icon": "fas fa-leaf",
+      "color": "#95e1d3",
+      "description": "健康に関する運勢を占います"
+    },
+    "study": {
+      "name": "学業運",
+      "icon": "fas fa-graduation-cap",
+      "color": "#a8e6cf",
+      "description": "学習や試験に関する運勢を占います"
+    }
+  }
+}

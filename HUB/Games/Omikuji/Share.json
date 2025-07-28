@@ -1,0 +1,4 @@
+{
+  "title": "おみくじ結果: {title}",
+  "message": "あなたの{category}運は「{message}」でした！ **おみくじBox**"
+}

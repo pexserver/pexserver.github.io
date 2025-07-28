@@ -1,0 +1,173 @@
+/* animations.css: おみくじアプリの各種アニメーション効果 */
+
+/* 桜の花びらのアニメーション */
+@keyframes fall {
+  0% { 
+    transform: translateY(-100vh) rotate(0deg); 
+    opacity: 1; 
+  }
+  100% { 
+    transform: translateY(100vh) rotate(360deg); 
+    opacity: 0; 
+  }
+}
+
+/* おみくじボックスの輝きアニメーション */
+@keyframes glow {
+  0% { 
+    transform: translate(-50%, -50%) scale(1); 
+    opacity: 0.5; 
+  }
+  100% { 
+    transform: translate(-50%, -50%) scale(1.5); 
+    opacity: 0.8; 
+  }
+}
+
+/* おみくじを引くときの振動アニメーション */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* おみくじが出てくるアニメーション */
+@keyframes slipFloat {
+  0% { transform: translate(-50%, -50%); opacity: 0; }
+  50% { transform: translate(-50%, -150%); opacity: 1; }
+  100% { transform: translate(-50%, -200%) rotate(360deg); opacity: 0; }
+}
+
+/* 縁結びの木のアイコンが揺れるアニメーション */
+@keyframes sway {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+/* ボタンのリップルエフェクト */
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 0.5; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* クールダウンタイマーの点滅 */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* カテゴリーアイコンの脈動 */
+@keyframes pulseIcon {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* モーダルのフェードイン */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* セクションのフェードインと上昇 */
+@keyframes sectionFadeIn {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* 要素のスライドイン */
+@keyframes slideIn {
+  from { right: -280px; }
+  to { right: 0; }
+}
+
+/* ローディングスピナーの回転 */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 祈願アイテムのフェードイン */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ボタンのホバーエフェクト用のシャイン */
+@keyframes shine {
+  0% { transform: translateX(-100%) rotate(30deg); }
+  100% { transform: translateX(100%) rotate(30deg); }
+}
+
+/* おみくじ結果リスト項目のフェードイン */
+@keyframes listItemAppear {
+  from { 
+    opacity: 0; 
+    transform: translateX(-20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateX(0); 
+  }
+}
+
+/* エラーメッセージの振動 */
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+  20%, 40%, 60%, 80% { transform: translateX(3px); }
+}
+
+/* 成功メッセージのバウンス */
+@keyframes successBounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-20px); }
+  60% { transform: translateY(-10px); }
+}
+
+/* トーストメッセージのスライドイン */
+@keyframes toastSlideIn {
+  from { transform: translateY(100px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* トーストメッセージのスライドアウト */
+@keyframes toastSlideOut {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(100px); opacity: 0; }
+}
+
+/* スクロール誘導の上下運動 */
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-15px); }
+  60% { transform: translateY(-7px); }
+}
+
+/* 星の点滅 */
+@keyframes twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ヘッダータイトルのグラデーション移動 */
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* モバイルデバイス向けの最適化 */
+@media (max-width: 768px) {
+  @keyframes slipFloat {
+    0% { transform: translate(-50%, -50%); opacity: 0; }
+    50% { transform: translate(-50%, -120%); opacity: 1; }
+    100% { transform: translate(-50%, -170%) rotate(360deg); opacity: 0; }
+  }
+  
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+    20%, 40%, 60%, 80% { transform: translateX(3px); }
+  }
+}

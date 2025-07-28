@@ -1,0 +1,67 @@
+{
+  "categories": [
+    {
+      "id": "games",
+      "name": "Minecraft関連",
+      "description": "Minecraftやその関連ゲームのリンク集",
+      "icon": "🎮",
+      "items": [
+        {
+          "name": "マインクラフト@クラシック",
+          "description": "マイクラ公式のクラシックマインクラフト",
+          "thumbnail": "./Image/minecraft.png",
+          "url": "https://classic.minecraft.net/",
+          "category": "games",
+          "tags": ["minecraft", "game"],
+          "os": ["pc"]
+        },
+        {
+          "name": "Bloxd.io",
+          "description": "3Dブロック系マルチプレイゲーム（マイクラ風）",
+          "thumbnail": "https://media.indiedb.com/images/games/1/83/82757/1Bloxd.io_1.png",
+          "url": "https://bloxd.io/",
+          "category": "games",
+          "tags": ["bloxd", "minecraft", "game"],
+          "os": ["pc", "mobile"]
+        },
+        {
+          "name": "Mine Blocks",
+          "description": "2Dマイクラ風サンドボックスゲーム（ブラウザ対応）",
+          "thumbnail": "https://tse2.mm.bing.net/th/id/OIP.0mfKZkpIUtEZvBDCXdS9AgAAAA?rs=1&pid=ImgDetMain&o=7&rm=3",
+          "url": "./Games/MineBlock/index.html",
+          "category": "games",
+          "tags": ["mineblocks", "minecraft", "game"],
+          "os": ["pc", "mobile"]
+        }
+      ]
+    },
+    {
+      "id": "casual",
+      "name": "カジュアルゲーム",
+      "description": "手軽に遊べるカジュアルゲームのリンク集",
+      "icon": "🎲",
+      "items": [
+        {
+          "name": "おみくじ",
+          "description": "運試しができるシンプルなおみくじゲーム",
+          "thumbnail": "https://base-ec2.akamaized.net/images/item/origin/bd7eab1e986bcd1e8c15956ef73205a2.png",
+          "url": "./Games/Omikuji/index.html",
+          "category": "casual",
+          "tags": ["omikuji", "fortune", "casual", "game"],
+          "os": ["pc", "mobile"]
+        }
+      ]
+    }
+  ],
+  "featured": [
+    {
+      "name": "マインクラフト@クラシック",
+      "description": "マイクラ関連",
+      "thumbnail": "./Image/minecraft.png",
+      "url": "https://classic.minecraft.net/",
+      "category": "games",
+      "tags": ["minecraft", "game"],
+      "os": ["pc"]
+    }
+  ]
+}

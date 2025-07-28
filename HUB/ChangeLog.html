@@ -1,0 +1,298 @@
+<!-- ChangeLog.html: HUB用の軽量なページネーション付きChange log（GitHubコミット履歴自動取得用テンプレート） -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Change Log - pexserver.github.io</title>
+  <meta name="description" content="GitHubコミット履歴を日付ごとにまとめたChange log">
+  <!-- iOS PWA対応 -->
+  <link rel="apple-touch-icon" href="/libs/Assets/images/home.png">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Game HUB">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#667eea">
+  <link rel="icon" href="/libs/Assets/images/home.png" type="image/png">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      background: linear-gradient(120deg, #e0e7ff 0%, #f8fafc 100%);
+      font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
+      margin: 0;
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-left: env(safe-area-inset-left, 0px);
+      padding-right: env(safe-area-inset-right, 0px);
+      touch-action: manipulation;
+    }
+    .changelog-list {
+      max-width: min(700px, 100vw - 2em);
+      margin: 2.5em auto 2em auto;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px #667eea22;
+      padding: 2.2em max(2em, 4vw) 1.5em max(2em, 4vw);
+      border: 1.5px solid #e0e7ff;
+      box-sizing: border-box;
+    }
+    .changelog-list h1 {
+      text-align: center;
+      font-size: 2.1em;
+      letter-spacing: 0.04em;
+      color: #4f46e5;
+      margin-bottom: 0.7em;
+      font-weight: 700;
+      text-shadow: 0 2px 8px #a5b4fc33;
+    }
+    .changelog-date {
+      font-weight: bold;
+      margin-top: 2.2em;
+      font-size: 1.13em;
+      color: #6366f1;
+      border-left: 4px solid #a5b4fc;
+      padding-left: 0.7em;
+      background: #f3f4f6;
+      border-radius: 6px;
+      box-shadow: 0 1px 4px #a5b4fc11;
+      margin-bottom: 0.5em;
+    }
+    .changelog-commits {
+      margin-bottom: 0.7em;
+    }
+    .changelog-commit {
+      margin: 0.3em 0 0.3em 1.5em;
+      font-size: 1em;
+      padding: 0.5em 0.7em;
+      border-radius: 5px;
+      transition: background 0.2s;
+      background: #f8fafc;
+      border-left: 2.5px solid #c7d2fe;
+      position: relative;
+    }
+    .changelog-commit a {
+      color: #4f46e5;
+      text-decoration: none;
+      font-weight: 500;
+      word-break: break-all;
+      transition: color 0.2s;
+    }
+    .changelog-commit a:hover {
+      color: #a21caf;
+      text-decoration: underline;
+    }
+    .changelog-commit::before {
+      content: '•';
+      color: #818cf8;
+      position: absolute;
+      left: -1.1em;
+      top: 0.7em;
+      font-size: 1.1em;
+    }
+    .changelog-pager {
+      display: flex;
+      justify-content: center;
+      gap: 1.2em;
+      margin: 2.5em 0 0;
+      align-items: center;
+    }
+    .changelog-pager button {
+      background: linear-gradient(90deg, #e0e7ff 0%, #f3f3fa 100%);
+      border: 1.5px solid #a5b4fc;
+      border-radius: 8px;
+      padding: 0.5em 1.5em;
+      cursor: pointer;
+      font-size: 1em;
+      color: #4f46e5;
+      font-weight: 600;
+      box-shadow: 0 1px 4px #a5b4fc22;
+      transition: background 0.2s, color 0.2s;
+    }
+    .changelog-pager button:hover:not(:disabled) {
+      background: #c7d2fe;
+      color: #a21caf;
+    }
+    .changelog-pager button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .changelog-pager #page-info {
+      font-size: 1.08em;
+      color: #6366f1;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+    .home-btn {
+      position: fixed;
+      top: max(1.2em, env(safe-area-inset-top, 1.2em));
+      right: max(2vw, 18px);
+      z-index: 10000;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(120deg, #6366f1 60%, #a5b4fc 100%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      box-shadow: 0 4px 16px #6366f155;
+      text-decoration: none;
+      opacity: 0.92;
+      transition: background 0.2s, opacity 0.2s;
+      outline: none;
+      border: none;
+      touch-action: manipulation;
+    }
+    .home-btn:active {
+      background: #6366f1;
+      opacity: 1;
+    }
+    @media (hover: hover) {
+      .home-btn:hover {
+        background: #a21caf;
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="changelog-list" id="changelog-list">
+    <h1>Change Log</h1>
+    <div id="changelog-entries">読み込み中...</div>
+    <div class="changelog-pager">
+      <button id="prev-page">前へ</button>
+      <span id="page-info"></span>
+      <button id="next-page">次へ</button>
+    </div>
+  </div>
+  <a href="index.html" class="home-btn" title="ホームに戻る" aria-label="ホームに戻る">🏠</a>
+  <script>
+    // ページネーション設定
+    const PER_PAGE = 5;
+    let currentPage = 1;
+    let changelogData = [];
+    const CACHE_KEY = 'changeLogData';
+    const CACHE_TIME = 60 * 60 * 1000; // 1時間
+
+    // クッキー操作関数
+    function setCookie(name, value, maxAgeMs) {
+      // 値が大きい場合のエンコード強化
+      const encoded = encodeURIComponent(value);
+      const maxAge = Math.floor(maxAgeMs / 1000);
+      document.cookie = `${encodeURIComponent(name)}=${encoded}; max-age=${maxAge}; path=/; samesite=strict`;
+    }
+    function getCookie(name) {
+      const cookies = document.cookie ? document.cookie.split('; ') : [];
+      for (const c of cookies) {
+        const eqIdx = c.indexOf('=');
+        if (eqIdx < 0) continue;
+        const k = c.slice(0, eqIdx);
+        const v = c.slice(eqIdx + 1);
+        if (k === encodeURIComponent(name)) return decodeURIComponent(v);
+      }
+      return null;
+    }
+
+    async function fetchCommits(maxPages = 30) {
+      let allCommits = [];
+      for (let page = 1; page <= maxPages; page++) {
+        const res = await fetch(`https://api.github.com/repos/pexserver/pexserver.github.io/commits?per_page=100&page=${page}&path=HUB`);
+        if (!res.ok) break;
+        const commits = await res.json();
+        if (!Array.isArray(commits) || commits.length === 0) break;
+        allCommits = allCommits.concat(commits);
+        if (commits.length < 100) break;
+      }
+      return allCommits;
+    }
+
+    function groupCommitsByDate(commits) {
+      const grouped = {};
+      for (const c of commits) {
+        const date = c.commit.author.date.slice(0, 10);
+        if (!grouped[date]) grouped[date] = [];
+        grouped[date].push({
+          message: c.commit.message.split('\n')[0],
+          url: c.html_url
+        });
+      }
+      // 日付降順
+      return Object.entries(grouped)
+        .sort((a, b) => b[0].localeCompare(a[0]))
+        .map(([date, commits]) => ({ date, commits }));
+    }
+
+    async function loadChangelog() {
+      // クッキーキャッシュ確認
+      const cache = getCookie(CACHE_KEY);
+      if (cache) {
+        try {
+          const { timestamp, data } = JSON.parse(cache);
+          if (Date.now() - timestamp < CACHE_TIME) {
+            console.log('Changelog: cache hit');
+            changelogData = data;
+            renderChangelogPage(currentPage);
+            return;
+          } else {
+            console.log('Changelog: cache expired');
+          }
+        } catch {
+          console.log('Changelog: cache parse error');
+        }
+      } else {
+        console.log('Changelog: cache miss');
+      }
+      // API取得
+      console.log('Changelog: fetching from GitHub');
+      document.getElementById('changelog-entries').textContent = 'GitHubから取得中...';
+      try {
+        const commits = await fetchCommits(30);
+        // ここで全ページ取得完了
+        changelogData = groupCommitsByDate(commits);
+        renderChangelogPage(currentPage);
+        setCookie(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data: changelogData }), CACHE_TIME);
+        console.log('Changelog: saved to cookie (after all fetches)');
+      } catch (e) {
+        document.getElementById('changelog-entries').textContent = '取得失敗';
+        console.log('Changelog: fetch failed', e);
+      }
+    }
+
+    function renderChangelogPage(page) {
+      const start = (page - 1) * PER_PAGE;
+      const end = start + PER_PAGE;
+      const pageData = changelogData.slice(start, end);
+      const entries = pageData.map(day => `
+        <div class="changelog-date">${day.date}</div>
+        <div class="changelog-commits">
+          ${day.commits.map(c => `<div class="changelog-commit"><a href="${c.url}" target="_blank" rel="noopener">${c.message}</a></div>`).join('')}
+        </div>
+      `).join('');
+      document.getElementById('changelog-entries').innerHTML = entries || '<div style="text-align:center;color:#aaa;">No logs.</div>';
+      document.getElementById('page-info').textContent = `${page} / ${Math.ceil(changelogData.length / PER_PAGE)}`;
+      document.getElementById('prev-page').disabled = page === 1;
+      document.getElementById('next-page').disabled = end >= changelogData.length;
+    }
+    document.getElementById('prev-page').onclick = () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderChangelogPage(currentPage);
+      }
+    };
+    document.getElementById('next-page').onclick = () => {
+      if ((currentPage * PER_PAGE) < changelogData.length) {
+        currentPage++;
+        renderChangelogPage(currentPage);
+      }
+    };
+    loadChangelog();
+  </script>
+</body>
+</html>

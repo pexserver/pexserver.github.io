@@ -1,0 +1,224 @@
+/* hamburger.css: ハンバーガーメニュー・サイドメニューのCSS3スタイル */
+.hamburger {
+  display: flex !important;
+  position: fixed;
+  top: 32px;
+  left: 32px;
+  right: auto;
+  width: 56px;
+  height: 56px;
+  background: rgba(255,255,255,0.98);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  border-radius: 50%;
+  z-index: 2101;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  flex-direction: column;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent; /* iOSでタップ時の青いハイライトを消す */
+}
+
+/* モーダルウィンドウ表示時はハンバーガーメニューを非表示 */
+body.modal-open .hamburger {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.hamburger:active, .hamburger:focus {
+  background: #e3f2fd;
+  outline: 2px solid var(--focus-outline);
+}
+
+.hamburger:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.hamburger-bar {
+  display: block;
+  width: 26px;
+  height: 3px;
+  margin: 3px auto;
+  background: var(--primary-color);
+  border-radius: 4px;
+  transition: all 0.3s;
+  transform-origin: center;
+  position: relative;
+  opacity: 0.9; /* わずかに透明にしてソフトな印象に */
+}
+
+/* ハンバーガーメニューがアクティブになったときのアニメーション */
+.hamburger.active {
+  background: rgba(255,255,255,0.98);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+}
+
+.hamburger.active .hamburger-bar:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+  width: 28px; /* アクティブ時は少し長く */
+  opacity: 1;
+  background-color: #111; /* よりはっきりした色に */
+}
+
+.hamburger.active .hamburger-bar:nth-child(2) {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.hamburger.active .hamburger-bar:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+  width: 28px; /* アクティブ時は少し長く */
+  opacity: 1;
+  background-color: #111; /* よりはっきりした色に */
+}
+
+.side-menu {
+  display: block !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: auto;
+  width: 320px;
+  height: 100vh;
+  background: #fff;
+  box-shadow: 4px 0 25px rgba(0,0,0,0.10);
+  border-radius: 0 20px 20px 0;
+  border-right: 1px solid #e0e0e0;
+  padding-top: 80px;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+  z-index: 2100;
+  transition: left 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+  overflow-y: auto;
+}
+
+.side-menu ul {
+  padding: 30px 20px;
+}
+
+.side-menu li {
+  font-size: 1.1em;
+  padding: 18px 18px 20px;
+  margin: 18px 0;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+@media (max-width: 900px) {
+  .hamburger {
+    left: auto;
+    right: max(calc(env(safe-area-inset-right, 0px) + 20px), 20px);
+    top: max(calc(env(safe-area-inset-top, 0px) + 20px), 20px);
+    width: 52px;
+    height: 52px;
+  }
+  .side-menu {
+    left: auto;
+    right: -320px;
+    border-radius: 20px 0 0 20px;
+    border-right: none;
+    border-left: 1px solid rgba(0,0,0,0.05);
+    box-shadow: -5px 0 25px rgba(0,0,0,0.2);
+    padding-top: max(calc(env(safe-area-inset-top, 0px) + 35px), 35px);
+    padding-left: 25px;
+    padding-right: max(env(safe-area-inset-right, 0px), 0px);
+    padding-bottom: max(calc(env(safe-area-inset-bottom, 0px) + 25px), 25px);
+    transition: right 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+  }
+  .side-menu.open {
+    right: 0;
+    left: auto;
+    animation: slideIn 0.4s forwards;
+  }
+  @keyframes slideIn {
+    from { right: -320px; }
+    to { right: 0; }
+  }
+}
+
+@media (min-width: 901px) {
+  .side-menu {
+    left: 0;
+    right: auto;
+    width: 280px; /* 少しスリムに */
+    border-radius: 0 16px 16px 0;
+    border-right: 1px solid #e0e0e0;
+    border-left: none;
+    box-shadow: 4px 0 25px rgba(0,0,0,0.10);
+    padding-top: 64px;
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    transition: width 0.3s, left 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+    z-index: 2100;
+    display: block !important;
+    transform: none !important;
+    animation: none !important;
+  }
+  .side-menu.collapsed {
+    width: 72px;
+    min-width: 56px;
+    overflow-x: hidden;
+  }
+  .side-menu ul {
+    padding: 24px 10px;
+  }
+  .side-menu li {
+    font-size: 1em;
+    padding: 12px 10px 14px;
+    margin: 10px 0;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.98);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background 0.2s;
+  }
+  .side-menu li.active, .side-menu li:focus {
+    background: #e3f2fd;
+    color: #1976d2;
+    outline: none;
+  }
+  /* 折りたたみボタン */
+  .side-menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 8px 12px 0 0;
+    cursor: pointer;
+    color: #888;
+    font-size: 1.2em;
+    background: none;
+    border: none;
+    outline: none;
+    transition: color 0.2s;
+  }
+  .side-menu-toggle:hover {
+    color: #1976d2;
+  }
+  /* PCではハンバーガー非表示 */
+  .hamburger {
+    display: none !important;
+  }
+}
+
+/* サイドメニューのアクセシビリティ強化 */
+.side-menu[aria-label], .side-menu[role="navigation"] {
+  outline: none;
+}
+.side-menu li {
+  cursor: pointer;
+}
+.side-menu li:focus {
+  outline: 2px solid #1976d2;
+}
+
+/* ダークモード完全廃止: @media (prefers-color-scheme: dark) セクションを削除 */

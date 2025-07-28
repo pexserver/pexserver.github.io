@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ツール・サービス一覧</title>
+    <meta name="description" content="Game HUBでの各種ツール・サービスへのアクセスハブ">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Game HUB">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="/libs/Assets/images/home.png">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/libs/Assets/images/home.png" type="image/png">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>Game Hub</h2>
+            <p>読み込み中...</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div id="main-container" class="main-container hidden">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-gamepad logo-img"></i>
+                    <h1>Game HUB</h1>
+                </div>
+                <nav class="nav">
+                    <button id="home-btn" class="nav-btn active">
+                        <i class="fas fa-home"></i>
+                        ホーム
+                    </button>
+                    <button id="search-btn" class="nav-btn">
+                        <i class="fas fa-search"></i>
+                        検索
+                    </button>
+                    <button id="favorites-btn" class="nav-btn">
+                        <i class="fas fa-star"></i>
+                        お気に入り
+                    </button>
+                    <a href="ChangeLog.html" class="nav-btn" id="changelog-btn" style="text-decoration:none;">
+                        <i class="fas fa-clock-rotate-left"></i>
+                        変更履歴
+                    </a>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Search Bar -->
+        <div class="search-container">
+            <div class="search-bar">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="search-input" placeholder="ツールやサービスを検索...">
+                <button id="clear-search" class="clear-btn" title="検索をクリア">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="search-filters">
+                <button class="filter-btn active" data-category="all">すべて</button>
+                <button class="filter-btn" data-category="games">ゲーム</button>
+                <button class="filter-btn" data-category="casual">カジュアルゲーム</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Featured Section -->
+            <section id="featured-section" class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-star"></i>
+                    注目のツール
+                </h2>
+                <div id="featured-grid" class="featured-grid">
+                    <!-- Featured items will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Categories Section -->
+            <section id="categories-section" class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-th-large"></i>
+                    カテゴリ
+                </h2>
+                <div id="categories-grid" class="categories-grid">
+                    <!-- Categories will be loaded here -->
+                </div>
+            </section>
+
+            <!-- All Items Section -->
+            <section id="all-items-section" class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-list"></i>
+                    すべてのツール
+                </h2>
+                <div id="all-items-grid" class="items-grid">
+                    <!-- All items will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Search Results Section -->
+            <section id="search-results-section" class="section hidden">
+                <h2 class="section-title">
+                    <i class="fas fa-search"></i>
+                    検索結果
+                </h2>
+                <div id="search-results-grid" class="items-grid">
+                    <!-- Search results will be loaded here -->
+                </div>
+                <div id="no-results" class="no-results hidden">
+                    <i class="fas fa-search"></i>
+                    <h3>検索結果が見つかりません</h3>
+                    <p>別のキーワードで検索してみてください</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>&copy; 2025 Game Hub All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modal for Item Details -->
+    <div id="item-modal" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" title="モーダルを閉じる">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-header">
+                <img id="modal-thumbnail" src="" alt="" class="modal-thumbnail">
+                <div class="modal-info">
+                    <h3 id="modal-title"></h3>
+                    <p id="modal-description"></p>
+                    <div id="modal-tags" class="modal-tags"></div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="modal-visit" class="btn btn-primary">
+                    <i class="fas fa-external-link-alt"></i>
+                    アクセス
+                </button>
+                <button id="modal-favorite" class="btn btn-secondary">
+                    <i class="fas fa-star"></i>
+                    お気に入り
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- iOSホーム追加案内モーダル -->
+    <div id="ios-pwa-modal" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" id="ios-pwa-close" title="閉じる">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-header">
+                <h3>ホーム画面に追加しよう</h3>
+            </div>
+            <div class="modal-body">
+                <p>iPhoneでより快適にご利用いただくため、<br>
+                <b>Safariの共有ボタン</b>から<br>
+                <b>「ホーム画面に追加」</b>を選択してください。</p>
+                <img src="https://docs-assets.developer.apple.com/published/887ab0fb0d25b913a58087830060e9fa/components-activity-views-thumbnail~dark%402x.png" alt="ホーム追加案内" class="ios-pwa-guide">
+                <p class="ios-pwa-note">※この案内は一度無視できます</p>
+            </div>
+            <div class="modal-actions">
+                <button id="ios-pwa-ignore" class="btn btn-secondary">今は表示しない</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="animation.js" type="module"></script>
+    <script src="main.js" type="module"></script>
+</body>
+</html>
