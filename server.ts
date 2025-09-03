@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import * as url from 'node:url';
 import * as os from 'node:os';
 
-const DEFAULT_PORT = 80;
+const DEFAULT_PORT = 25565;
 const DEFAULT_ROOT_DIR = path.resolve('');
 const INDEX_FILE = 'index.html';
 
@@ -22,10 +22,57 @@ const mimeTypes: Record<string, string> = {
     '.ico': 'image/x-icon',
 };
 
+// --- 追加: Proxy Protocol 用の定数/シンボル ---
+const PROXY_INFO = Symbol('proxyInfo');
+const PPv2_SIG = Buffer.from([0x0d,0x0a,0x0d,0x0a,0x00,0x0d,0x0a,0x51,0x55,0x49,0x54,0x0a]);
+
 async function requestHandler(req: http.IncomingMessage, res: http.ServerResponse) {
     if (!req.url) {
         sendError(res, 400, 'Bad Request: URL is missing');
         return;
+    }
+
+    // クライアントの IP/ポートを取得・正規化
+    const socket = req.socket as any;
+
+    // 優先順位:
+    //  1) X-Real-IP ヘッダ
+    //  2) X-Forwarded-For ヘッダ (カンマ区切りの場合は最初の値を使う)
+    //  3) Proxy Protocol 情報 (socket[PROXY_INFO])
+    //  4) socket.remoteAddress
+    let clientIp = '';
+    let clientPort: number | string = '';
+
+    const headerXReal = typeof req.headers['x-real-ip'] === 'string' ? (req.headers['x-real-ip'] as string) : '';
+    const headerXFwd = typeof req.headers['x-forwarded-for'] === 'string' ? (req.headers['x-forwarded-for'] as string) : '';
+
+    const sanitizeIp = (ip: string) => {
+        if (!ip) return '';
+        let v = ip.trim();
+        // X-Forwarded-For は "client, proxy1, proxy2" の形式になり得る -> 最初のエントリを採用
+        if (v.includes(',')) v = v.split(',')[0].trim();
+        // IPv4-mapped IPv6 を変換
+        if (v.startsWith('::ffff:')) v = v.replace('::ffff:', '');
+        if (v === '::1') v = '127.0.0.1';
+        return v;
+    };
+
+    if (headerXReal) {
+        clientIp = sanitizeIp(headerXReal);
+        clientPort = socket.remotePort ?? '';
+    } else if (headerXFwd) {
+        clientIp = sanitizeIp(headerXFwd);
+        clientPort = socket.remotePort ?? '';
+    } else if (socket[PROXY_INFO]) {
+        clientIp = socket[PROXY_INFO].srcAddr || '';
+        clientPort = socket[PROXY_INFO].srcPort ?? '';
+    } else {
+        clientIp = socket.remoteAddress ?? '';
+        if (clientIp) {
+            if (clientIp.startsWith('::ffff:')) clientIp = clientIp.replace('::ffff:', '');
+            if (clientIp === '::1') clientIp = '127.0.0.1';
+        }
+        clientPort = socket.remotePort ?? '';
     }
 
     const parsedUrl = url.parse(req.url);
@@ -38,7 +85,7 @@ async function requestHandler(req: http.IncomingMessage, res: http.ServerRespons
         return;
     }
 
-    console.log(`Request: ${req.method} ${req.url} -> ${filePath}`);
+    console.log(`Client: ${clientIp}:${clientPort}  Request: ${req.method} ${req.url} -> ${filePath}`);
 
     try {
         const stats = await fs.stat(filePath);
@@ -93,7 +140,9 @@ async function requestHandler(req: http.IncomingMessage, res: http.ServerRespons
         res.writeHead(200, {
             'Content-Type': contentType,
             'Content-Length': fileContent.length,
-            'Cache-Control': 'no-cache'
+            'Cache-Control': 'no-cache',
+            // デバッグ用にクライアント IP を返す（任意）
+            'X-Client-IP': clientIp
         });
         res.end(fileContent);
 
@@ -115,6 +164,110 @@ function sendError(res: http.ServerResponse, statusCode: number, message: string
 }
 
 const server = http.createServer(requestHandler);
+
+// --- 追加: connection 時に最初のデータを先読みして Proxy Protocol を解析 ---
+server.on('connection', (socket) => {
+    let buffer = Buffer.alloc(0);
+    const onData = (chunk: Buffer) => {
+        buffer = Buffer.concat([buffer, chunk]);
+
+        // Proxy Protocol v1 (テキスト "PROXY ...\r\n")
+        if (buffer.length >= 6 && buffer.slice(0,6).toString('ascii') === 'PROXY ') {
+            const idx = buffer.indexOf('\r\n');
+            if (idx !== -1) {
+                const header = buffer.slice(0, idx).toString('utf8');
+                const headerTrim = header.trim();
+                const parts = headerTrim.split(/\s+/);
+                // Valid forms:
+                //  - PROXY UNKNOWN\r\n
+                //  - PROXY TCP4 src dst srcport dstport\r\n
+                //  - PROXY TCP6 src dst srcport dstport\r\n
+                if (parts.length >= 2) {
+                    const proto = parts[1].toUpperCase();
+                    if (proto === 'UNKNOWN') {
+                        // クライアント情報は利用不可と明示
+                        (socket as any)[PROXY_INFO] = { proto: 'UNKNOWN' };
+                    } else if (parts.length >= 6) {
+                        const srcAddr = parts[2];
+                        const srcPort = parseInt(parts[4], 10);
+                        if (!Number.isNaN(srcPort)) {
+                            (socket as any)[PROXY_INFO] = { proto, srcAddr, srcPort };
+                            // 他のコードが socket.remoteAddress/remotePort を見ている可能性があるため
+                            // 上書きしておく（注意: セキュリティ的に信頼できる環境でのみ行うこと）
+                            try {
+                                (socket as any).remoteAddress = srcAddr;
+                                (socket as any).remotePort = srcPort;
+                            } catch (e) {
+                                // ignore if platform prevents override
+                            }
+                        } else {
+                            // 無効なポート -> ヘッダ無視
+                        }
+                    } else {
+                        // トークン不足 -> ヘッダ無視
+                    }
+                }
+
+                const remaining = buffer.slice(idx + 2);
+                if (remaining.length) socket.unshift(remaining);
+                socket.removeListener('data', onData);
+            } else if (buffer.length > 108) {
+                // 長すぎて改行が来ない -> プロキシヘッダなしとして戻す
+                socket.unshift(buffer);
+                socket.removeListener('data', onData);
+            }
+            return;
+        }
+
+        // Proxy Protocol v2 (バイナリ)
+        if (buffer.length >= 12 && buffer.slice(0,12).equals(PPv2_SIG)) {
+            if (buffer.length >= 16) {
+                const len = buffer.readUInt16BE(14);
+                const total = 16 + len;
+                if (buffer.length >= total) {
+                    const famProto = buffer[13];
+                    const fam = famProto & 0xf0;
+                    // AF_INET
+                    if (fam === 0x10 && len >= 12) {
+                        const srcAddrBuf = buffer.slice(16, 20);
+                        const srcPort = buffer.readUInt16BE(24);
+                        const srcAddr = Array.from(srcAddrBuf).join('.');
+                        (socket as any)[PROXY_INFO] = { proto: 'TCP4', srcAddr, srcPort };
+                    }
+                    // AF_INET6 (簡易処理)
+                    else if (fam === 0x20 && len >= 36) {
+                        const srcAddrBuf = buffer.slice(16, 32);
+                        const srcPort = buffer.readUInt16BE(48);
+                        const srcAddr = srcAddrBuf.toString('hex').match(/.{1,4}/g)?.join(':') || '';
+                        (socket as any)[PROXY_INFO] = { proto: 'TCP6', srcAddr, srcPort };
+                    }
+                    const remaining = buffer.slice(total);
+                    if (remaining.length) socket.unshift(remaining);
+                    socket.removeListener('data', onData);
+                    return;
+                }
+                // まだ全体が来ていない -> 続けて待つ
+                return;
+            }
+            // header がまだ全部来ていない -> 続けて待つ
+            return;
+        }
+
+        // どちらのプロキシヘッダでもない -> 読み込んだデータを戻して処理を続行
+        socket.unshift(buffer);
+        socket.removeListener('data', onData);
+    };
+
+    socket.on('data', onData);
+
+    // タイムアウト: 一定時間で先読みを止める（既に読み込んだデータは戻す）
+    const t = setTimeout(() => {
+        socket.removeListener('data', onData);
+        if (buffer.length) socket.unshift(buffer);
+    }, 1000);
+
+    socket.once('close', () => clearTimeout(t));
+});
 
 const port = process.env.PORT ? parseInt(process.env.PORT, 10) : DEFAULT_PORT;
 const rootDir = process.env.ROOT_DIR ? path.resolve(process.env.ROOT_DIR) : DEFAULT_ROOT_DIR;
