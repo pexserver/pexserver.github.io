@@ -1,0 +1,4 @@
+#hud-life{display:flex;gap:2px}
+.heart{width:14px;height:14px;display:inline-block;position:relative}
+.heart:before,.heart:after{content:"";position:absolute;top:0;left:7px;width:7px;height:10px;background:#ff5577;border-radius:7px 7px 0 0;transform:rotate(-45deg);transform-origin:0 100%;}
+.heart:after{left:0;transform:rotate(45deg);transform-origin:100% 100%;}

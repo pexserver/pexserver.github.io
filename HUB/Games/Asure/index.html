@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+	<title>Asure Side Scroll Action</title>
+	<link rel="stylesheet" href="css/layout/style.css" />
+	<link rel="stylesheet" href="css/ui/hud.css" />
+	<link rel="stylesheet" href="css/character/player.css" />
+	<script type="module" src="js/main/game.js"></script>
+</head>
+<body>
+	<div id="app-root">
+		<div id="overlay-start" class="overlay visible">
+			<div class="panel">
+				<h1>Asure</h1>
+				<p>横スクロールアスレチックアクション<br>敵を踏んでスコアを稼ごう！</p>
+				<ul class="help">
+					<li>移動: ← → / A D</li>
+					<li>ジャンプ: ↑ / W / Space</li>
+					<li>踏みつけで敵撃破 + スコア</li>
+					<li>ライフ3。チェックポイント通過で全回復。</li>
+				</ul>
+				<button id="btn-start" class="btn primary">スタート</button>
+			</div>
+		</div>
+		<div id="overlay-gameover" class="overlay">
+			<div class="panel">
+				<h2>ゲームオーバー</h2>
+				<p id="gameover-score"></p>
+				<button id="btn-retry" class="btn">リトライ</button>
+			</div>
+		</div>
+		<div id="overlay-cleared" class="overlay">
+			<div class="panel">
+				<h2>ステージクリア</h2>
+				<p id="cleared-stage"></p>
+				<button id="btn-next" class="btn primary">次のステージ</button>
+			</div>
+		</div>
+			<div id="overlay-results" class="overlay">
+				<div class="panel">
+					<h2>全ステージクリア</h2>
+					<p id="results-score">スコア: 0</p>
+					<button id="btn-playagain" class="btn primary">もう一度遊ぶ</button>
+				</div>
+			</div>
+	<div id="checkpoint-toast" class="toast">チェックポイント ✓ ライフ全回復</div>
+		<div id="hud" class="material">
+			<div class="group">
+				<span class="label">ステージ</span><span id="hud-stage">1</span>
+			</div>
+			<div class="group">
+				<span class="label">ライフ</span><span id="hud-life" class="life"></span>
+			</div>
+			<div class="group">
+				<span class="label">スコア</span><span id="hud-score">0</span>
+			</div>
+			<div class="group small">
+				<span class="label">時間</span><span id="hud-time">0</span>
+			</div>
+		</div>
+		<canvas id="game-canvas"></canvas>
+			<div id="mobile-controls" class="no-select">
+				<div class="cluster cluster-left">
+					<button class="ctrl-btn" id="btn-left" aria-label="left">◀</button>
+					<button class="ctrl-btn" id="btn-right" aria-label="right">▶</button>
+				</div>
+				<div class="cluster cluster-right">
+					<button class="ctrl-btn primary" id="btn-jump" aria-label="jump">⤒</button>
+				</div>
+			</div>
+	</div>
+</body>
+</html>

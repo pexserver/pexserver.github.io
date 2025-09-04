@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Asure - 2D 横スクロール アクション</title>
+	<link rel="stylesheet" href="css/layout/style.css">
+	<link rel="stylesheet" href="css/ui/hud.css">
+</head>
+<body>
+	<div id="ui">
+		<div id="title" class="screen">
+			<h1>Asure</h1>
+			<p>2D 横スクロール アスレチックアクション (Three.js)</p>
+			<button id="startBtn">Start</button>
+		</div>
+
+		<div id="hud" class="hidden">
+			<div id="score">SCORE: 0</div>
+			<div id="lives">❤❤❤</div>
+			<div id="stage">STAGE 1</div>
+		</div>
+
+		<div id="overlay" class="hidden"></div>
+
+		<!-- モバイルタッチ -->
+		<div id="touchControls" class="touch">
+			<button id="leftBtn" class="touch-btn">◀</button>
+			<button id="rightBtn" class="touch-btn">▶</button>
+			<button id="jumpBtn" class="touch-btn">JUMP</button>
+		</div>
+	</div>
+
+	<canvas id="c"></canvas>
+
+	<script src="https://unpkg.com/three@0.154.0/build/three.min.js"></script>
+	<script src="js/main/game.js"></script>
+</body>
+</html>
