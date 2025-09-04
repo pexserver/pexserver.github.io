@@ -66,6 +66,12 @@ class Game {
     this.score = 0;
     this.life = CONFIG.lifeMax;
     this.time = 0;
+    // ハイスコア管理
+    this.highScore = 0;
+    try{
+      const v = localStorage.getItem('asure_highscore');
+      this.highScore = v? parseInt(v,10) : 0;
+    }catch(e){ this.highScore = 0; }
 
     this.entities = [];
     this.player = null;
@@ -283,10 +289,16 @@ class Game {
   playerDie(){
     this.life--;
     if(this.life <=0){
-      this.gameoverScoreEl.textContent = `SCORE: ${this.score}`;
-            try{ if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); }catch(e){}
-            this.overlayGameover.classList.add('visible');
-  this.playSE('damage');
+      // ハイスコア更新
+      if(this.score > this.highScore){
+        this.highScore = this.score;
+        try{ localStorage.setItem('asure_highscore', String(this.highScore)); }catch(e){}
+      }
+      const txt = `スコア: ${this.score} \n ハイスコア: ${this.highScore}`;
+      this.gameoverScoreEl.textContent = txt;
+      try{ if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); }catch(e){}
+      this.overlayGameover.classList.add('visible');
+      this.playSE('damage');
     } else {
       // 最終チェックポイントへ復帰
       this.player.mesh.position.set(this.lastCheckpointX,2,0);
