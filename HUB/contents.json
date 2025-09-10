@@ -59,6 +59,15 @@
           "category": "games",
           "tags": ["tnt", "run", "platform", "2d"],
           "os": ["pc", "mobile"]
+        },
+        {
+          "name": "SoloPop — バブルポップ",
+          "description": "クリックでバブルをポップしてスコアを競う軽量な単独プレイ用ミニゲーム",
+          "thumbnail": "https://picsum.photos/seed/solopop/400/200",
+          "url": "./Games/SoloPop/index.html",
+          "category": "games",
+          "tags": ["solopop","bubble","casual","game"],
+          "os": ["pc", "mobile"]
         }
       ]
     },
