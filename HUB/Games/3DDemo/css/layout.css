@@ -1,0 +1,125 @@
+/* Layout and component styles (extracted from style.css) */
+
+nav .brand-logo {
+  padding-left: 12px;
+  font-weight: 500;
+}
+
+/* Canvas container: keep responsive and centered content */
+#canvasContainer {
+  position: relative;
+  height: 70vh;
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(250,250,250,0.7), rgba(245,245,245,0.7));
+  border-radius: var(--md-radius);
+  box-shadow: var(--md-elevation-1);
+}
+
+/* CSS-made square decorative box centered in the container */
+.css-box {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 320px;
+  height: 320px;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #90caf9 0%, #64b5f6 50%, #42a5f5 100%);
+  border-radius: 12px;
+  box-shadow: var(--md-elevation-2);
+  z-index: 1;
+  display: block;
+  pointer-events: none; /* purely decorative */
+}
+
+/* The three.js canvas should fully cover the container and be interactive */
+#threeCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 2; /* render above the css-box so the 3D scene overlays */
+  background: transparent;
+}
+
+/* Card content tweaks for better spacing and Material feel */
+.card .card-content {
+  padding: 20px;
+}
+
+.card .card-content p {
+  margin: 0 0 12px 0;
+  color: var(--md-on-surface);
+  line-height: 1.45;
+}
+
+/* Controls area: make inputs full-width and visually consistent */
+.card .card-content label {
+  font-weight: 500;
+  display: block;
+  margin-bottom: 6px;
+  color: rgba(33,33,33,0.9);
+}
+
+/* Color input and range full width on narrow screens */
+#voxelColor {
+  width: 64px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  background: none;
+  vertical-align: middle;
+}
+
+#brushSize {
+  width: 100%;
+  margin-top: 6px;
+}
+
+#brushSizeLabel {
+  display: inline-block;
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+#resetBtn, #resetNav {
+  transition: background-color var(--md-transition), box-shadow var(--md-transition);
+}
+
+#resetBtn:hover {
+  box-shadow: var(--md-elevation-1);
+}
+
+/* Improvements for accessibility: focus outlines and larger hit targets */
+input[type="radio"] + span, input[type="checkbox"] + span {
+  cursor: pointer;
+}
+
+/* Small responsive tweaks */
+@media (max-width: 800px) {
+  #canvasContainer {
+    height: 50vh;
+    min-height: 320px;
+  }
+  .css-box {
+    width: 220px;
+    height: 220px;
+  }
+  .card .card-content {
+    padding: 16px;
+  }
+}
+
+/* Utility: visually-hidden for decorative elements when needed */
+.visually-hidden {
+  position: absolute !important;
+  height: 1px; width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
+}

@@ -1,0 +1,40 @@
+/* Theme tokens and base styles (moved from theme.css)
+   - Contains design tokens and base typography
+*/
+:root {
+  --md-primary: #1e88e5; /* blue 600 */
+  --md-primary-variant: #1565c0; /* blue 800 */
+  --md-surface: #fafafa;
+  --md-on-surface: #212121;
+  --md-surface-elev1: #ffffff;
+  --md-elevation-1: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  --md-elevation-2: 0 6px 18px rgba(0,0,0,0.12);
+  --md-radius: 8px;
+  --md-gap: 16px;
+  --md-transition: 200ms cubic-bezier(.4,0,.2,1);
+}
+
+/* Base */
+body {
+  font-family: "Roboto", sans-serif;
+  background: var(--md-surface);
+  margin: 0;
+  color: var(--md-on-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accessibility focus styles */
+input[type="range"]:focus, input[type="color"]:focus, a:focus {
+  outline: 3px solid rgba(30,136,229,0.18);
+  outline-offset: 2px;
+}
+
+/* Utility: visually-hidden for decorative elements when needed */
+.visually-hidden {
+  position: absolute !important;
+  height: 1px; width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
+}
