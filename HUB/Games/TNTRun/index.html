@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>TNT Run 2D - Game HUB</title>
+<meta name="description" content="シンプルで楽しい2DのTNT Run。床が崩れるサバイバルラン。" />
+<link rel="icon" href="../../Image/logo.png" type="image/png" />
+<style>
+  :root{
+    --bg1:#0f172a;
+    --card:#0b1220;
+    --accent:#ff7a18;
+    --muted:#9aa7c7;
+    --tile:#f6bd60;
+  }
+  html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;background:linear-gradient(180deg,var(--bg1) 0%,#071022 100%);color:#e6eef8}
+  .wrap{max-width:980px;margin:18px auto;padding:12px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  h1{font-size:1.1rem;margin:0}
+  .toolbar{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .btn{background:linear-gradient(90deg,var(--accent),#ffb86b);border:none;padding:8px 12px;border-radius:10px;color:#111;font-weight:700;cursor:pointer}
+  canvas{display:block;width:100%;height:70vh;border-radius:12px;background:linear-gradient(180deg,#081226 0%, #05203a 100%);box-shadow:0 8px 30px rgba(0,0,0,0.6);touch-action:none}
+  .hud{display:flex;gap:12px;align-items:center;margin-top:8px}
+  .panel{background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:10px;color:var(--muted);font-size:0.95rem}
+  .controls{display:flex;gap:8px;margin-top:10px;justify-content:center}
+  .control-btn{width:64px;height:64px;border-radius:12px;border:none;background:rgba(255,255,255,0.04);color:#eaf4ff;font-size:1.1rem}
+  .control-btn:active{transform:translateY(2px)}
+  .centered{display:flex;align-items:center;justify-content:center}
+  .overlay{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+  .message{pointer-events:auto;background:linear-gradient(180deg,#0b1220,#071226);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 8px 24px rgba(0,0,0,0.6);text-align:center}
+  .message h2{margin:0 0 8px 0;color:var(--accent)}
+  .small{font-size:0.9rem;color:var(--muted)}
+  footer{margin-top:18px;text-align:center;color:rgba(230,238,248,0.6);font-size:0.85rem}
+  @media (max-width:600px){
+    .btn{padding:8px 10px}
+    .control-btn{width:56px;height:56px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>TNT Run 2D</h1>
+      <div class="small">床が踏むと崩れるサバイバルラン。左右で移動、ジャンプで生き残れ。</div>
+    </div>
+    <div class="toolbar">
+      <button id="startBtn" class="btn">スタート</button>
+      <button id="restartBtn" class="btn" style="display:none;background:#7dd3fc">リスタート</button>
+    </div>
+  </header>
+
+  <div style="position:relative">
+    <canvas id="gameCanvas" width="960" height="600" aria-label="TNT Run ゲームキャンバス"></canvas>
+
+    <div class="overlay" style="pointer-events:none">
+      <div id="overlayMsg" class="message" style="display:none;pointer-events:auto">
+        <h2 id="msgTitle">Game Over</h2>
+        <div id="msgText" class="small">落ちました</div>
+        <div style="margin-top:10px">
+          <button id="overlayRestart" class="btn">リスタート</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hud">
+    <div class="panel">残り: <strong id="tilesLeft">--</strong></div>
+    <div class="panel">経過: <strong id="timeElapsed">0.0s</strong></div>
+    <div class="panel">状態: <strong id="gameState">準備中</strong></div>
+  </div>
+
+  <div class="controls" aria-hidden="false" role="group" aria-label="ゲーム操作">
+    <button id="leftBtn" class="control-btn">◀︎</button>
+    <button id="jumpBtn" class="control-btn">▲</button>
+    <button id="rightBtn" class="control-btn">▶︎</button>
+  </div>
+
+  <footer>矢印キー / A D = 左右移動、Space / ↑ = ジャンプ</footer>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  let W = canvas.width;
+  let H = canvas.height;
+
+  // Grid
+  const COLS = 12;
+  const ROWS = 8;
+  const PADDING = 24;
+  let tileW, tileH;
+  let grid = [];
+
+  // Player
+  const player = {
+    x: 0, y: 0, w: 32, h: 48,
+    vx: 0, vy: 0,
+    speed: 260, jump: 460,
+    onGround: false,
+    alive: true
+  };
+
+  // Particles
+  const particles = [];
+
+  // Audio (WebAudio simple SFX)
+  let audioCtx = null;
+  function ensureAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  function playBeep(freq = 440, time = 0.08, gain = 0.12) {
+    try {
+      ensureAudio();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      g.gain.setValueAtTime(gain, audioCtx.currentTime);
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start();
+      o.stop(audioCtx.currentTime + time);
+    } catch(e) {}
+  }
+  function playJump() { playBeep(620, 0.09, 0.14); }
+  function playBreak() { playBeep(220, 0.14, 0.16); }
+  function playGameOver() { playBeep(120, 0.4, 0.18); }
+
+  // Game state
+  let lastTime = 0;
+  let running = false;
+  let startedAt = 0;
+  let screen = 'start'; // 'start' | 'play' | 'result'
+  const gravity = 1600;
+  const tileBreakDelay = 700; // ms after stepped -> start cracking
+  const tileRemoveDelay = 1100; // ms after stepped -> removed
+  let tilesLeft = 0;
+
+  const startBtn = document.getElementById('startBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const overlayMsg = document.getElementById('overlayMsg');
+  const overlayRestart = document.getElementById('overlayRestart');
+  const tilesLeftEl = document.getElementById('tilesLeft');
+  const timeElapsedEl = document.getElementById('timeElapsed');
+  const gameStateEl = document.getElementById('gameState');
+
+  // Start overlay (create dynamically)
+  const startOverlay = document.createElement('div');
+  startOverlay.className = 'overlay';
+  startOverlay.style.pointerEvents = 'auto';
+  startOverlay.innerHTML = `<div class="message"><h2> TNT Run 2D </h2><div class="small">左右移動で生き残れ</div><div style="margin-top:12px"><button id="startOverlayBtn" class="btn">スタート</button></div></div>`;
+  document.querySelector('.wrap').appendChild(startOverlay);
+  const startOverlayBtn = startOverlay.querySelector('#startOverlayBtn');
+
+  function showStart() {
+    screen = 'start';
+    startOverlay.style.display = 'flex';
+    overlayMsg.style.display = 'none';
+    restartBtn.style.display = 'none';
+    startBtn.style.display = 'inline-block';
+    gameStateEl.textContent = '開始画面';
+  }
+  function showResult(reason) {
+    screen = 'result';
+    overlayMsg.style.display = 'block';
+    document.getElementById('msgTitle').textContent = reason || '終了';
+    document.getElementById('msgText').textContent = `生存時間: ${((performance.now()-startedAt)/1000).toFixed(1)}秒`;
+    overlayMsg.style.pointerEvents = 'auto';
+    restartBtn.style.display = 'inline-block';
+    gameStateEl.textContent = '結果';
+  }
+
+  function hideStart() {
+    startOverlay.style.display = 'none';
+  }
+
+  function initGrid() {
+    grid = [];
+    tileW = (W - PADDING*2) / COLS;
+    tileH = (H*0.6 - PADDING*2) / ROWS;
+    for (let r = 0; r < ROWS; r++) {
+      const row = [];
+      for (let c = 0; c < COLS; c++) {
+        row.push({
+          r, c,
+          x: PADDING + c * tileW,
+          y: PADDING + r * tileH + (H*0.25),
+          w: tileW - 6,
+          h: tileH - 6,
+          state: 'solid', // solid, cracked, gone
+          steppedAt: null
+        });
+      }
+      grid.push(row);
+    }
+    tilesLeft = COLS * ROWS;
+    tilesLeftEl.textContent = tilesLeft;
+  }
+
+  function spawnParticles(x,y,count=12,colors=['#ffd166','#ff7a18']) {
+    for (let i=0;i<count;i++) {
+      const angle = Math.random()*Math.PI*2;
+      const speed = 60 + Math.random()*180;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle)*speed,
+        vy: Math.sin(angle)*speed - 60,
+        life: 0.7 + Math.random()*0.6,
+        size: 2 + Math.random()*4,
+        color: colors[Math.floor(Math.random()*colors.length)]
+      });
+    }
+  }
+
+  function resetPlayer() {
+    player.w = Math.min(64, tileW*0.6 || 32);
+    player.h = player.w * 1.25;
+    player.x = PADDING + (W - PADDING*2)/2 - player.w/2;
+    player.y = PADDING + (H*0.25) - player.h - 6;
+    player.vx = 0; player.vy = 0; player.onGround = false; player.alive = true;
+  }
+
+  function startGame() {
+    initGrid();
+    resetPlayer();
+    running = true;
+    startedAt = performance.now();
+    lastTime = performance.now();
+    hideStart();
+    screen = 'play';
+    startBtn.style.display = 'none';
+    restartBtn.style.display = 'none';
+    overlayMsg.style.display = 'none';
+    gameStateEl.textContent = 'プレイ中';
+    playBeep(440,0.06,0.12);
+    requestAnimationFrame(loop);
+  }
+
+  function endGame(reason='Game Over') {
+    if (screen === 'result') return;
+    running = false;
+    player.alive = false;
+    playGameOver();
+    showResult(reason);
+  }
+
+  function showOverlay(text) {
+    // kept for compatibility
+    showResult(text);
+  }
+
+  function update(dt) {
+    if (!running) return;
+    // Apply input before physics
+    applyInput(dt);
+    // Apply gravity
+    player.vy += gravity * dt;
+    player.x += player.vx * dt;
+    player.y += player.vy * dt;
+
+    // Horizontal bounds
+    if (player.x < PADDING) player.x = PADDING;
+    if (player.x + player.w > W - PADDING) player.x = W - PADDING - player.w;
+
+    // Tile collision detection (very simple)
+    player.onGround = false;
+    const prevOnGround = player.onGround;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const t = grid[r][c];
+        if (!t || t.state === 'gone') continue;
+        // AABB
+        if (player.x < t.x + t.w &&
+            player.x + player.w > t.x &&
+            player.y < t.y + t.h &&
+            player.y + player.h > t.y) {
+          // collision from top?
+          const penetration = (player.y + player.h) - t.y;
+          if (player.vy >= 0 && penetration > 0 && penetration < player.h + 20) {
+            // stand on tile
+            player.y = t.y - player.h;
+            player.vy = 0;
+            player.onGround = true;
+            // mark stepped
+            if (!t.steppedAt) {
+              t.steppedAt = performance.now();
+            }
+          }
+        }
+      }
+    }
+
+    // if landing event — パーティクルはジャンプ時のみ発火するため、着地ではサウンドのみ再生
+    if (!prevOnGround && player.onGround) {
+      playBeep(780,0.06,0.08);
+    }
+
+    // If player fell below canvas => dead
+    if (player.y > H + 80) {
+      endGame('落下しました');
+    }
+
+    updateTiles();
+    updateParticles(dt);
+    tilesLeftEl.textContent = tilesLeft;
+    timeElapsedEl.textContent = ((performance.now()-startedAt)/1000).toFixed(1) + 's';
+  }
+
+  function updateTiles() {
+    const now = performance.now();
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const t = grid[r][c];
+        if (!t) continue;
+        if (t.state === 'solid' && t.steppedAt && now - t.steppedAt > tileBreakDelay) {
+          t.state = 'cracked';
+          // small crack sound
+          playBeep(300 + Math.random()*120, 0.08, 0.08);
+          spawnParticles(t.x + t.w/2, t.y + t.h/2, 6, ['#ffcf7a','#ff7a18']);
+        }
+        if ((t.state === 'cracked' || t.state === 'solid') && t.steppedAt && now - t.steppedAt > tileRemoveDelay) {
+          if (t.state !== 'gone') {
+            t.state = 'gone';
+            tilesLeft--;
+            playBreak();
+            spawnParticles(t.x + t.w/2, t.y + t.h/2, 12, ['#ff7a18','#ffb86b']);
+          }
+        }
+      }
+    }
+    // Recompute true tilesLeft
+    let realLeft = 0;
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) if (grid[r][c] && grid[r][c].state!=='gone') realLeft++;
+    tilesLeft = realLeft;
+  }
+
+  function updateParticles(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.life -= dt;
+      if (p.life <= 0) {
+        particles.splice(i,1);
+        continue;
+      }
+      p.vy += 800 * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= 0.98;
+      p.vy *= 0.998;
+    }
+  }
+
+  function drawParticles(ctx) {
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life / 1.2));
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function draw() {
+    // If grid not initialized yet, just clear and return
+    ctx.clearRect(0,0,W,H);
+    if (!grid || grid.length === 0) {
+      // draw simple background
+      const g = ctx.createLinearGradient(0,0,0,H);
+      g.addColorStop(0,'#041026');
+      g.addColorStop(1,'#051b34');
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,W,H);
+      // draw start overlay hint
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      ctx.font = '18px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText('Start を押してゲームを開始', W/2, H/2);
+      drawParticles(ctx);
+      return;
+    }
+
+    // background gradient
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'#041026');
+    g.addColorStop(1,'#051b34');
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
+
+    // draw grid tiles
+    for (let r = 0; r < ROWS; r++) {
+      if (!grid[r]) continue;
+      for (let c = 0; c < COLS; c++) {
+        const t = grid[r][c];
+        if (!t || t.state === 'gone') continue;
+        const cx = t.x + 0.5;
+        const cy = t.y + 0.5;
+        // tile base
+        ctx.fillStyle = t.state === 'cracked' ? '#e0651a' : '#ffa94d';
+        ctx.fillRect(cx, cy, t.w, t.h);
+        // border
+        ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cx+1, cy+1, t.w-2, t.h-2);
+        if (t.state === 'cracked') {
+          // cracks
+          ctx.strokeStyle = 'rgba(0,0,0,0.28)';
+          ctx.beginPath();
+          ctx.moveTo(cx+6, cy+6);
+          ctx.lineTo(cx + t.w - 8, cy + t.h - 8);
+          ctx.moveTo(cx + t.w - 6, cy + 6);
+          ctx.lineTo(cx + 6, cy + t.h - 6);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // particles behind player
+    drawParticles(ctx);
+
+    // player
+    ctx.fillStyle = '#7ee787';
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+    // eyes
+    ctx.fillStyle = '#053';
+    ctx.fillRect(player.x + player.w*0.2, player.y + player.h*0.25, player.w*0.15, player.h*0.15);
+    ctx.fillRect(player.x + player.w*0.6, player.y + player.h*0.25, player.w*0.15, player.h*0.15);
+  }
+
+  function loop(ts) {
+    const dt = Math.min(0.032, (ts - lastTime) / 1000);
+    lastTime = ts;
+    update(dt);
+    draw();
+    if (running) requestAnimationFrame(loop);
+  }
+
+  // Input
+  const keys = {};
+  function handleKeyDown(e) {
+    // Normalize key and ignore typing in inputs
+    const k = (e.key || '').toLowerCase();
+    const targetTag = (e.target && e.target.tagName) || '';
+    if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
+
+    if (k === 'arrowleft' || k === 'a') keys.left = true;
+    if (k === 'arrowright' || k === 'd') keys.right = true;
+    if (k === 'arrowup' || k === 'w' || k === ' ') {
+      if (!keys.jump) keys.jump = true;
+      if (player.onGround && running) {
+        player.vy = -player.jump;
+        player.onGround = false;
+        spawnParticles(player.x + player.w/2, player.y + player.h, 6, ['#a8e6cf']);
+        playJump();
+      }
+    }
+  }
+  function handleKeyUp(e) {
+    const k = (e.key || '').toLowerCase();
+    const targetTag = (e.target && e.target.tagName) || '';
+    if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
+
+    if (k === 'arrowleft' || k === 'a') keys.left = false;
+    if (k === 'arrowright' || k === 'd') keys.right = false;
+    if (k === 'arrowup' || k === 'w' || k === ' ') keys.jump = false;
+  }
+
+  function applyInput(dt) {
+    const accel = player.speed;
+    if (keys.left) player.vx = -accel;
+    else if (keys.right) player.vx = accel;
+    else player.vx = 0;
+  }
+
+  // Touch / buttons
+  document.getElementById('leftBtn').addEventListener('pointerdown', () => keys.left = true);
+  document.getElementById('leftBtn').addEventListener('pointerup', () => keys.left = false);
+  document.getElementById('leftBtn').addEventListener('pointercancel', () => keys.left = false);
+  document.getElementById('rightBtn').addEventListener('pointerdown', () => keys.right = true);
+  document.getElementById('rightBtn').addEventListener('pointerup', () => keys.right = false);
+  document.getElementById('rightBtn').addEventListener('pointercancel', () => keys.right = false);
+  document.getElementById('jumpBtn').addEventListener('pointerdown', () => {
+    if (player.onGround && running) {
+      player.vy = -player.jump;
+      player.onGround = false;
+      spawnParticles(player.x + player.w/2, player.y + player.h, 6, ['#a8e6cf']);
+      playJump();
+    }
+  });
+
+  // Hook inputs into loop (apply before physics)
+  window.addEventListener('keydown', (e) => {
+    // block devtools shortcuts
+    if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C','K'].includes(e.key.toUpperCase())) || (e.ctrlKey && e.key.toUpperCase() === 'U')) {
+      e.preventDefault(); e.stopPropagation(); return;
+    }
+    handleKeyDown(e);
+  });
+  window.addEventListener('keyup', handleKeyUp);
+
+  // Game start/restart UI
+  startBtn.addEventListener('click', () => {
+    startGame();
+  });
+  restartBtn.addEventListener('click', () => {
+    startGame();
+  });
+  overlayRestart.addEventListener('click', () => {
+    startGame();
+  });
+  startOverlayBtn.addEventListener('click', () => {
+    startGame();
+  });
+
+  // Prevent context menu / devtools shortcuts inside game frame to avoid accidental cheats
+  window.addEventListener('contextmenu', e => { e.preventDefault(); });
+
+  // Resize handling
+  function onResize() {
+    const rect = canvas.getBoundingClientRect();
+    // maintain canvas internal resolution but scale it visually
+    const scale = window.devicePixelRatio || 1;
+    // keep internal fixed size for simple physics
+    W = canvas.width = Math.max(640, Math.min(1400, Math.floor(rect.width * scale)));
+    H = canvas.height = Math.max(480, Math.floor(window.innerHeight * 0.68 * scale));
+    // recompute tile sizes and player
+    if (grid.length) {
+      tileW = (W - PADDING*2) / COLS;
+      tileH = (H*0.6 - PADDING*2) / ROWS;
+    }
+    resetPlayer();
+    draw();
+  }
+  window.addEventListener('resize', onResize);
+  onResize();
+
+  // Main loop wrapper to integrate applyInput
+  (function mainLoopIntegration(){
+    const originalLoop = loop;
+    window.requestAnimationFrame(function step(ts){
+      const dt = Math.min(0.032, (ts - (lastTime || ts)) / 1000);
+      applyInput(dt);
+      if (running) {
+        requestAnimationFrame(step);
+      }
+      // When running, actual animation frames come from startGame's requestAnimationFrame(loop)
+    });
+  })();
+
+  // Basic auto-start for convenience on desktop
+  // startGame(); // keep disabled so user can read instructions
+
+  // Small accessibility: allow tapping canvas to jump (mobile)
+  let lastTap = 0;
+  canvas.addEventListener('pointerdown', (e) => {
+    const t = performance.now();
+    if (t - lastTap < 250) return; // debounce
+    lastTap = t;
+    if (player.onGround && running) {
+      player.vy = -player.jump;
+      player.onGround = false;
+      spawnParticles(player.x + player.w/2, player.y + player.h, 6, ['#a8e6cf']);
+      playJump();
+    }
+  });
+
+  // safety: stop pointer interactions from scrolling page
+  canvas.addEventListener('touchstart', e => e.preventDefault(), {passive:false});
+})();
+</script>
+</body>
+</html>

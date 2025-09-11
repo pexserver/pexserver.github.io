@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SoloPop — バブルポップ</title>
+<style>
+  :root{--bg:#0b1220;--panel:#0f1724;--accent:#ffcc33;--muted:#9aa6bf}
+  html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+  body{background:linear-gradient(180deg,var(--bg),#07101a);color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:20px}
+  .wrap{width:920px;max-width:100%;display:grid;grid-template-columns:1fr 320px;gap:20px}
+  .stage{background:rgba(255,255,255,0.03);border-radius:12px;padding:12px;box-shadow:0 6px 20px rgba(2,6,23,0.6)}
+  canvas{width:100%;height:640px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border-radius:8px;display:block}
+  .panel{background:var(--panel);padding:16px;border-radius:12px;min-height:640px;display:flex;flex-direction:column;gap:12px}
+  h1{margin:6px 0;font-size:18px}
+  .info{display:flex;flex-direction:column;gap:8px}
+  .row{display:flex;justify-content:space-between;align-items:center}
+  .big{font-size:28px;font-weight:700;color:var(--accent)}
+  button,select{background:linear-gradient(180deg,#1b2433,#0f1724);border:1px solid rgba(255,255,255,0.04);color:#eaf0ff;padding:10px;border-radius:8px;cursor:pointer}
+  select option{background:#1b2433;color:#eaf0ff;padding:8px}
+  select option:hover{background:#2c3540;color:#ffffff}
+  select option:checked{background:var(--accent);color:#0b1220}
+  .muted{color:var(--muted);font-size:13px}
+  .controls{display:flex;gap:8px;flex-wrap:wrap}
+  .footer{margin-top:auto;font-size:13px;color:var(--muted)}
+  .hint{font-size:13px;color:var(--muted);line-height:1.4}
+  .scorebox{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:10px;border-radius:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage">
+    <canvas id="game" width="560" height="640"></canvas>
+  </div>
+
+  <div class="panel">
+    <h1>SoloPop — バブルポップ</h1>
+
+    <div class="info scorebox">
+      <div class="row"><div class="muted">スコア</div><div id="score" class="big">0</div></div>
+      <div class="row"><div class="muted">コンボ</div><div id="combo">x1</div></div>
+      <div class="row"><div class="muted">残り時間</div><div id="time" class="big">60</div></div>
+      <div class="row"><div class="muted">ハイスコア</div><div id="best">0</div></div>
+    </div>
+
+    <div class="controls">
+      <button id="start">スタート</button>
+      <button id="pause">一時停止</button>
+      <button id="restart">リスタート</button>
+      <select id="mode">
+        <option value="classic">クラシック（60秒）</option>
+        <option value="endless">エンドレス</option>
+        <option value="relax">リラックス（時間無制限）</option>
+      </select>
+    </div>
+
+    <div class="hint">
+      ルール：画面に出現するバブルをクリックしてポップ。連続で短時間にポップするとコンボが発生して得点が上がる。時間切れでスコア集計。エンドレスは最長生存で競う。
+    </div>
+
+    <div class="muted">操作: マウスでクリック（またはタップ）</div>
+
+    <div class="footer">
+      作: Cline-style 自動生成 — 軽量で単独プレイ向けのミニゲーム
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  const scoreEl = document.getElementById('score');
+  const comboEl = document.getElementById('combo');
+  const timeEl = document.getElementById('time');
+  const bestEl = document.getElementById('best');
+  const startBtn = document.getElementById('start');
+  const pauseBtn = document.getElementById('pause');
+  const restartBtn = document.getElementById('restart');
+  const modeSel = document.getElementById('mode');
+
+  let bubbles = [], particles = [];
+  let score = 0, combo = 0, comboTimer = 0;
+  let timeLeft = 60, running = false, paused = false;
+  let lastSpawn = 0, spawnInterval = 700;
+  let best = parseInt(localStorage.getItem('solopop_best')||'0',10) || 0;
+  bestEl.textContent = best;
+
+  function rand(min,max){return Math.random()*(max-min)+min}
+  function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+
+  const palette = ['#ff7b7b','#ffd27b','#7bffcf','#7bd1ff','#d37bff'];
+
+  function spawnBubble() {
+    const r = rand(16,48);
+    const x = rand(r, W - r);
+    const y = H + r;
+    const speed = rand(0.8, 2.8) + Math.min(2, score/200);
+    const color = pick(palette);
+    bubbles.push({x,y,r,speed,color,created:Date.now(),score:Math.floor(r)});
+  }
+
+  function spawnParticle(x,y,color){
+    for(let i=0;i<10;i++){
+      particles.push({
+        x, y,
+        dx: rand(-2.5,2.5),
+        dy: rand(-4,-1),
+        life: rand(600,1000),
+        born: Date.now(),
+        color,
+        alpha:1
+      });
+    }
+  }
+
+  function update(dt){
+    if(!running || paused) return;
+    // spawn
+    if(Date.now()-lastSpawn > spawnInterval){
+      spawnBubble();
+      lastSpawn = Date.now();
+      // gradually increase spawn rate
+      spawnInterval = Math.max(250, 700 - Math.floor(score/30));
+    }
+
+    // update bubbles
+    for(let i=bubbles.length-1;i>=0;i--){
+      const b = bubbles[i];
+      b.y -= b.speed * dt * 0.06;
+      // float a bit
+      b.x += Math.sin((Date.now()+i*100)/1200)*0.2;
+      if(b.y + b.r < -20) bubbles.splice(i,1);
+    }
+
+    // particles
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      const age = Date.now()-p.born;
+      if(age>p.life){ particles.splice(i,1); continue; }
+      p.x += p.dx;
+      p.y += p.dy;
+      p.dy += 0.08;
+      p.alpha = 1 - age/p.life;
+    }
+
+    // combo timer
+    if(comboTimer>0) comboTimer -= dt;
+    else { combo = 0; comboEl.textContent = 'x1'; }
+    // time
+    if(modeSel.value !== 'relax'){
+      timeLeft -= dt * 0.001;
+      if(modeSel.value === 'classic' && timeLeft <= 0) {
+        timeLeft = 0;
+        endGame();
+      }
+    }
+  }
+
+  function draw(){
+    // clear
+    ctx.clearRect(0,0,W,H);
+    // background stars
+    for(let i=0;i<60;i++){
+      ctx.fillStyle = 'rgba(255,255,255,0.02)';
+      ctx.fillRect((i*37)%W,(i*53)%H,1,1);
+    }
+
+    // bubbles
+    for(const b of bubbles){
+      const g = ctx.createRadialGradient(b.x-b.r*0.3,b.y-b.r*0.3,2,b.x,b.y,b.r);
+      g.addColorStop(0,'#ffffff');
+      g.addColorStop(0.25, b.color);
+      g.addColorStop(1,'rgba(255,255,255,0.06)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+      ctx.fill();
+      // shine
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.beginPath();
+      ctx.ellipse(b.x-b.r*0.3,b.y-b.r*0.5,b.r*0.4,b.r*0.25,0,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    // particles
+    for(const p of particles){
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,3,0,Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  let lastTime = performance.now();
+  function loop(now){
+    const dt = now - lastTime;
+    lastTime = now;
+    update(dt);
+    draw();
+    if(running) requestAnimationFrame(loop);
+  }
+
+  canvas.addEventListener('click', e => {
+    if(!running || paused) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const cx = (e.clientX - rect.left) * scaleX;
+    const cy = (e.clientY - rect.top) * scaleY;
+
+    // クリック位置に近いバブルを探す（より広い範囲）
+    let hitBubble = null;
+    let minDist = Infinity;
+    for(let i=bubbles.length-1;i>=0;i--){
+      const b = bubbles[i];
+      const dx = cx - b.x, dy = cy - b.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if(dist <= b.r + 8){ // クリック範囲を8px拡大
+        if(dist < minDist){
+          minDist = dist;
+          hitBubble = i;
+        }
+      }
+    }
+
+    if(hitBubble !== null){
+      const b = bubbles[hitBubble];
+      // pop
+      bubbles.splice(hitBubble,1);
+      spawnParticle(b.x,b.y,b.color);
+      // scoring: base by radius + combo multiplier
+      combo = combo ? combo + 1 : 1;
+      comboTimer = 1200; // ms
+      const pts = Math.floor(b.score * (1 + combo*0.25));
+      score += pts;
+      scoreEl.textContent = score;
+      comboEl.textContent = 'x' + combo;
+    }
+  });
+
+  // touch support
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const t = e.touches[0];
+    canvas.dispatchEvent(new MouseEvent('click', {clientX: t.clientX, clientY: t.clientY}));
+  }, {passive:false});
+
+  function startGame(){
+    if(running){ paused=false; return; }
+    // reset
+    bubbles = []; particles = [];
+    score = 0; combo = 0; comboTimer = 0;
+    timeLeft = (modeSel.value==='classic' ? 60 : (modeSel.value==='endless' ? 9999 : 9999));
+    spawnInterval = 700;
+    lastSpawn = 0;
+    running = true; paused = false;
+    scoreEl.textContent = '0';
+    comboEl.textContent = 'x1';
+    timeEl.textContent = Math.ceil(timeLeft);
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  function pauseGame(){
+    paused = !paused;
+  }
+
+  function endGame(){
+    running = false;
+    // update best
+    if(score > best){
+      best = score;
+      localStorage.setItem('solopop_best', String(best));
+      bestEl.textContent = best;
+    }
+    // show simple overlay
+    setTimeout(()=> {
+      alert('ゲーム終了！ スコア: ' + score + '\\nハイスコア: ' + best);
+    }, 50);
+  }
+
+  // UI
+  startBtn.addEventListener('click', () => {
+    startGame();
+  });
+  pauseBtn.addEventListener('click', () => {
+    if(!running) return;
+    pauseGame();
+    pauseBtn.textContent = paused ? '再開' : '一時停止';
+  });
+  restartBtn.addEventListener('click', () => {
+    running = false;
+    startGame();
+  });
+
+  // timer updater
+  setInterval(()=>{
+    if(running && !paused && modeSel.value !== 'relax'){
+      timeEl.textContent = Math.ceil(timeLeft);
+      if(modeSel.value === 'endless' && timeLeft > 0){
+        // endless uses timeLeft as survival counter (not needed)
+      }
+    }
+  }, 200);
+
+  // autosave best
+  window.addEventListener('beforeunload', () => {
+    if(score > best) localStorage.setItem('solopop_best', String(score));
+  });
+
+  // quick start hint
+  setTimeout(()=>{ bestEl.textContent = best; }, 100);
+
+})();
+</script>

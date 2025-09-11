@@ -478,6 +478,7 @@
                 e.stopPropagation();
             }
         }, true);
+
         // メニューバー: クリックでリスト表示、再クリックで閉じる
         document.querySelectorAll('.menu').forEach(menu => {
             menu.addEventListener('click', function (e) {
@@ -505,63 +506,135 @@
             document.getElementById('modalAbout').classList.remove('active');
         };
 
-        // ---- ネットワーク監視とモーダル制御 ----
+        /* ===== ネットワーク切断時のモーダル（画面中央）を追加実装
+           - ネットワークがオフラインになったらモーダル表示
+           - モーダル表示中は操作を一時停止（クリックやキー入力を抑止）
+           - 接続復帰を検出したらコンテンツをリロードして復帰
+        */
+        // モーダル要素を動的に作る（既に存在する場合は追加しない）
+        if (!document.getElementById('modalNetwork')) {
+            const modalHtml = `
+    <div class="modal-overlay" id="modalNetwork" aria-live="polite" aria-modal="true">
+        <div class="modal-content" role="dialog" aria-labelledby="netTitle" aria-describedby="netDesc">
+            <h2 id="netTitle">ネットワーク接続が切断されました</h2>
+            <p id="netDesc">ネットワークが復旧するまで待機中です。復旧後、自動で再接続します...</p>
+            <div class="modal-spinner" aria-hidden="true"></div>
+        </div>
+    </div>`;
+            // Aboutモーダルの直後に挿入
+            const aboutModal = document.getElementById('modalAbout');
+            aboutModal.insertAdjacentHTML('afterend', modalHtml);
+        }
+
         const networkModal = document.getElementById('modalNetwork');
-        let lostConnection = false;
+        const mainFrame = document.getElementById('mainFrame');
+        let wasOffline = false;
         let reloadPending = false;
+        let pingTimeout = 5000; // ms
+
+        function pauseUI() {
+            // 視覚的に裏側のコンテンツを停止していることを示す
+            if (mainFrame) {
+                mainFrame.style.filter = 'grayscale(40%) blur(1px)';
+                mainFrame.style.pointerEvents = 'none';
+            }
+            document.body.setAttribute('data-paused', '1');
+        }
+        function resumeUI() {
+            if (mainFrame) {
+                mainFrame.style.filter = '';
+                mainFrame.style.pointerEvents = '';
+            }
+            document.body.removeAttribute('data-paused');
+        }
 
         function showModal() {
+            if (!networkModal) return;
             networkModal.classList.add('active');
+            // 全体の操作を無効化（モーダル自身は操作可能にする）
             document.body.style.pointerEvents = "none";
             networkModal.style.pointerEvents = "auto";
-        }
-        function hideModal() {
-            networkModal.classList.remove('active');
-            document.body.style.pointerEvents = "";
-        }
-        function reloadContent() {
-            const iframe = document.getElementById('mainFrame');
-            iframe.src = iframe.src;
-            hideModal(); 
+            pauseUI();
         }
 
-        function checkOnlineStatus() {
+        function hideModal() {
+            if (!networkModal) return;
+            networkModal.classList.remove('active');
+            document.body.style.pointerEvents = "";
+            resumeUI();
+        }
+
+        // シンプルなping（同一オリジンのパスがあるならそちらを使う方が確実）
+        async function pingServer() {
+            if (!navigator.onLine) throw new Error('offline');
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), pingTimeout);
+            try {
+                // 同一オリジンのヘッドを試す。失敗したら fetch が reject する
+                const url = location.origin && location.origin !== 'null' ? (location.origin + '/favicon.ico') : 'https://www.google.com/';
+                await fetch(url, { method: 'HEAD', cache: 'no-store', signal: controller.signal });
+                clearTimeout(id);
+                return true;
+            } finally {
+                clearTimeout(id);
+            }
+        }
+
+        async function checkOnlineStatus() {
             if (!navigator.onLine) {
-                lostConnection = true;
+                wasOffline = true;
                 reloadPending = true;
                 showModal();
                 return;
             }
-            fetch("https://www.google.com/", { method: "HEAD", mode: "no-cors" })
-                .then(() => {
-                    if (lostConnection && reloadPending) {
-                        lostConnection = false;
-                        reloadPending = false;
-                        reloadContent(); // モーダルもここで閉じる
-                    } else if (lostConnection) {
-                        lostConnection = false;
-                        hideModal();
+            try {
+                await pingServer();
+                // ping 成功
+                if (wasOffline && reloadPending) {
+                    wasOffline = false;
+                    reloadPending = false;
+                    // 再読み込みして復帰
+                    if (mainFrame) {
+                        // object タグの再読み込み
+                        const src = mainFrame.getAttribute('data-src') || mainFrame.getAttribute('data') || mainFrame.src || mainFrame.data;
+                        // reassign data to force reload
+                        mainFrame.data = src;
                     }
-                })
-                .catch(() => {
-                    lostConnection = true;
-                    reloadPending = true;
-                    showModal();
-                });
+                    hideModal();
+                } else {
+                    wasOffline = false;
+                    hideModal();
+                }
+            } catch (err) {
+                // ping失敗 => オフライン扱い
+                wasOffline = true;
+                reloadPending = true;
+                showModal();
+            }
+        }
+
+        // 初期化: object の元の data を保証 (一部環境で src と data の差があるため)
+        if (mainFrame) {
+            const current = mainFrame.getAttribute('data') || mainFrame.src || mainFrame.data || '';
+            mainFrame.setAttribute('data-src', current);
         }
 
         window.addEventListener('online', checkOnlineStatus);
         window.addEventListener('offline', checkOnlineStatus);
 
+        // check immediately and then periodically
         checkOnlineStatus();
         setInterval(checkOnlineStatus, 4000);
 
+        // モーダルが存在する場合、モーダル内のイベントを透過させないようにする
         if (networkModal) {
             networkModal.addEventListener('mousedown', e => e.stopPropagation());
             networkModal.addEventListener('touchstart', e => e.stopPropagation());
             window.addEventListener('keydown', function (e) {
                 if (networkModal.classList.contains('active')) {
+                    // モーダル表示中のキーボード操作を抑止（必要最低限の操作は通す場合はここを調整）
                     e.preventDefault();
+                    e.stopPropagation();
                 }
             }, true);
         }
