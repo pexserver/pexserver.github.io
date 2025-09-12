@@ -17,147 +17,175 @@
   <link rel="icon" href="/libs/Assets/images/home.png" type="image/png">
   <link rel="stylesheet" href="style.css">
   <style>
+    :root {
+      --brand-color-light: #e0e7ff;
+      --brand-color: #6366f1;
+      --brand-color-dark: #4f46e5;
+      --text-color: #374151;
+      --link-color: #4338ca;
+      --link-hover-color: #a21caf;
+      --bg-color-light: #f8fafc;
+      --bg-color-main: #ffffff;
+      --border-color: #c7d2fe;
+    }
     body {
-      background: linear-gradient(120deg, #e0e7ff 0%, #f8fafc 100%);
-      font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
+      background: linear-gradient(120deg, var(--brand-color-light) 0%, var(--bg-color-light) 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
       margin: 0;
       min-height: 100dvh;
+      color: var(--text-color);
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
-      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
       padding-top: env(safe-area-inset-top, 0px);
       padding-left: env(safe-area-inset-left, 0px);
       padding-right: env(safe-area-inset-right, 0px);
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
       touch-action: manipulation;
     }
     .changelog-list {
-      max-width: min(700px, 100vw - 2em);
-      margin: 2.5em auto 2em auto;
-      background: #fff;
-      border-radius: 18px;
-      box-shadow: 0 4px 24px #667eea22;
-      padding: 2.2em max(2em, 4vw) 1.5em max(2em, 4vw);
-      border: 1.5px solid #e0e7ff;
+      max-width: min(720px, 100% - 2em);
+      margin: 3em auto;
+      background: var(--bg-color-main);
+      border-radius: 24px;
+      box-shadow: 0 10px 40px -10px rgba(102, 126, 234, 0.2);
+      padding: 2.5em max(2em, 5vw);
+      border: 1px solid var(--brand-color-light);
       box-sizing: border-box;
     }
     .changelog-list h1 {
       text-align: center;
-      font-size: 2.1em;
-      letter-spacing: 0.04em;
-      color: #4f46e5;
-      margin-bottom: 0.7em;
-      font-weight: 700;
-      text-shadow: 0 2px 8px #a5b4fc33;
+      font-size: 2.5em;
+      letter-spacing: 0.02em;
+      margin-bottom: 0.8em;
+      font-weight: 800;
+      background: linear-gradient(45deg, var(--brand-color-dark) 30%, var(--link-hover-color) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 2px 10px rgba(165, 180, 252, 0.3);
     }
     .changelog-date {
-      font-weight: bold;
-      margin-top: 2.2em;
-      font-size: 1.13em;
-      color: #6366f1;
-      border-left: 4px solid #a5b4fc;
-      padding-left: 0.7em;
-      background: #f3f4f6;
-      border-radius: 6px;
-      box-shadow: 0 1px 4px #a5b4fc11;
-      margin-bottom: 0.5em;
+      font-weight: 700;
+      margin-top: 2.5em;
+      font-size: 1.2em;
+      color: var(--brand-color-dark);
+      border-left: 4px solid var(--brand-color);
+      padding: 0.4em 0.8em;
+      background: linear-gradient(90deg, #f1f5f9, #f8fafc);
+      border-radius: 8px;
+      margin-bottom: 1em;
     }
     .changelog-commits {
-      margin-bottom: 0.7em;
+      margin-bottom: 1em;
+      padding-left: 0.5em;
     }
     .changelog-commit {
-      margin: 0.3em 0 0.3em 1.5em;
+      margin: 0.5em 0 0.5em 1.2em;
       font-size: 1em;
-      padding: 0.5em 0.7em;
-      border-radius: 5px;
-      transition: background 0.2s;
-      background: #f8fafc;
-      border-left: 2.5px solid #c7d2fe;
+      padding: 0.6em 0.8em;
+      border-radius: 8px;
+      transition: background 0.2s ease-out, transform 0.2s ease-out;
+      background: var(--bg-color-light);
+      border-left: 3px solid var(--border-color);
       position: relative;
     }
+    .changelog-commit:hover {
+      background: #eef2ff;
+      transform: translateX(5px);
+    }
     .changelog-commit a {
-      color: #4f46e5;
+      color: var(--link-color);
       text-decoration: none;
       font-weight: 500;
       word-break: break-all;
       transition: color 0.2s;
     }
     .changelog-commit a:hover {
-      color: #a21caf;
+      color: var(--link-hover-color);
       text-decoration: underline;
     }
     .changelog-commit::before {
-      content: '•';
-      color: #818cf8;
+      content: '';
+      background-color: var(--brand-color);
+      border-radius: 50%;
+      width: 8px;
+      height: 8px;
       position: absolute;
-      left: -1.1em;
-      top: 0.7em;
-      font-size: 1.1em;
+      left: -1.5em;
+      top: 50%;
+      transform: translateY(-50%);
     }
     .changelog-pager {
       display: flex;
       justify-content: center;
-      gap: 1.2em;
-      margin: 2.5em 0 0;
+      gap: 1em;
+      margin: 3em 0 0.5em;
       align-items: center;
     }
     .changelog-pager button {
-      background: linear-gradient(90deg, #e0e7ff 0%, #f3f3fa 100%);
-      border: 1.5px solid #a5b4fc;
-      border-radius: 8px;
-      padding: 0.5em 1.5em;
+      background: var(--bg-color-main);
+      border: 1.5px solid var(--border-color);
+      border-radius: 10px;
+      padding: 0.6em 1.6em;
       cursor: pointer;
       font-size: 1em;
-      color: #4f46e5;
+      color: var(--brand-color-dark);
       font-weight: 600;
-      box-shadow: 0 1px 4px #a5b4fc22;
-      transition: background 0.2s, color 0.2s;
+      box-shadow: 0 2px 8px -2px rgba(165, 180, 252, 0.3);
+      transition: all 0.2s ease-out;
     }
     .changelog-pager button:hover:not(:disabled) {
-      background: #c7d2fe;
-      color: #a21caf;
+      background: #eef2ff;
+      color: var(--link-hover-color);
+      border-color: #a5b4fc;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px -2px rgba(165, 180, 252, 0.5);
     }
     .changelog-pager button:disabled {
-      opacity: 0.5;
+      opacity: 0.6;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
     .changelog-pager #page-info {
-      font-size: 1.08em;
-      color: #6366f1;
-      font-weight: 500;
-      letter-spacing: 0.04em;
+      font-size: 1.1em;
+      color: var(--brand-color);
+      font-weight: 600;
+      min-width: 60px;
+      text-align: center;
     }
     .home-btn {
       position: fixed;
-      top: max(1.2em, env(safe-area-inset-top, 1.2em));
-      right: max(2vw, 18px);
+      top: max(1em, env(safe-area-inset-top, 1em));
+      right: max(1em, env(safe-area-inset-right, 1em));
       z-index: 10000;
-      width: 48px;
-      height: 48px;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
-      background: linear-gradient(120deg, #6366f1 60%, #a5b4fc 100%);
+      background: linear-gradient(135deg, var(--brand-color) 0%, #818cf8 100%);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2em;
-      box-shadow: 0 4px 16px #6366f155;
+      font-size: 1.8em;
+      box-shadow: 0 6px 20px -4px rgba(99, 102, 241, 0.6);
       text-decoration: none;
-      opacity: 0.92;
-      transition: background 0.2s, opacity 0.2s;
+      transition: all 0.2s ease-out;
       outline: none;
       border: none;
       touch-action: manipulation;
     }
     .home-btn:active {
-      background: #6366f1;
-      opacity: 1;
+      transform: scale(0.95);
+      box-shadow: 0 4px 15px -4px rgba(99, 102, 241, 0.8);
     }
     @media (hover: hover) {
       .home-btn:hover {
-        background: #a21caf;
-        opacity: 1;
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 8px 25px -4px rgba(99, 102, 241, 0.7);
       }
     }
   </style>
