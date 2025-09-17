@@ -71,44 +71,6 @@
         }
       ]
     },
-         {
-          "name": "GoreScript Classic",
-          "description": "JavaScript / WebGLで作られた、抽象的な2.5Dとボクセルの美学を持つ、90年代スタイルの高速ファーストパーソンシューター。",
-          "thumbnail": "https://gorescript.github.io/classic/img/logo_gs.png",
-          "url": "https://gorescript.github.io/classic/play/",
-          "category": "games",
-          "tags": ["shooter", "fps", "3d", "webgl"],
-          "os": ["pc"]
-        },
-        {
-          "name": "Asure - 2D 横スクロール アスレチックアクション",
-          "description": "Three.js の OrthographicCamera を使った 2D ライク横スクロールアクション。5 ステージ、踏みつけチェイン・チェックポイント・モバイルタッチ対応。BGM/SE は Web Audio 合成。",
-          "thumbnail": "./Games/Asure/img/asure_thumb.png",
-          "url": "./Games/Asure/",
-          "category": "games",
-          "tags": ["asure", "platformer", "threejs", "2d", "action"],
-          "os": ["pc"]
-        },
-        {
-          "name": "TNT Run 2D",
-          "description": "2DのTNT Run。床が踏むと崩れるサバイバルラン。左右を操作して最後の一人を目指すシンプルなブラウザゲーム。",
-          "thumbnail": "https://picsum.photos/seed/tnt/400/200",
-          "url": "./Games/TNTRun/index.html",
-          "category": "games",
-          "tags": ["tnt", "run", "platform", "2d"],
-          "os": ["pc", "mobile"]
-        },
-        {
-          "name": "SoloPop — バブルポップ",
-          "description": "クリックでバブルをポップしてスコアを競う軽量な単独プレイ用ミニゲーム",
-          "thumbnail": "https://picsum.photos/seed/solopop/400/200",
-          "url": "./Games/SoloPop/index.html",
-          "category": "games",
-          "tags": ["solopop","bubble","casual","game"],
-          "os": ["pc", "mobile"]
-        }
-      ]
-    },
     {
       "id":"fps",
       "name":"FPSゲーム",
