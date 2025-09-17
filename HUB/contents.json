@@ -71,13 +71,7 @@
         }
       ]
     },
-    {
-      "id":"fps",
-      "name":"FPSゲーム",
-      "id": "casual",
-      "name": "カジュアルゲーム",
-      "description": "手軽に遊べるカジュアルゲームのリンク集",
-      "icon": "従       {
+         {
           "name": "GoreScript Classic",
           "description": "JavaScript / WebGLで作られた、抽象的な2.5Dとボクセルの美学を持つ、90年代スタイルの高速ファーストパーソンシューター。",
           "thumbnail": "https://gorescript.github.io/classic/img/logo_gs.png",
