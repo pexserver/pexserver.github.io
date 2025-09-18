@@ -72,6 +72,25 @@
       ]
     },
     {
+      "id":"fps",
+      "name":"FPSゲーム",
+      "id": "casual",
+      "name": "カジュアルゲーム",
+      "description": "手軽に遊べるカジュアルゲームのリンク集",
+      "icon": "🔫",
+      "items": [
+        {
+          "name": "krunker",
+          "description": "軽いFPSゲーム",
+          "thumbnail": "https://i.ytimg.com/vi/A5NCnN37HB8/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGEIgXihlMA8=&rs=AOn4CLDX6KsTo_-JHDH-3xom6Nl-ytY4aQ",
+          "url": "https://krunker.io/",
+          "category": "fps",
+          "tags": ["fps", "krunker","game"],
+          "os": ["pc", "mobile"]
+        }
+      ]
+    },
+    {
       "id": "casual",
       "name": "カジュアルゲーム",
       "description": "手軽に遊べるカジュアルゲームのリンク集",
