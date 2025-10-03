@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>線引きゲーム - Line Drawing Game</title>
+<meta name="description" content="戦略的な2人対戦型の線引きゲーム。盤面の境界線を使った完全情報ゲーム。" />
+<link rel="icon" href="../../Image/logo.png" type="image/png" />
+<style>
+  :root {
+    --bg1: #0f172a;
+    --bg2: #1e293b;
+    --card: #0b1220;
+    --accent-a: #3b82f6;
+    --accent-b: #ef4444;
+    --muted: #9aa7c7;
+    --border: #334155;
+    --line-color: #60a5fa;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+  body {
+    background: linear-gradient(180deg, var(--bg1), #050a14);
+    color: #e6eef8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+  header {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  h1 {
+    font-size: 28px;
+    margin: 0;
+    background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .small { 
+    color: var(--muted); 
+    font-size: 14px; 
+    margin-top: 4px;
+  }
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    background: linear-gradient(180deg, #334155, #1e293b);
+    border: 1px solid var(--border);
+    color: #eaf0ff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  .btn:hover {
+    background: linear-gradient(180deg, #475569, #334155);
+    transform: translateY(-1px);
+  }
+  .btn:active {
+    transform: translateY(0);
+  }
+  .btn.primary {
+    background: linear-gradient(180deg, var(--accent-a), #2563eb);
+  }
+  .btn.primary:hover {
+    background: linear-gradient(180deg, #60a5fa, var(--accent-a));
+  }
+  .game-container {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    width: 100%;
+    max-width: 1200px;
+  }
+  .canvas-wrap {
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(2,6,23,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  canvas {
+    display: block;
+    border-radius: 8px;
+    cursor: pointer;
+    background: linear-gradient(135deg, rgba(15,23,42,0.8), rgba(30,41,59,0.6));
+  }
+  .side-panel {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 12px;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 6px 20px rgba(2,6,23,0.6);
+  }
+  .status-box {
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .current-player {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .player-a { color: var(--accent-a); }
+  .player-b { color: var(--accent-b); }
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    font-size: 14px;
+  }
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .control-group {
+    display: flex;
+    gap: 8px;
+  }
+  select {
+    background: linear-gradient(180deg, #334155, #1e293b);
+    border: 1px solid var(--border);
+    color: #eaf0ff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    flex: 1;
+  }
+  .rules {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    background: rgba(255,255,255,0.02);
+    padding: 12px;
+    border-radius: 8px;
+  }
+  .rules h3 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #e6eef8;
+  }
+  .rules ul {
+    margin: 6px 0;
+    padding-left: 20px;
+  }
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .overlay.visible {
+    display: flex;
+  }
+  .modal {
+    background: var(--bg2);
+    padding: 32px;
+    border-radius: 16px;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+  }
+  .modal h2 {
+    margin: 0 0 16px 0;
+    font-size: 32px;
+  }
+  .modal p {
+    margin: 12px 0;
+    font-size: 16px;
+    color: var(--muted);
+  }
+  .modal-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    justify-content: center;
+  }
+  @media (max-width: 900px) {
+    .game-container {
+      grid-template-columns: 1fr;
+    }
+    .side-panel {
+      min-width: 0;
+    }
+  }
+  footer {
+    margin-top: 24px;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>線引きゲーム</h1>
+    <div class="small">戦略的な2人対戦型の境界線ゲーム</div>
+  </div>
+  <div class="toolbar">
+    <button id="newGameBtn" class="btn primary">新しいゲーム</button>
+    <button id="undoBtn" class="btn">戻る</button>
+  </div>
+</header>
+
+<div class="game-container">
+  <div class="canvas-wrap">
+    <canvas id="gameCanvas" width="600" height="600" aria-label="線引きゲーム キャンバス"></canvas>
+  </div>
+
+  <div class="side-panel">
+    <div class="status-box">
+      <div class="current-player" id="currentPlayer">プレイヤー A のターン</div>
+      <div class="info-row">
+        <span>手数:</span>
+        <span id="moveCount">0</span>
+      </div>
+      <div class="info-row">
+        <span>盤面サイズ:</span>
+        <span id="boardSize">5×5</span>
+      </div>
+      <div class="info-row">
+        <span>ゲームモード:</span>
+        <span id="gameMode">プレイヤー vs AI</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="control-group">
+        <select id="sizeSelect">
+          <option value="3">3×3 (小)</option>
+          <option value="5" selected>5×5 (標準)</option>
+          <option value="7">7×7 (大)</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <select id="modeSelect">
+          <option value="pvai">プレイヤー vs AI</option>
+          <option value="pvp">プレイヤー vs プレイヤー</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <select id="difficultySelect">
+          <option value="easy">AI: 簡単</option>
+          <option value="medium" selected>AI: 普通</option>
+          <option value="hard">AI: 難しい</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="rules">
+      <h3>ルール:</h3>
+      <ul>
+        <li>マスの境界に沿って線を引く</li>
+        <li>線は端まで一気に伸ばす</li>
+        <li>既存の線で止まる</li>
+        <li>線は重ねられない</li>
+        <li>引けなくなったら負け</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">ゲーム終了</h2>
+    <p id="modalMessage">プレイヤー A の勝利！</p>
+    <div class="modal-buttons">
+      <button class="btn primary" id="modalNewGame">新しいゲーム</button>
+      <button class="btn" id="modalClose">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  矢印キー、マウス、タッチで操作 | 戦略的な完全情報ゲーム
+</footer>
+
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  
+  // Game state
+  let gridSize = 5;
+  let gameMode = 'pvai'; // 'pvai' or 'pvp'
+  let difficulty = 'medium';
+  let currentPlayer = 'A'; // 'A' or 'B'
+  let moveHistory = [];
+  let horizontalLines = {}; // key: "row,col", value: true if line exists
+  let verticalLines = {};   // key: "row,col", value: true if line exists
+  let gameOver = false;
+  let aiThinking = false;
+  
+  // UI elements
+  const currentPlayerEl = document.getElementById('currentPlayer');
+  const moveCountEl = document.getElementById('moveCount');
+  const boardSizeEl = document.getElementById('boardSize');
+  const gameModeEl = document.getElementById('gameMode');
+  const overlay = document.getElementById('overlay');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalMessage = document.getElementById('modalMessage');
+  
+  // Controls
+  const newGameBtn = document.getElementById('newGameBtn');
+  const undoBtn = document.getElementById('undoBtn');
+  const sizeSelect = document.getElementById('sizeSelect');
+  const modeSelect = document.getElementById('modeSelect');
+  const difficultySelect = document.getElementById('difficultySelect');
+  const modalNewGame = document.getElementById('modalNewGame');
+  const modalClose = document.getElementById('modalClose');
+  
+  // Event listeners
+  newGameBtn.addEventListener('click', () => initGame());
+  undoBtn.addEventListener('click', () => undoMove());
+  sizeSelect.addEventListener('change', (e) => {
+    gridSize = parseInt(e.target.value);
+    initGame();
+  });
+  modeSelect.addEventListener('change', (e) => {
+    gameMode = e.target.value;
+    gameModeEl.textContent = gameMode === 'pvai' ? 'プレイヤー vs AI' : 'プレイヤー vs プレイヤー';
+    difficultySelect.style.display = gameMode === 'pvai' ? 'block' : 'none';
+    initGame();
+  });
+  difficultySelect.addEventListener('change', (e) => {
+    difficulty = e.target.value;
+    initGame();
+  });
+  canvas.addEventListener('click', handleCanvasClick);
+  modalNewGame.addEventListener('click', () => {
+    overlay.classList.remove('visible');
+    initGame();
+  });
+  modalClose.addEventListener('click', () => {
+    overlay.classList.remove('visible');
+  });
+  
+  // Initialize game
+  function initGame() {
+    horizontalLines = {};
+    verticalLines = {};
+    moveHistory = [];
+    currentPlayer = 'A';
+    gameOver = false;
+    aiThinking = false;
+    
+    updateUI();
+    draw();
+  }
+  
+  // Draw the board
+  function draw() {
+    const cellSize = Math.min(canvas.width, canvas.height) / (gridSize + 1);
+    const offsetX = (canvas.width - cellSize * gridSize) / 2;
+    const offsetY = (canvas.height - cellSize * gridSize) / 2;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw grid dots
+    ctx.fillStyle = '#475569';
+    for (let row = 0; row <= gridSize; row++) {
+      for (let col = 0; col <= gridSize; col++) {
+        const x = offsetX + col * cellSize;
+        const y = offsetY + row * cellSize;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Draw horizontal lines
+    ctx.strokeStyle = currentPlayer === 'A' ? '#3b82f6' : '#ef4444';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    
+    for (const key in horizontalLines) {
+      const [row, col] = key.split(',').map(Number);
+      const x1 = offsetX + col * cellSize;
+      const y = offsetY + row * cellSize;
+      const x2 = x1 + cellSize;
+      
+      ctx.beginPath();
+      ctx.moveTo(x1, y);
+      ctx.lineTo(x2, y);
+      ctx.stroke();
+    }
+    
+    // Draw vertical lines
+    for (const key in verticalLines) {
+      const [row, col] = key.split(',').map(Number);
+      const x = offsetX + col * cellSize;
+      const y1 = offsetY + row * cellSize;
+      const y2 = y1 + cellSize;
+      
+      ctx.beginPath();
+      ctx.moveTo(x, y1);
+      ctx.lineTo(x, y2);
+      ctx.stroke();
+    }
+    
+    // Highlight possible moves on hover
+    drawHoverHighlight(cellSize, offsetX, offsetY);
+  }
+  
+  // Handle canvas click
+  function handleCanvasClick(e) {
+    if (gameOver || aiThinking) return;
+    if (gameMode === 'pvai' && currentPlayer === 'B') return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const cellSize = Math.min(canvas.width, canvas.height) / (gridSize + 1);
+    const offsetX = (canvas.width - cellSize * gridSize) / 2;
+    const offsetY = (canvas.height - cellSize * gridSize) / 2;
+    
+    const move = getClickedLine(x, y, cellSize, offsetX, offsetY);
+    if (move) {
+      makeMove(move);
+    }
+  }
+  
+  // Get line from click position
+  function getClickedLine(x, y, cellSize, offsetX, offsetY) {
+    const threshold = 15;
+    
+    // Check horizontal lines
+    for (let row = 0; row <= gridSize; row++) {
+      const lineY = offsetY + row * cellSize;
+      if (Math.abs(y - lineY) < threshold) {
+        for (let col = 0; col < gridSize; col++) {
+          const x1 = offsetX + col * cellSize;
+          const x2 = x1 + cellSize;
+          if (x >= x1 - threshold && x <= x2 + threshold) {
+            const move = { type: 'h', row, col };
+            if (isValidMove(move)) {
+              return move;
+            }
+          }
+        }
+      }
+    }
+    
+    // Check vertical lines
+    for (let col = 0; col <= gridSize; col++) {
+      const lineX = offsetX + col * cellSize;
+      if (Math.abs(x - lineX) < threshold) {
+        for (let row = 0; row < gridSize; row++) {
+          const y1 = offsetY + row * cellSize;
+          const y2 = y1 + cellSize;
+          if (y >= y1 - threshold && y <= y2 + threshold) {
+            const move = { type: 'v', row, col };
+            if (isValidMove(move)) {
+              return move;
+            }
+          }
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  // Check if move is valid
+  function isValidMove(move) {
+    if (move.type === 'h') {
+      const key = `${move.row},${move.col}`;
+      return !horizontalLines[key];
+    } else {
+      const key = `${move.row},${move.col}`;
+      return !verticalLines[key];
+    }
+  }
+  
+  // Make a move
+  function makeMove(move) {
+    if (!isValidMove(move)) return;
+    
+    moveHistory.push({ move, player: currentPlayer });
+    
+    if (move.type === 'h') {
+      horizontalLines[`${move.row},${move.col}`] = true;
+    } else {
+      verticalLines[`${move.row},${move.col}`] = true;
+    }
+    
+    // Switch player
+    currentPlayer = currentPlayer === 'A' ? 'B' : 'A';
+    updateUI();
+    draw();
+    
+    // Check if game is over
+    if (!hasLegalMoves()) {
+      endGame();
+      return;
+    }
+    
+    // AI turn
+    if (gameMode === 'pvai' && currentPlayer === 'B') {
+      aiThinking = true;
+      setTimeout(() => {
+        makeAIMove();
+        aiThinking = false;
+      }, 300);
+    }
+  }
+  
+  // Undo last move
+  function undoMove() {
+    if (moveHistory.length === 0 || gameOver) return;
+    
+    // Undo twice in AI mode (undo AI and player moves)
+    const undoCount = gameMode === 'pvai' ? 2 : 1;
+    
+    for (let i = 0; i < undoCount && moveHistory.length > 0; i++) {
+      const last = moveHistory.pop();
+      const move = last.move;
+      
+      if (move.type === 'h') {
+        delete horizontalLines[`${move.row},${move.col}`];
+      } else {
+        delete verticalLines[`${move.row},${move.col}`];
+      }
+      
+      currentPlayer = last.player;
+    }
+    
+    updateUI();
+    draw();
+  }
+  
+  // Check if current player has legal moves
+  function hasLegalMoves() {
+    const moves = getLegalMoves();
+    return moves.length > 0;
+  }
+  
+  // Get all legal moves
+  function getLegalMoves() {
+    const moves = [];
+    
+    // Horizontal lines
+    for (let row = 0; row <= gridSize; row++) {
+      for (let col = 0; col < gridSize; col++) {
+        const move = { type: 'h', row, col };
+        if (isValidMove(move)) {
+          moves.push(move);
+        }
+      }
+    }
+    
+    // Vertical lines
+    for (let row = 0; row < gridSize; row++) {
+      for (let col = 0; col <= gridSize; col++) {
+        const move = { type: 'v', row, col };
+        if (isValidMove(move)) {
+          moves.push(move);
+        }
+      }
+    }
+    
+    return moves;
+  }
+  
+  // AI move using minimax algorithm
+  function makeAIMove() {
+    const moves = getLegalMoves();
+    if (moves.length === 0) return;
+    
+    let bestMove;
+    
+    if (difficulty === 'easy') {
+      // Random move
+      bestMove = moves[Math.floor(Math.random() * moves.length)];
+    } else if (difficulty === 'medium') {
+      // Limited depth minimax
+      bestMove = findBestMove(2);
+    } else {
+      // Deeper search
+      bestMove = findBestMove(4);
+    }
+    
+    if (bestMove) {
+      makeMove(bestMove);
+    }
+  }
+  
+  // Find best move using minimax
+  function findBestMove(maxDepth) {
+    const moves = getLegalMoves();
+    let bestScore = -Infinity;
+    let bestMove = null;
+    
+    for (const move of moves) {
+      // Make move
+      if (move.type === 'h') {
+        horizontalLines[`${move.row},${move.col}`] = true;
+      } else {
+        verticalLines[`${move.row},${move.col}`] = true;
+      }
+      
+      const score = minimax(false, maxDepth - 1, -Infinity, Infinity);
+      
+      // Undo move
+      if (move.type === 'h') {
+        delete horizontalLines[`${move.row},${move.col}`];
+      } else {
+        delete verticalLines[`${move.row},${move.col}`];
+      }
+      
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = move;
+      }
+    }
+    
+    return bestMove;
+  }
+  
+  // Minimax algorithm with alpha-beta pruning
+  function minimax(isMaximizing, depth, alpha, beta) {
+    const moves = getLegalMoves();
+    
+    // Terminal state
+    if (moves.length === 0) {
+      return isMaximizing ? -100 : 100;
+    }
+    
+    // Depth limit
+    if (depth <= 0) {
+      return 0;
+    }
+    
+    if (isMaximizing) {
+      let maxScore = -Infinity;
+      for (const move of moves) {
+        if (move.type === 'h') {
+          horizontalLines[`${move.row},${move.col}`] = true;
+        } else {
+          verticalLines[`${move.row},${move.col}`] = true;
+        }
+        
+        const score = minimax(false, depth - 1, alpha, beta);
+        
+        if (move.type === 'h') {
+          delete horizontalLines[`${move.row},${move.col}`];
+        } else {
+          delete verticalLines[`${move.row},${move.col}`];
+        }
+        
+        maxScore = Math.max(maxScore, score);
+        alpha = Math.max(alpha, score);
+        if (beta <= alpha) break;
+      }
+      return maxScore;
+    } else {
+      let minScore = Infinity;
+      for (const move of moves) {
+        if (move.type === 'h') {
+          horizontalLines[`${move.row},${move.col}`] = true;
+        } else {
+          verticalLines[`${move.row},${move.col}`] = true;
+        }
+        
+        const score = minimax(true, depth - 1, alpha, beta);
+        
+        if (move.type === 'h') {
+          delete horizontalLines[`${move.row},${move.col}`];
+        } else {
+          delete verticalLines[`${move.row},${move.col}`];
+        }
+        
+        minScore = Math.min(minScore, score);
+        beta = Math.min(beta, score);
+        if (beta <= alpha) break;
+      }
+      return minScore;
+    }
+  }
+  
+  // End game
+  function endGame() {
+    gameOver = true;
+    const winner = currentPlayer === 'A' ? 'B' : 'A';
+    const winnerName = gameMode === 'pvai' && winner === 'B' ? 'AI' : `プレイヤー ${winner}`;
+    
+    modalTitle.textContent = 'ゲーム終了';
+    modalMessage.textContent = `${winnerName} の勝利！`;
+    overlay.classList.add('visible');
+  }
+  
+  // Update UI
+  function updateUI() {
+    const playerName = currentPlayer === 'A' ? 'プレイヤー A' : 
+                       (gameMode === 'pvai' ? 'AI (プレイヤー B)' : 'プレイヤー B');
+    currentPlayerEl.textContent = `${playerName} のターン`;
+    currentPlayerEl.className = `current-player player-${currentPlayer.toLowerCase()}`;
+    moveCountEl.textContent = moveHistory.length;
+    boardSizeEl.textContent = `${gridSize}×${gridSize}`;
+  }
+  
+  // Draw hover highlight
+  let lastHoverMove = null;
+  canvas.addEventListener('mousemove', (e) => {
+    if (gameOver || aiThinking) return;
+    if (gameMode === 'pvai' && currentPlayer === 'B') return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const cellSize = Math.min(canvas.width, canvas.height) / (gridSize + 1);
+    const offsetX = (canvas.width - cellSize * gridSize) / 2;
+    const offsetY = (canvas.height - cellSize * gridSize) / 2;
+    
+    const move = getClickedLine(x, y, cellSize, offsetX, offsetY);
+    
+    if (move !== lastHoverMove) {
+      lastHoverMove = move;
+      draw();
+    }
+  });
+  
+  function drawHoverHighlight(cellSize, offsetX, offsetY) {
+    if (!lastHoverMove) return;
+    
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    
+    const move = lastHoverMove;
+    if (move.type === 'h') {
+      const x1 = offsetX + move.col * cellSize;
+      const y = offsetY + move.row * cellSize;
+      const x2 = x1 + cellSize;
+      
+      ctx.beginPath();
+      ctx.moveTo(x1, y);
+      ctx.lineTo(x2, y);
+      ctx.stroke();
+    } else {
+      const x = offsetX + move.col * cellSize;
+      const y1 = offsetY + move.row * cellSize;
+      const y2 = y1 + cellSize;
+      
+      ctx.beginPath();
+      ctx.moveTo(x, y1);
+      ctx.lineTo(x, y2);
+      ctx.stroke();
+    }
+  }
+  
+  // Initialize
+  initGame();
+  difficultySelect.style.display = gameMode === 'pvai' ? 'block' : 'none';
+})();
+</script>
+
+</body>
+</html>
