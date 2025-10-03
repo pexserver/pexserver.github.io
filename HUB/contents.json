@@ -72,11 +72,9 @@
       ]
     },
     {
-      "id":"fps",
-      "name":"FPSゲーム",
-      "id": "casual",
-      "name": "カジュアルゲーム",
-      "description": "手軽に遊べるカジュアルゲームのリンク集",
+      "id": "fps",
+      "name": "FPSゲーム",
+      "description": "軽快なFPSゲームのリンク集",
       "icon": "🔫",
       "items": [
         {
@@ -103,6 +101,15 @@
           "url": "./Games/Omikuji/index.html",
           "category": "casual",
           "tags": ["omikuji", "fortune", "casual", "game"],
+          "os": ["pc", "mobile"]
+        },
+        {
+          "name": "線引きゲーム",
+          "description": "戦略的な2人対戦型の境界線ゲーム。ミニマックス法によるAI対戦も可能。",
+          "thumbnail": "https://picsum.photos/seed/linegame/400/200",
+          "url": "./Games/LineGame/index.html",
+          "category": "casual",
+          "tags": ["strategy", "puzzle", "ai", "board", "game"],
           "os": ["pc", "mobile"]
         }
       ]
