@@ -68,6 +68,15 @@
           "category": "games",
           "tags": ["solopop","bubble","casual","game"],
           "os": ["pc", "mobile"]
+        },
+        {
+          "name": "Minecraft 1.12",
+          "description": "Minecraft",
+          "thumbnail": "https://picsum.photos/seed/minecraft/400/200",
+          "url": "./Games/mine/index.html",
+          "category": "games",
+          "tags": ["minecraft", "1.12", "wasm", "offline", "game"],
+          "os": ["pc"]
         }
       ]
     },
